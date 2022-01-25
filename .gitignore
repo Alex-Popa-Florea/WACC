@@ -1,9 +1,15 @@
-#ignore generated binary files and auto-generated ANTLR code
-bin
-src/antlr
+#target folder
+project
+target
 
 #ignore Java class files
 *.class
+
+#.folders
+.vscode
+.bloop
+.bsp
+.metals
 
 #ignore other junk files
 *~

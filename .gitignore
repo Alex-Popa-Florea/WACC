@@ -2,7 +2,8 @@
 project
 target
 
-#ignore Java class files
+#ignore files
+*.jar
 *.class
 
 #.folders

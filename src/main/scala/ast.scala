@@ -10,8 +10,7 @@ object ast {
 
     case class Begin(func: List[Function], stat: List[Statement])(val pos: (Int, Int)) extends Program // change all * to List[]
 
-    case class Function(t: Type, id: Ident, vars: ParamList, stat: List[Statement])(val pos: (Int, Int)) extends Node
-    case class ParamList(ps: List[Parameter])(val pos: (Int, Int)) extends Node
+    case class Function(t: Type, id: Ident, vars: List[Parameter], stat: List[Statement])(val pos: (Int, Int)) extends Node
     case class Parameter(t: Type, id: Ident)(val pos: (Int, Int)) extends Node
 
     sealed trait Statement extends Node
@@ -25,12 +24,12 @@ object ast {
     case class Print(expr: Expr)(val pos: (Int, Int)) extends Statement
     case class Println(expr: Expr)(val pos: (Int, Int)) extends Statement
     case class If(cond: Expr, trueStat: List[Statement], falseStat: List[Statement])(val pos: (Int, Int)) extends Statement
-    case class While(expr: Expr, stat: List[Statement])(val pos: (Int, Int)) extends Statement
+    case class While(cond: Expr, stat: List[Statement])(val pos: (Int, Int)) extends Statement
     case class NestedBegin(stat: List[Statement])(val pos: (Int, Int)) extends Statement
 
     sealed trait AssignLHS extends Node
     case class Ident(variable: String)(val pos: (Int, Int)) extends AssignLHS with Expr
-    case class ArrayElem(id: Ident, head:Expr, rest:List[Expr])(val pos: (Int, Int)) extends AssignLHS with Expr
+    case class ArrayElem(id: Ident, exprs: List[Expr])(val pos: (Int, Int)) extends AssignLHS with Expr
 
     sealed trait AssignRHS extends Node 
     case class ArrayLiter(array: List[Expr])(val pos: (Int, Int)) extends AssignRHS
@@ -110,5 +109,74 @@ object ast {
         def apply(x: T1, y: T2, z: T3, d: T4)(pos: (Int, Int)): R
         val parser = pos.map(p => apply(_, _, _,_)(p))
     }
+
+    // Specific Builders:
+
+
+    // Expressions:
+
+    object Not extends ParserBuilderPos1[Expr,Not]
+    object Neg extends ParserBuilderPos1[Expr,Neg]
+    object Len extends ParserBuilderPos1[Expr,Len]
+    object Ord extends ParserBuilderPos1[Expr,Ord]
+    object Chr extends ParserBuilderPos1[Expr,Chr]
+    object Mul extends ParserBuilderPos2[Expr,Expr,Mul]
+    object Div extends ParserBuilderPos2[Expr,Expr,Div]
+    object Mod extends ParserBuilderPos2[Expr,Expr,Mod]
+    object Add extends ParserBuilderPos2[Expr,Expr,Add]
+    object Sub extends ParserBuilderPos2[Expr,Expr,Sub]
+    object GT extends ParserBuilderPos2[Expr,Expr,GT]
+    object GTE extends ParserBuilderPos2[Expr,Expr,GTE]
+    object LT extends ParserBuilderPos2[Expr,Expr,LT]
+    object LTE extends ParserBuilderPos2[Expr,Expr,LTE]
+    object EQ extends ParserBuilderPos2[Expr,Expr,EQ]
+    object NEQ extends ParserBuilderPos2[Expr,Expr,NEQ]
+    object And extends ParserBuilderPos2[Expr,Expr,And]
+    object Or extends ParserBuilderPos2[Expr,Expr,Or]
+
+    // ArrayElem:
+
+    object ArrayElem {
+        def apply(id: => Parsley[Ident], exprs: Parsley[List[Expr]]): Parsley[ArrayElem] =
+            pos <**> (id, exprs).zipped(ArrayElem(_, _) _)
+    }
+
+
+    // Identifier:
+    
+    object Ident {
+        def apply(variable: =>Parsley[String]): Parsley[Ident] = 
+            pos <**> variable.map(Ident(_) _)
+    }
+
+
+    // Liters:
+    
+    object IntLiter {
+         def apply(x: => Parsley[Int]): Parsley[IntLiter] = 
+             pos <**> x.map(IntLiter(_) _)
+    }
+
+    object BoolLiter {
+         def apply(bool: => Parsley[Boolean]): Parsley[BoolLiter] = 
+             pos <**> bool.map(BoolLiter(_) _)
+    }
+
+    object CharLiter {
+        def apply(char: => Parsley[Any]): Parsley[CharLiter] = 
+            pos <**> char.map(CharLiter(_) _)
+    }
+
+    object StrLiter {
+         def apply(string: => Parsley[String]): Parsley[StrLiter] = 
+             pos <**> string.map(StrLiter(_) _)
+    }
+
+    object ArrayLiter {
+        def apply(array: => Parsley[List[Expr]]): Parsley[ArrayLiter] = 
+            pos <**> array.map(ArrayLiter(_) _)
+    }
+
+    object PairLiter extends ParserBuilderPos0[PairLiter]
 
 }

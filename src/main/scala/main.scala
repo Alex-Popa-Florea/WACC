@@ -1,3 +1,4 @@
+package wacc
 import parsley.Parsley, Parsley._
 object main {
     import parser._

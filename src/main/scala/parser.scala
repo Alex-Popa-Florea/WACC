@@ -1,3 +1,4 @@
+package wacc
 import parsley.Parsley, Parsley._
 import parsley.debug._
 
@@ -39,7 +40,7 @@ object parser {
     private lazy val atom =  
         "(" ~> expr <~ ")" <|> attempt(arrayElem) <|> ident <|> charLiter <|> intLiter <|> boolLiter <|> stringLiter <|> pairLiter 
 
-    private lazy val expr: Parsley[Expr] = precedence[Expr](atom)(
+    lazy val expr: Parsley[Expr] = precedence[Expr](atom)(
         Ops(Prefix)(Not  <# "!"),
         Ops(Prefix)(Neg  <# "-"),
         Ops(Prefix)(Len  <# "len"),

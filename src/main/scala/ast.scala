@@ -1,3 +1,4 @@
+package wacc
 import parsley.Parsley, Parsley._
 import parsley.implicits.zipped.{Zipped2, Zipped3, Zipped4}
 

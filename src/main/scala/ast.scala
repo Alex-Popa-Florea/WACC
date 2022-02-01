@@ -112,6 +112,46 @@ object ast {
 
     // Specific Builders:
 
+    // Program builder:
+        
+    object Begin {
+        def apply(func: => Parsley[List[Function]], stat: => Parsley[List[Statement]]): Parsley[Begin] = 
+            pos <**> (func, stat).zipped(Begin(_, _) _)
+    }
+
+    // Function builders:
+            
+    object Function {
+        def apply(t: => Parsley[Type], id: => Parsley[Ident], vars: => Parsley[List[Parameter]], st: Parsley[List[Statement]]): Parsley[Function] =
+            pos <**> (t, id, vars, st).zipped(Function(_, _, _, _) _)
+    }
+
+    object Parameter {
+        def apply(t: => Parsley[Type], id: =>Parsley[Ident]): Parsley[Parameter] =
+            pos <**> (t, id).zipped(Parameter(_,_) _)
+    }
+
+    // Statements:
+    
+    object Skip extends ParserBuilderPos0[Skip]
+
+    
+    // Types:
+
+    object IntType extends ParserBuilderPos0[IntType]
+    object StrType extends ParserBuilderPos0[StrType]
+    object BoolType extends ParserBuilderPos0[BoolType]
+    object CharType extends ParserBuilderPos0[CharType]
+
+    object ArrayType {
+        def apply(t: =>Parsley[Type]): Parsley[ArrayType] = 
+            pos <**> t.map(ArrayType(_) _)
+    }
+
+    object PairType {
+        def apply(elemtype1: => Parsley[PairElemType], elemtype2: Parsley[PairElemType]): Parsley[PairType] =
+            pos <**> (elemtype1, elemtype2).zipped(PairType(_, _) _)
+    }
 
     // Expressions:
 
@@ -141,6 +181,24 @@ object ast {
             pos <**> (id, exprs).zipped(ArrayElem(_, _) _)
     }
 
+    // Pair:
+
+    object Pair extends ParserBuilderPos0[Pair]
+
+    object Fst {
+        def apply(expr: =>Parsley[Expr]): Parsley[Fst] = 
+            pos <**> expr.map(Fst(_) _)
+    }
+    object Snd {
+        def apply(expr: =>Parsley[Expr]): Parsley[Snd] = 
+            pos <**> expr.map(Snd(_) _)
+    }
+
+    object NewPair {
+        def apply(expr1: => Parsley[Expr], expr2: Parsley[Expr]): Parsley[NewPair] =
+            pos <**> (expr1, expr2).zipped(NewPair(_, _) _)
+    }
+
 
     // Identifier:
     
@@ -148,7 +206,6 @@ object ast {
         def apply(variable: =>Parsley[String]): Parsley[Ident] = 
             pos <**> variable.map(Ident(_) _)
     }
-
 
     // Liters:
     

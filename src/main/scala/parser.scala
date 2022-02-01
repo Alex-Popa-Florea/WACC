@@ -18,7 +18,24 @@ object parser {
     private lazy val pairLiter = (PairLiter <# "null")
 
     private lazy val arrayElem = ArrayElem(ident, endBy1("[" ~> expr, "]"))
+    private lazy val pairElem: Parsley[PairElem] = ("fst" ~> Fst(expr)) <|> ("snd" ~> Snd(expr))
+    private lazy val newPair = "newpair" ~> NewPair("(" ~> expr, "," ~> expr <~ ")")
 
+    private lazy val types: Parsley[Type] = baseType
+
+    private lazy val baseType: Parsley[BaseType] = ((IntType <# "int") <|> (StrType <# "string") <|> (BoolType <# "bool") <|> (CharType <# "char"))
+    
+    private lazy val param = Parameter(types, " " ~> Ident(VARIABLE))
+    private lazy val params = sepBy(param,",")
+    private lazy val function = attempt(Function(types, Ident(VARIABLE), "(" ~> params <~ ")", "is" ~> nestedStatement))
+    private lazy val functions = endBy(function, "end")
+    
+    private lazy val nestedStatement = sepBy1(statement, ";")
+    private lazy val statement: Parsley[Statement] = 
+        (Skip <# "skip")
+        
+        
+    private lazy val program = "begin" ~> (Begin(functions, nestedStatement)) <~ "end"
     private lazy val atom =  
         "(" ~> expr <~ ")" <|> attempt(arrayElem) <|> ident <|> charLiter <|> intLiter <|> boolLiter <|> stringLiter <|> pairLiter 
 
@@ -38,5 +55,5 @@ object parser {
         Ops(InfixR)(Or   <# "||")
         
     )
-    val result = fully(expr)
+    val result = fully(program)
 }

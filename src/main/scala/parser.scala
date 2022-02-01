@@ -47,7 +47,7 @@ object parser {
     private lazy val assignRHS = expr <|> arrayLiter <|> newPair <|> pairElem <|> call
     
     private lazy val nestedStatement = sepBy1(statement, ";")
-    private lazy val statement: Parsley[Statement] = 
+    lazy val statement: Parsley[Statement] = 
         (Skip <# "skip") <|> 
         AssignType(types, ident, "=" ~> assignRHS) <|> 
         Assign(assignLHS, "=" ~> assignRHS)

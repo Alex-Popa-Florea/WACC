@@ -1,4 +1,5 @@
 package wacc
+
 import parsley.Parsley, Parsley._
 import parsley.debug._
 
@@ -9,6 +10,8 @@ object parser {
     import parsley.expr.{precedence, Ops, InfixL, InfixR, NonAssoc, Prefix}
     import parsley.combinator._
     
+    private def count(p: =>Parsley[_]): Parsley[Int] = p.foldLeft(0)((n, _) => n + 1)
+
     private lazy val ident = Ident(VARIABLE)
 
     private lazy val charLiter = CharLiter(CHAR)
@@ -19,21 +22,35 @@ object parser {
     private lazy val pairLiter = (PairLiter <# "null")
 
     private lazy val arrayElem = ArrayElem(ident, endBy1("[" ~> expr, "]"))
+
     private lazy val pairElem: Parsley[PairElem] = ("fst" ~> Fst(expr)) <|> ("snd" ~> Snd(expr))
     private lazy val newPair = "newpair" ~> NewPair("(" ~> expr, "," ~> expr <~ ")")
 
-    private lazy val types: Parsley[Type] = baseType
+    private lazy val types: Parsley[Type] = attempt((baseType <|> pairType) <~ notFollowedBy("[")) <|> arrayType
 
     private lazy val baseType: Parsley[BaseType] = ((IntType <# "int") <|> (StrType <# "string") <|> (BoolType <# "bool") <|> (CharType <# "char"))
+    private lazy val arrayType = ArrayType((baseType <|> pairType), count("[" <~ "]"))
+    private lazy val pairType = PairType("pair" ~> "(" ~> pairElemType <~ ",", pairElemType <~ ")")
+    private lazy val pairElemType: Parsley[PairElemType] = attempt(baseType <~ notFollowedBy("[")) <|> arrayType <|> (Pair <# "pair")
+    
+    
+    private lazy val arglist = sepBy(expr, ",")
     
     private lazy val param = Parameter(types, " " ~> Ident(VARIABLE))
-    private lazy val params = sepBy(param,",")
+    private lazy val params = sepBy(param, ",")
     private lazy val function = attempt(Function(types, Ident(VARIABLE), "(" ~> params <~ ")", "is" ~> nestedStatement))
     private lazy val functions = endBy(function, "end")
     
+    private lazy val call = Call("call" ~> ident, "(" ~> arglist <~ ")")
+
+    private lazy val assignLHS: Parsley[AssignLHS] = attempt(arrayElem) <|> ident <|> pairElem
+    private lazy val assignRHS = expr <|> arrayLiter <|> newPair <|> pairElem <|> call
+    
     private lazy val nestedStatement = sepBy1(statement, ";")
     private lazy val statement: Parsley[Statement] = 
-        (Skip <# "skip")
+        (Skip <# "skip") <|> 
+        AssignType(types, ident, "=" ~> assignRHS) <|> 
+        Assign(assignLHS, "=" ~> assignRHS)
         
         
     private lazy val program = "begin" ~> (Begin(functions, nestedStatement)) <~ "end"

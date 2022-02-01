@@ -1,4 +1,5 @@
 package wacc
+
 import parsley.Parsley, Parsley._
 import parsley.implicits.zipped.{Zipped2, Zipped3, Zipped4}
 
@@ -9,7 +10,7 @@ object ast {
 
     sealed trait Program extends Node
 
-    case class Begin(func: List[Function], stat: List[Statement])(val pos: (Int, Int)) extends Program // change all * to List[]
+    case class Begin(func: List[Function], stat: List[Statement])(val pos: (Int, Int)) extends Program 
 
     case class Function(t: Type, id: Ident, vars: List[Parameter], stat: List[Statement])(val pos: (Int, Int)) extends Node
     case class Parameter(t: Type, id: Ident)(val pos: (Int, Int)) extends Node
@@ -53,7 +54,7 @@ object ast {
     sealed trait PairElemType extends Type
     case class Pair()(val pos: (Int, Int)) extends PairElemType
 
-    case class ArrayType(t: Type)(val pos: (Int, Int)) extends Type with PairElemType
+    case class ArrayType(t: Type, count: Int)(val pos: (Int, Int)) extends Type with PairElemType
 
     sealed trait Expr extends AssignRHS
     case class IntLiter(x: Int)(val pos: (Int, Int)) extends Expr // change back wiht sign 
@@ -136,6 +137,22 @@ object ast {
     
     object Skip extends ParserBuilderPos0[Skip]
 
+    object AssignType {
+        def apply(t: => Parsley[Type], id: => Parsley[Ident], rhs: Parsley[AssignRHS]): Parsley[AssignType] =
+            pos <**> (t, id, rhs).zipped(AssignType(_, _, _) _)
+    }
+
+    object Assign {
+        def apply(lhs: => Parsley[AssignLHS], rhs: Parsley[AssignRHS]): Parsley[Assign] =
+            pos <**> (lhs, rhs).zipped(Assign(_, _) _)
+    }
+
+    // Call:
+
+    object Call {
+        def apply(id: => Parsley[Ident], args: => Parsley[List[Expr]]): Parsley[Call] =
+            pos <**> (id, args).zipped(Call(_, _) _)
+    }
     
     // Types:
 
@@ -145,8 +162,8 @@ object ast {
     object CharType extends ParserBuilderPos0[CharType]
 
     object ArrayType {
-        def apply(t: =>Parsley[Type]): Parsley[ArrayType] = 
-            pos <**> t.map(ArrayType(_) _)
+        def apply(t: =>Parsley[Type], count: Parsley[Int]): Parsley[ArrayType] = 
+            pos <**> (t, count).zipped(ArrayType(_, _) _)
     }
 
     object PairType {

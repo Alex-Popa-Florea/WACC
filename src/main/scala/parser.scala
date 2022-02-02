@@ -40,9 +40,9 @@ object parser {
     private lazy val params = sepBy(param, ",")
     private lazy val function = attempt(Function(types, Ident(VARIABLE), "(" ~> params <~ ")", "is" ~> nestedStatement))
     private lazy val functions = endBy(function, "end")
-    
-    private lazy val call = Call("call" ~> ident, "(" ~> arglist <~ ")")
 
+    private lazy val call = Call("call" ~> ident, "(" ~> arglist <~ ")")
+    
     private lazy val assignLHS: Parsley[AssignLHS] = attempt(arrayElem) <|> ident <|> pairElem
     private lazy val assignRHS = expr <|> arrayLiter <|> newPair <|> pairElem <|> call
     
@@ -50,7 +50,10 @@ object parser {
     lazy val statement: Parsley[Statement] = 
         (Skip <# "skip") <|> 
         AssignType(types, ident, "=" ~> assignRHS) <|> 
-        Assign(assignLHS, "=" ~> assignRHS)
+        Assign(assignLHS, "=" ~> assignRHS) <|>
+        Read("read" ~> assignLHS) <|>
+        Free("free" ~> expr) <|>
+        Return("return" ~> expr)
         
         
     private lazy val program = "begin" ~> (Begin(functions, nestedStatement)) <~ "end"

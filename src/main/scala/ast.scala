@@ -133,6 +133,14 @@ object ast {
             pos <**> (t, id).zipped(Parameter(_,_) _)
     }
 
+    // Call:
+
+    object Call {
+        def apply(id: => Parsley[Ident], args: => Parsley[List[Expr]]): Parsley[Call] =
+            pos <**> (id, args).zipped(Call(_, _) _)
+    }
+
+
     // Statements:
     
     object Skip extends ParserBuilderPos0[Skip]
@@ -147,12 +155,21 @@ object ast {
             pos <**> (lhs, rhs).zipped(Assign(_, _) _)
     }
 
-    // Call:
-
-    object Call {
-        def apply(id: => Parsley[Ident], args: => Parsley[List[Expr]]): Parsley[Call] =
-            pos <**> (id, args).zipped(Call(_, _) _)
+    object Read {
+         def apply(lhs: => Parsley[AssignLHS]): Parsley[Read] = 
+             pos <**> lhs.map(Read(_) _)
     }
+
+    object Free {
+         def apply(expr: => Parsley[Expr]): Parsley[Free] = 
+             pos <**> expr.map(Free(_) _)
+    }
+
+    object Return {
+         def apply(expr: => Parsley[Expr]): Parsley[Return] = 
+             pos <**> expr.map(Return(_) _)
+    }
+    
     
     // Types:
 

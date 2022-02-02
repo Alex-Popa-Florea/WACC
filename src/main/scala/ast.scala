@@ -169,7 +169,22 @@ object ast {
          def apply(expr: => Parsley[Expr]): Parsley[Return] = 
              pos <**> expr.map(Return(_) _)
     }
-    
+
+    object Exit {
+         def apply(expr: => Parsley[Expr]): Parsley[Exit] = 
+             pos <**> expr.map(Exit(_) _)
+    }
+
+    object Print {
+         def apply(expr: => Parsley[Expr]): Parsley[Print] = 
+             pos <**> expr.map(Print(_) _)
+    }
+
+    object Println {
+         def apply(expr: => Parsley[Expr]): Parsley[Println] = 
+             pos <**> expr.map(Println(_) _)
+    }
+
     
     // Types:
 

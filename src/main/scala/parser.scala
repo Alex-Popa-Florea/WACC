@@ -53,7 +53,10 @@ object parser {
         Assign(assignLHS, "=" ~> assignRHS) <|>
         Read("read" ~> assignLHS) <|>
         Free("free" ~> expr) <|>
-        Return("return" ~> expr)
+        Return("return" ~> expr) <|>
+        Exit("exit" ~> expr) <|>
+        Print("print" ~> expr) <|>
+        Println("println" ~> expr)
         
         
     private lazy val program = "begin" ~> (Begin(functions, nestedStatement)) <~ "end"

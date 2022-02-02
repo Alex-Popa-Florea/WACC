@@ -185,6 +185,21 @@ object ast {
              pos <**> expr.map(Println(_) _)
     }
 
+    object If {
+        def apply(cond: => Parsley[Expr], trueStat: => Parsley[List[Statement]], falseStat: => Parsley[List[Statement]]): Parsley[If] =
+            pos <**> (cond, trueStat, falseStat).zipped(If(_, _, _) _)
+    }
+
+    object While {
+        def apply(cond: Parsley[Expr], stat: Parsley[List[Statement]]): Parsley[While] =
+            pos <**> (cond, stat).zipped(While(_, _) _)
+    }
+
+    object NestedBegin {
+         def apply(stat: => Parsley[List[Statement]]): Parsley[NestedBegin] = 
+             pos <**> stat.map(NestedBegin(_) _)
+    }
+
     
     // Types:
 

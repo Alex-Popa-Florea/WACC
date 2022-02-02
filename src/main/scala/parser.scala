@@ -56,7 +56,10 @@ object parser {
         Return("return" ~> expr) <|>
         Exit("exit" ~> expr) <|>
         Print("print" ~> expr) <|>
-        Println("println" ~> expr)
+        Println("println" ~> expr) <|>
+        If("if" ~> expr, "then" ~> nestedStatement, "else" ~> nestedStatement <~ "fi") <|>
+        While("while" ~> expr, "do" ~> nestedStatement <~ "done") <|>
+        NestedBegin("begin" ~> nestedStatement <~ "end")
         
         
     private lazy val program = "begin" ~> (Begin(functions, nestedStatement)) <~ "end"

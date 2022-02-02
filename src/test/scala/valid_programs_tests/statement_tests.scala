@@ -148,11 +148,32 @@ class StatParserTest extends AnyFlatSpec with AppendedClues{
         =>} withClue(" Success(Return(Ident(\"result\")))")
     }
 
-    "Exit statements" should "parse successfully and produce a correct AST" in pending
+    "Exit statements" should "parse successfully and produce a correct AST" in {
+        info("exit with error status of -1")
+        fully(statement).parse("exit -1") should matchPattern{
+            case Success(Exit(Neg(IntLiter(1))))
+        =>} withClue(" Success(Exit(Neg(IntLiter(1))))")
+        
+        info("exit with normal status of 42")
+        fully(statement).parse("exit 42") should matchPattern{
+            case Success(Exit(IntLiter(42)))
+        =>} withClue(" Success(Exit(IntLiter(42)))")
+        
+    }
 
-    "Print statements" should "parse successfully and produce a correct AST" in pending
 
-    "Print line statements" should "parse successfully and produce a correct AST" in pending
+    "Print statements" should "parse successfully and produce a correct AST" in {
+        fully(statement).parse("print (1 + 2) * 3 ") should matchPattern{
+            case Success(Print(Mul(Add(IntLiter(1), IntLiter(2)), IntLiter(3))))
+        =>} withClue(" Success(Print(Mul(Add(IntLiter(1), IntLiter(2)), IntLiter(3))))")
+    }
+
+    "Print line statements" should "parse successfully and produce a correct AST" in {
+        fully(statement).parse("println (1 + 2) * 3 ") should matchPattern{
+            case Success(Println(Mul(Add(IntLiter(1), IntLiter(2)), IntLiter(3))))
+        =>} withClue(" Success(Print(Mul(Add(IntLiter(1), IntLiter(2)), IntLiter(3))))")
+
+    }
 
     "If statements" should "parse successfully and produce a correct AST" in pending
 

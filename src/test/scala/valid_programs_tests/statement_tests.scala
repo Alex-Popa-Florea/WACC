@@ -175,13 +175,79 @@ class StatParserTest extends AnyFlatSpec with AppendedClues{
 
     }
 
-    "If statements" should "parse successfully and produce a correct AST" in pending
+    "If statements" should "parse successfully and produce a correct AST" in {
+        fully(statement).parse("if x == 1 then print \"Hello World!\" else x = x - 1 fi ") should matchPattern{
+            case Success
+            (
+                If
+                (
+                    EQ(Ident("x"), IntLiter(1)), 
+                    List(Print(StrLiter("Hello World!"))), 
+                    List(Assign(Ident("x"), Sub(Ident("x"), IntLiter(1))))
+                )
+            )
+        =>} withClue(" Success(If(EQ(Ident(\"x\"), IntLiter(1)), List(Print(StrLiter(\"Hello World!\"))),"+
+                    "List(Assign(Ident(\"x\"), Sub(Ident(\"x\"), IntLiter(1))))))")
+    
+    }
 
-    "While statements" should "parse successfully and produce a correct AST" in pending
+    "While statements" should "parse successfully and produce a correct AST" in {
+        fully(statement).parse("while i < len arr do x = x + 1 done") should matchPattern{
+            case Success
+            (
+                While
+                (
+                    LT(Ident("i"), Len(Ident("arr"))),
+                    List(Assign(Ident("x"), Add(Ident("x"), IntLiter(1))))
+                )
+            )
+        =>} withClue(" Success(While(LT(Ident(\"i\"), Len(Ident(\"arr\")))," +
+                    "List(Assign(Ident(\"x\"), Add(Ident(\"x\"), IntLiter(1)))))))")
+    }
 
-    "Begin and end statements" should "parse successfully and produce a correct AST" in pending
+    "Begin and end statements" should "parse successfully and produce a correct AST" in {
+        fully(statement).parse("begin skip end") should matchPattern{
+            case Success(NestedBegin(List(Skip())))
+        =>} withClue(" Success(Begin(List(), List(Skip())))")
+    }
 
-    "Nested statements" should "parse successfully and produce a correct AST" in pending
+    "Nested statements" should "parse successfully and produce a correct AST" in {
+
+        info("in body of if statement")
+        fully(statement).parse("if x == 1 then print \"Hello World!\" ; skip ; skip else x = x - 1 ; skip fi ") should matchPattern{
+            case Success
+            (
+                If
+                (
+                    EQ(Ident("x"), IntLiter(1)), 
+                    List(Print(StrLiter("Hello World!")), Skip(), Skip()), 
+                    List(Assign(Ident("x"), Sub(Ident("x"), IntLiter(1))), Skip())
+                )
+            )
+        =>} withClue(" Success(If(EQ(Ident(\"x\"), IntLiter(1)), List(Print(StrLiter(\"Hello World!\")), Skip(). Skip()),"+
+                    "List(Assign(Ident(\"x\"), Sub(Ident(\"x\"), IntLiter(1))), Skip())))")
+
+        info("in body of while statement")
+        fully(statement).parse("while i < len arr do x = x + 1 ; if true then skip else skip fi done") should matchPattern{
+            case Success
+            (
+                While
+                (
+                    LT(Ident("i"), Len(Ident("arr"))),
+                    List(Assign(Ident("x"), Add(Ident("x"),IntLiter(1))), If(BoolLiter(true), List(Skip()), List(Skip())))
+                )
+            )
+        =>} withClue(" Success(While(LT(Ident(\"i\"), Len(Ident(\"arr\")))," +
+                     "List(Assign(Ident(\"x\"), Add(Ident(\"x\"), IntLiter(1)))IntLiter(1))), " +
+                     "If(BoolLiter(true), List(Skip()), List(Skip())))")
+        
+
+        info("inside nested begin statement")
+        fully(statement).parse("begin skip; skip; skip end") should matchPattern{
+            case Success(NestedBegin(List(Skip(), Skip(), Skip())))
+        =>} withClue(" Success(Begin(List(), List(Skip(), Skip(), Skip())))")
+    
+    }
 
 
 }

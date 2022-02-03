@@ -31,7 +31,7 @@ object parser {
     private lazy val baseType: Parsley[BaseType] = ((IntType <# "int") <|> (StrType <# "string") <|> (BoolType <# "bool") <|> (CharType <# "char"))
     private lazy val arrayType = ArrayType((baseType <|> pairType), count("[" <~ "]"))
     private lazy val pairType = PairType("pair" ~> "(" ~> pairElemType <~ ",", pairElemType <~ ")")
-    private lazy val pairElemType: Parsley[PairElemType] = attempt(baseType <~ notFollowedBy("[")) <|> arrayType <|> (Pair <# "pair")
+    private lazy val pairElemType: Parsley[PairElemType] = (Pair <# "pair") <|> attempt(baseType <~ notFollowedBy("[")) <|> arrayType
     
     private lazy val arglist = sepBy(expr, ",")
                                                
@@ -48,7 +48,7 @@ object parser {
     private lazy val nestedStatement = sepBy1(statement, ";")
     lazy val statement: Parsley[Statement] =  
         (Skip <# "skip") <|>                 
-        AssignType(types, ident.debug("identifier"), "=".debug("function") ~> assignRHS) <|> 
+        AssignType(types, ident, "=" ~> assignRHS) <|> 
         Assign(assignLHS, "=" ~> assignRHS) <|>
         Read("read" ~> assignLHS) <|>
         Free("free" ~> expr) <|>
@@ -60,7 +60,7 @@ object parser {
         While("while" ~> expr, "do" ~> nestedStatement <~ "done") <|>
         NestedBegin("begin" ~> nestedStatement <~ "end")
         
-    lazy val program = "begin" ~> (Begin(functions, nestedStatement.debug("state"))) <~ "end"
+    lazy val program = "begin" ~> (Begin(functions, nestedStatement)) <~ "end"
     private lazy val atom =  
         "(" ~> expr <~ ")" <|> attempt(arrayElem) <|> ident <|> charLiter <|> intLiter <|> boolLiter <|> stringLiter <|> pairLiter 
 

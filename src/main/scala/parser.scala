@@ -26,30 +26,29 @@ object parser {
     private lazy val pairElem: Parsley[PairElem] = ("fst" ~> Fst(expr)) <|> ("snd" ~> Snd(expr))
     private lazy val newPair = "newpair" ~> NewPair("(" ~> expr, "," ~> expr <~ ")")
 
-    private lazy val types: Parsley[Type] = attempt((baseType <|> pairType) <~ notFollowedBy("[")) <|> arrayType
+    lazy val types: Parsley[Type] = attempt((baseType <|> pairType) <~ notFollowedBy("[")) <|> arrayType
 
     private lazy val baseType: Parsley[BaseType] = ((IntType <# "int") <|> (StrType <# "string") <|> (BoolType <# "bool") <|> (CharType <# "char"))
     private lazy val arrayType = ArrayType((baseType <|> pairType), count("[" <~ "]"))
     private lazy val pairType = PairType("pair" ~> "(" ~> pairElemType <~ ",", pairElemType <~ ")")
     private lazy val pairElemType: Parsley[PairElemType] = attempt(baseType <~ notFollowedBy("[")) <|> arrayType <|> (Pair <# "pair")
     
-    
     private lazy val arglist = sepBy(expr, ",")
-    
-    private lazy val param = Parameter(types, " " ~> Ident(VARIABLE))
+                                               
+    private lazy val param = Parameter(types, Ident(VARIABLE))
     private lazy val params = sepBy(param, ",")
     private lazy val function = attempt(Function(types, Ident(VARIABLE), "(" ~> params <~ ")", "is" ~> nestedStatement))
-    private lazy val functions = endBy(function, "end")
-
+    lazy val functions = endBy(function, "end")
+                                               
     private lazy val call = Call("call" ~> ident, "(" ~> arglist <~ ")")
-    
+                                               
     private lazy val assignLHS: Parsley[AssignLHS] = attempt(arrayElem) <|> ident <|> pairElem
     private lazy val assignRHS = expr <|> arrayLiter <|> newPair <|> pairElem <|> call
-    
+                                               
     private lazy val nestedStatement = sepBy1(statement, ";")
-    lazy val statement: Parsley[Statement] = 
-        (Skip <# "skip") <|> 
-        AssignType(types, ident, "=" ~> assignRHS) <|> 
+    lazy val statement: Parsley[Statement] =  
+        (Skip <# "skip") <|>                 
+        AssignType(types, ident.debug("identifier"), "=".debug("function") ~> assignRHS) <|> 
         Assign(assignLHS, "=" ~> assignRHS) <|>
         Read("read" ~> assignLHS) <|>
         Free("free" ~> expr) <|>
@@ -61,8 +60,7 @@ object parser {
         While("while" ~> expr, "do" ~> nestedStatement <~ "done") <|>
         NestedBegin("begin" ~> nestedStatement <~ "end")
         
-        
-    private lazy val program = "begin" ~> (Begin(functions, nestedStatement)) <~ "end"
+    lazy val program = "begin" ~> (Begin(functions, nestedStatement.debug("state"))) <~ "end"
     private lazy val atom =  
         "(" ~> expr <~ ")" <|> attempt(arrayElem) <|> ident <|> charLiter <|> intLiter <|> boolLiter <|> stringLiter <|> pairLiter 
 
@@ -79,8 +77,7 @@ object parser {
                       LT <# "<",  LTE <# "<=",
                       EQ <# "==", NEQ <# "!="),
         Ops(InfixR)(And  <# "&&"),
-        Ops(InfixR)(Or   <# "||")
-        
+        Ops(InfixR)(Or   <# "||")       
     )
     val result = fully(program)
 }

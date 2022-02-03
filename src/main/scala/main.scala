@@ -15,7 +15,7 @@ object main {
             }
             case Failure(err) => {
                 println(err)
-                sys.exit(200)
+                sys.exit(100)
             }
         }
     }

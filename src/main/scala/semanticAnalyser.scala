@@ -12,9 +12,15 @@ object semanticAnalyser {
 		node match {
 			case Begin(func, stat) => true
             
-			case Function(t, id, vars, stats) => true
+			case Function(t, id, vars, stats) => 
+                var nst = new SymbolTable(Option(st))
+				val addedFunction = st.add((id.variable, true), extractType(t))
+				val checkedParams = vars.forall(x => analyse(x, nst))
+				val checkedStats = stats.forall(x => analyse(x, nst))
+				addedFunction && checkedParams && checkedStats
 				
-			case Parameter(t, id) => true
+			case Parameter(t, id) => 
+                st.add((id.variable, false), extractType(t))
 			
 			case Skip() => true
 
@@ -54,11 +60,22 @@ object semanticAnalyser {
                 val checkedExpr = analyseExpr(expr, st)
                 checkedExpr._1
 
-			case If(cond, trueStat, falseStat) => true
+			case If(cond, trueStat, falseStat) =>
+				var trueNst = new SymbolTable(Option(st))
+				var falseNst = new SymbolTable(Option(st))
+				val conditionCheck = analyseExpr(cond, st)
+				val trueStatCheck = trueStat.forall(x => analyse(x, trueNst))
+				val falseStatCheck = falseStat.forall(x => analyse(x, falseNst))
+			 	conditionCheck._1 && (conditionCheck._2 == Some(BoolCheck(0))) && trueStatCheck && falseStatCheck
 
-			case While(cond, stat) => true
+			case While(cond, stat) => 
+                var nst = new SymbolTable(Option(st))
+				val conditionCheck = analyseExpr(cond, st)
+				conditionCheck._1 && (conditionCheck._2 == Some(BoolCheck(0))) && stat.forall(x => analyse(x, nst))
 
-			case NestedBegin(stat) => true
+			case NestedBegin(stat) => 
+                var nst = new SymbolTable(Option(st))
+				stat.forall(x => analyse(x, nst))
 			
 			case _ => false
 		}

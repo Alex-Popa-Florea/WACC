@@ -18,21 +18,35 @@ object semanticAnalyser {
 			
 			case Skip() => true
 
-			case AssignType(t, id, rhs) => analyseRHS(rhs, st)
+			case AssignType(t, id, rhs) =>
+                val checkedRHS = analyseRHS(rhs, st, extractType(t))
+                checkedRHS
 
-			case Assign(lhs, rhs) => analyseLHS(lhs, st) && analyseRHS(rhs, st)
+			case Assign(lhs, rhs) => true
 
-			case Read(lhs) => analyseLHS(lhs, st)
+			case Read(lhs) =>
+                val checkedLHS = analyseLHS(lhs, st)
+                checkedLHS._1 && (checkedLHS._2 == Some(IntCheck(0)) || checkedLHS._2 == Some(CharCheck(0)))
 
-			case Free(expr) => analyseExpr(expr, st)
+			case Free(expr) => 
+                val checkedExpr = analyseExpr(expr, st)
+                checkedExpr._1
 
-			case Return(expr) => analyseExpr(expr, st)
+			case Return(expr) => 
+                val checkedExpr = analyseExpr(expr, st)
+                checkedExpr._1
 				
-			case Exit(expr) => analyseExpr(expr, st)
+			case Exit(expr) => 
+                val checkedExpr = analyseExpr(expr, st)
+                checkedExpr._1 && (checkedExpr._2 == Some(IntCheck(0)))
 
-			case Print(expr) => analyseExpr(expr, st)
+			case Print(expr) => 
+                val checkedExpr = analyseExpr(expr, st)
+                checkedExpr._1
 
-			case Println(expr) => analyseExpr(expr, st)
+			case Println(expr) => 
+                val checkedExpr = analyseExpr(expr, st)
+                checkedExpr._1
 
 			case If(cond, trueStat, falseStat) => true
 
@@ -44,49 +58,51 @@ object semanticAnalyser {
 		}
 	}
 
-    def analyseRHS(assignRHS: AssignRHS, st: SymbolTable): Boolean = {
+    def analyseRHS(assignRHS: AssignRHS, st: SymbolTable, lhsType: TypeCheck): Boolean = {
         assignRHS match {
-            case expr: Expr => analyseExpr(expr, st)
+            case expr: Expr => 
+                val checkedExpr = analyseExpr(expr, st)
+                checkedExpr._1 && (checkedExpr._2 == Some(lhsType))
 
             case ArrayLiter(array) => true
                 
-            case NewPair(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
+            case NewPair(expr1, expr2) => (analyseExpr(expr1, st)._1 && analyseExpr(expr2, st)._1)
  
-            case Fst(expr) => analyseExpr(expr, st)
+            case Fst(expr) => analyseExpr(expr, st)._1
 
-            case Snd(expr) => analyseExpr(expr, st)
+            case Snd(expr) => analyseExpr(expr, st)._1
 
             case Call(id, args) => true
         }
     }
 
-    def analyseLHS(assignLHS: AssignLHS, st: SymbolTable): Boolean = {
+    def analyseLHS(assignLHS: AssignLHS, st: SymbolTable): (Boolean, Option[TypeCheck]) = {
         assignLHS match {
-            case Ident(variable) => true
-
             case Fst(expr) => analyseExpr(expr, st)
-
+            
             case Snd(expr) => analyseExpr(expr, st)
+            
+            case ArrayElem(id, exprs) => (true, None)
 
-            case ArrayElem(id, exprs) => true
+            case ident: Ident => analyseExpr(ident, st)
         }
     }
 
-    def analyseExpr(expr: Expr, st: SymbolTable): Boolean = {
+    def analyseExpr(expr: Expr, st: SymbolTable): (Boolean, Option[TypeCheck]) = {
         expr match {
-            case IntLiter(x) => true
+            case IntLiter(x) => (true, Some(IntCheck(0)))
 
-            case BoolLiter(bool) => true
+            case BoolLiter(bool) => (true, Some(BoolCheck(0)))
 
-            case CharLiter(char) => true
+            case CharLiter(char) => (true, Some(CharCheck(0)))
 
-            case StrLiter(string) => true
+            case StrLiter(string) => (true, Some(StrCheck(0)))
 
-            case PairLiter() => true
+            case PairLiter() => (true, Some(EmptyPairCheck()))
 
-            case Ident(variable) => true
+            case Ident(variable) => (true, None)
 
-            case ArrayElem(id, exprs) => true    
+            case ArrayElem(id, exprs) => (true, None)    
             
             case Not(innerExpr) => analyseExpr(innerExpr, st)
 
@@ -98,31 +114,31 @@ object semanticAnalyser {
 
             case Chr(innerExpr) => analyseExpr(innerExpr, st)
 
-            case Mul(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
+            case Mul(expr1, expr2) => (analyseExpr(expr1, st)._1 && analyseExpr(expr2, st)._1, Some(IntCheck(0)))
 
-            case Div(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
+            case Div(expr1, expr2) => (analyseExpr(expr1, st)._1 && analyseExpr(expr2, st)._1, Some(IntCheck(0)))
 
-            case Mod(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
+            case Mod(expr1, expr2) => (analyseExpr(expr1, st)._1 && analyseExpr(expr2, st)._1, Some(IntCheck(0)))
 
-            case Add(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
+            case Add(expr1, expr2) => (analyseExpr(expr1, st)._1 && analyseExpr(expr2, st)._1, Some(IntCheck(0)))
 
-            case Sub(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
+            case Sub(expr1, expr2) => (analyseExpr(expr1, st)._1 && analyseExpr(expr2, st)._1, Some(IntCheck(0)))
 
-            case GT(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
+            case GT(expr1, expr2) => (analyseExpr(expr1, st)._1 && analyseExpr(expr2, st)._1, None)
 
-            case GTE(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
+            case GTE(expr1, expr2) => (analyseExpr(expr1, st)._1 && analyseExpr(expr2, st)._1, None)
 
-            case LT(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
+            case LT(expr1, expr2) => (analyseExpr(expr1, st)._1 && analyseExpr(expr2, st)._1, None)
 
-            case LTE(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
+            case LTE(expr1, expr2) => (analyseExpr(expr1, st)._1 && analyseExpr(expr2, st)._1, None)
 
-            case EQ(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
+            case EQ(expr1, expr2) => (analyseExpr(expr1, st)._1 && analyseExpr(expr2, st)._1, None)
 
-            case NEQ(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
+            case NEQ(expr1, expr2) => (analyseExpr(expr1, st)._1 && analyseExpr(expr2, st)._1, None)
 
-            case And(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
+            case And(expr1, expr2) => (analyseExpr(expr1, st)._1 && analyseExpr(expr2, st)._1, Some(BoolCheck(0)))
 
-            case Or(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
+            case Or(expr1, expr2) => (analyseExpr(expr1, st)._1 && analyseExpr(expr2, st)._1, Some(BoolCheck(0)))
         }
     }
 }

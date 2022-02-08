@@ -19,7 +19,7 @@ object main {
                     if (analyse(x, symbolTable)) {
                         println(symbolTable)
                     } else {
-                        sys.exit(200)
+                        //sys.exit(200)
                     }
                 }
                 case Failure(err) => {

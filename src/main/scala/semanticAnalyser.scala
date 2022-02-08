@@ -9,79 +9,100 @@ import wacc.functionTable._
 
 object semanticAnalyser {
     var functionTable = new FunctionTable()
-	def analyse(node: Node, st: SymbolTable): Boolean = {
+	def analyse(node: Node, st: SymbolTable, returnType: Option[TypeCheck]): (Boolean, Boolean) = {
 		node match {
 			case Begin(func, stat) =>
                 func.map(function => functionTable.add(function.id.variable, extractType(function.t), function.vars.map(x => extractType(x.t))))
-				val functionsChecked = func.forall(x => analyse(x, st))
-                functionsChecked && stat.forall(x => analyse(x, st))
+				val functionsChecked = func.map(x => analyse(x, st, None))
+                functionsChecked.reduceOption((x, y) => ((x._1 && y._1), false)) match {
+					case None => (stat.forall(x => analyse(x, st, None)._1), true)
+					case Some(value) => (value._1 && stat.forall(x => analyse(x, st, None)._1), functionsChecked.last._2)
+				}
             
 			case Function(t, id, vars, stats) => 
                 var nst = new SymbolTable(Option(st))
 				val addedFunction = st.add((id.variable, true), extractType(t))
-				val checkedParams = vars.forall(x => analyse(x, nst))
-				val checkedStats = stats.forall(x => analyse(x, nst))
-				addedFunction && checkedParams && checkedStats
+				val checkedParams = vars.forall(x => analyse(x, nst, None)._1)
+				val checkedStats = stats.map(x => analyse(x, nst, Some(extractType(t))))
+				(addedFunction && checkedParams && checkedStats.reduce((x, y) => ((x._1 && y._1), false))._1, checkedStats.last._2)
 				
 			case Parameter(t, id) => 
-                st.add((id.variable, false), extractType(t))
+                (st.add((id.variable, false), extractType(t)), false)
 			
-			case Skip() => true
+			case Skip() => (true, false)
 
 			case AssignType(t, id, rhs) =>
                 val checkedRHS = analyseRHS(rhs, st, extractType(t))
                 val addedVariable = st.add((id.variable, false), extractType(t))
-                checkedRHS && addedVariable
+                (checkedRHS && addedVariable, false)
 
 			case Assign(lhs, rhs) => 
                 val checkedLHS = analyseLHS(lhs, st)
                 checkedLHS._2 match {
-                    case None => false
-                    case Some(foundType) => (checkedLHS._1 && analyseRHS(rhs, st, foundType))
+                    case None => (false, false)
+                    case Some(foundType) => ((checkedLHS._1 && analyseRHS(rhs, st, foundType)), false)
                 }
                 
 			case Read(lhs) =>
                 val checkedLHS = analyseLHS(lhs, st)
-                checkedLHS._1 && (checkedLHS._2 == Some(IntCheck(0)) || checkedLHS._2 == Some(CharCheck(0)))
+                (checkedLHS._1 && (checkedLHS._2 == Some(IntCheck(0)) || checkedLHS._2 == Some(CharCheck(0))), false)
 
 			case Free(expr) => 
                 val checkedExpr = analyseExpr(expr, st)
-                checkedExpr._1
+                checkedExpr._2 match {
+                    case None => (false, false)
+                    case Some(foundType) => foundType match {
+                        case IntCheck(nested) => (nested > 0, false)
+						case BoolCheck(nested) => (nested > 0, false)
+						case CharCheck(nested) => (nested > 0, false)
+						case StrCheck(nested) => (nested > 0, false)
+						case PairCheck(_, _, _) => (true, false)
+						case EmptyPairCheck() => (false, false)
+                    }
+                }
 
 			case Return(expr) => 
                 val checkedExpr = analyseExpr(expr, st)
-                checkedExpr._1
+                returnType match {
+					case Some(foundReturnType) => 
+						foundReturnType match {
+							case EmptyPairCheck() => (false, true)
+                            case _ => (checkedExpr._2 == returnType, true)
+						}
+					case None => (false, false)
+				}
 				
 			case Exit(expr) => 
                 val checkedExpr = analyseExpr(expr, st)
-                checkedExpr._1 && (checkedExpr._2 == Some(IntCheck(0)))
+                (checkedExpr._1 && (checkedExpr._2 == Some(IntCheck(0))), true)
 
 			case Print(expr) => 
                 val checkedExpr = analyseExpr(expr, st)
-                checkedExpr._1
+                (checkedExpr._1, false)
 
 			case Println(expr) => 
                 val checkedExpr = analyseExpr(expr, st)
-                checkedExpr._1
+                (checkedExpr._1, false)
 
 			case If(cond, trueStat, falseStat) =>
 				var trueNst = new SymbolTable(Option(st))
 				var falseNst = new SymbolTable(Option(st))
 				val conditionCheck = analyseExpr(cond, st)
-				val trueStatCheck = trueStat.forall(x => analyse(x, trueNst))
-				val falseStatCheck = falseStat.forall(x => analyse(x, falseNst))
-			 	conditionCheck._1 && (conditionCheck._2 == Some(BoolCheck(0))) && trueStatCheck && falseStatCheck
+				val trueStatCheck = trueStat.map(x => analyse(x, trueNst, returnType))
+				val falseStatCheck = falseStat.map(x => analyse(x, falseNst, returnType))
+			 	(conditionCheck._1 && (conditionCheck._2 == Some(BoolCheck(0))) && 
+                 trueStatCheck.reduce((x, y) => ((x._1 && y._1), false))._1 && falseStatCheck.reduce((x, y) => ((x._1 && y._1), false))._1, trueStatCheck.last._2 && falseStatCheck.last._2)
 
 			case While(cond, stat) => 
                 var nst = new SymbolTable(Option(st))
 				val conditionCheck = analyseExpr(cond, st)
-				conditionCheck._1 && (conditionCheck._2 == Some(BoolCheck(0))) && stat.forall(x => analyse(x, nst))
+				(conditionCheck._1 && (conditionCheck._2 == Some(BoolCheck(0))) && stat.forall(x => analyse(x, nst, returnType)._1), false)
 
 			case NestedBegin(stat) => 
                 var nst = new SymbolTable(Option(st))
-				stat.forall(x => analyse(x, nst))
+				(stat.forall(x => analyse(x, nst, returnType)._1), false)
 			
-			case _ => false
+			case _ => (false, false)
 		}
 	}
 

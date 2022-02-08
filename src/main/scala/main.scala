@@ -16,10 +16,15 @@ object main {
             result.parse(Source.fromFile(args.head).getLines.toList.mkString("\n")) match {
                 case Success(x) => {
                     println(s"${args.head} = $x")
-                    if (analyse(x, symbolTable)) {
-                        println(symbolTable)
+                    val semanticAnalysis = analyse(x, symbolTable, None)
+                    if (!semanticAnalysis._2) {
+                        sys.exit(100)
                     } else {
-                        //sys.exit(200)
+                        if (semanticAnalysis._1) {
+                            println(symbolTable.variableMap)
+                        } else {
+                            sys.exit(200)
+                        }
                     }
                 }
                 case Failure(err) => {

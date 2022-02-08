@@ -5,12 +5,16 @@ import ast._
 import parser._
 import wacc.types._
 import wacc.symbolTable._
+import wacc.functionTable._
 
 object semanticAnalyser {
-
+    var functionTable = new FunctionTable()
 	def analyse(node: Node, st: SymbolTable): Boolean = {
 		node match {
-			case Begin(func, stat) => true
+			case Begin(func, stat) =>
+                func.map(function => functionTable.add(function.id.variable, extractType(function.t), function.vars.map(x => extractType(x.t))))
+				val functionsChecked = func.forall(x => analyse(x, st))
+                functionsChecked && stat.forall(x => analyse(x, st))
             
 			case Function(t, id, vars, stats) => 
                 var nst = new SymbolTable(Option(st))
@@ -135,7 +139,13 @@ object semanticAnalyser {
                     } 
 				}
 
-            case Call(id, args) => true
+            case Call(id, args) => 
+                val checkedArgs = args.map(x => analyseExpr(x, st))
+				functionTable.funcMap.get(id.variable) match {
+					case Some(foundFuncType) =>
+						foundFuncType._1 == lhsType && checkedArgs.forall(x => x._1) && functionTable.check(id.variable, checkedArgs.map(x => x._2.get))	
+					case _ => false
+				}
         }
     }
 

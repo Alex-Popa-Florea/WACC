@@ -84,11 +84,65 @@ object semanticAnalyser {
 
     def analyseLHS(assignLHS: AssignLHS, st: SymbolTable): (Boolean, Option[TypeCheck]) = {
         assignLHS match {
-            case Fst(expr) => analyseExpr(expr, st)
+            case Fst(expr) =>
+                var checkedExpr = analyseExpr(expr, st)
+				checkedExpr._2 match {
+                    case Some(foundType) => foundType match {
+                        case PairCheck(type1, _, 0) => (checkedExpr._1, Some(type1))
+					    case _ => (false, None)
+                    }
+                    case None => (false, None)
+                }
             
-            case Snd(expr) => analyseExpr(expr, st)
+            case Snd(expr) =>
+                var checkedExpr = analyseExpr(expr, st)
+				checkedExpr._2 match {
+                    case Some(foundType) => foundType match {
+                        case PairCheck(_, type2, 0) => (checkedExpr._1, Some(type2))
+					    case _ => (false, None)
+                    }
+                    case None => (false, None)
+                }
             
-            case ArrayElem(id, exprs) => (true, None)
+            case ArrayElem(id, exprs) => 
+				var variable = st.find((id.variable, false))
+				variable match {
+					case None => (false, None)
+					case Some(foundType) =>
+						foundType match {
+							case IntCheck(nested) =>
+								if (nested >= exprs.size) {
+									(exprs.forall(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))), Some(IntCheck(nested - exprs.size)))
+								} else {
+									(false, None)
+								}
+							case BoolCheck(nested) =>
+								if (nested >= exprs.size) {
+									(exprs.forall(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))), Some(BoolCheck(nested - exprs.size)))
+								} else {
+									(false, None)
+								}
+							case CharCheck(nested) =>
+								if (nested >= exprs.size) {
+									(exprs.forall(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))), Some(CharCheck(nested - exprs.size)))
+								} else {
+									(false, None)
+								}
+							case StrCheck(nested) =>
+								if (nested >= exprs.size) {
+									(exprs.forall(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))), Some(StrCheck(nested - exprs.size)))
+								} else {
+									(false, None)
+								}
+							case PairCheck(type1, type2, nested) =>
+								if (nested >= exprs.size) {
+									(exprs.forall(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))), Some(PairCheck(type1, type2, nested - exprs.size)))
+								} else {
+									(false, None)
+								}
+							case EmptyPairCheck() => (false, None)
+						}					
+				}
 
             case ident: Ident => analyseExpr(ident, st)
         }

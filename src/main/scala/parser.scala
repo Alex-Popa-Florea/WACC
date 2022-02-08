@@ -9,7 +9,30 @@ object parser {
     import ast._
     import parsley.expr.{precedence, Ops, InfixL, InfixR, NonAssoc, Prefix, SOps}
     import parsley.combinator._
+    import parsley.errors.combinator.ErrorMethods
     
+    def makeGreen(msg:String):String = {
+        Console.GREEN+msg+Console.RESET
+    }
+
+    val explainStatement = s""" Missing Statement(s):
+    Statements are simply instructions.
+    To do nothing: ${makeGreen("skip")}
+    To assign a variable: ${makeGreen("<type> <name> = <expression>")}
+    To Reassign variables: ${makeGreen("<variable> = <expression>")}
+    To take in input and store in a variable from user: ${makeGreen("read <variable>")}
+    To free pairs or arrays (not nested): ${makeGreen("free <variable>")}
+    To give something from a function: ${makeGreen("return <expressions>")}
+    To exit the program with an error number: ${makeGreen("exit <number>")}
+    To print with out a new line: ${makeGreen("print <expression>")}
+    To print with a new line: ${makeGreen("print <expression>")}
+    To use an if statement: ${makeGreen("if <condition of type bool> <statement(s)> else <statement(s)> fi")}
+    To repeat until a condition is met: ${makeGreen("While <condition> do <statement(s)> done")}
+    To have nested begin statemenets: ${makeGreen("begin <statement(s)> end")}
+    To write multiple statements ${makeGreen("<statement> ; <statment")}
+    Variables are Expressions!
+    """
+
     private def count(p: =>Parsley[_]): Parsley[Int] = p.foldLeft(0)((n, _) => n + 1)
 
     private lazy val ident = Ident(VARIABLE)
@@ -47,7 +70,7 @@ object parser {
     
     private lazy val nestedStatement = sepBy1(statement, ";")
     lazy val statement: Parsley[Statement] = 
-        (Skip <# "skip") <|> 
+        ((Skip <# "skip") <|> 
         AssignType(types, ident, "=" ~> assignRHS) <|> 
         Assign(assignLHS, "=" ~> assignRHS) <|>
         Read("read" ~> assignLHS) <|>
@@ -59,7 +82,7 @@ object parser {
         If("if" ~> expr, "then" ~> nestedStatement, "else" ~> nestedStatement <~ "fi") <|>
         While("while" ~> expr, "do" ~> nestedStatement <~ "done") <|>
         NestedBegin("begin" ~> nestedStatement <~ "end")
-        
+        ).hide.explain(explainStatement)
         
     private lazy val program = "begin" ~> (Begin(functions, nestedStatement)) <~ "end"
     private lazy val atom =  

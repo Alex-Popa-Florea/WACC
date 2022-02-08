@@ -5,17 +5,16 @@ import wacc.ast._
 object types {
     sealed trait TypeCheck
 
-		sealed trait BaseTypeCheck extends TypeCheck {
-			val nested: Int
-		}
+    sealed trait BaseTypeCheck extends TypeCheck {
+        val nested: Int
+    }
     case class IntCheck(nested: Int) extends BaseTypeCheck
     case class BoolCheck(nested: Int) extends BaseTypeCheck
     case class CharCheck(nested: Int) extends BaseTypeCheck
     case class StrCheck(nested: Int) extends BaseTypeCheck
     
-		sealed trait PairTypeCheck extends TypeCheck 
-		case class PairCheck(type1: TypeCheck, type2: TypeCheck, nested: Int) extends PairTypeCheck
-    case class EmptyPairCheck() extends PairTypeCheck
+    case class PairCheck(type1: TypeCheck, type2: TypeCheck, nested: Int) extends TypeCheck
+    case class EmptyPairCheck() extends TypeCheck
 
     def extractType(astType: Type): TypeCheck = {
 		astType match {

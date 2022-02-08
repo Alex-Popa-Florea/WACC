@@ -21,8 +21,8 @@ object main {
                         sys.exit(100)
                     } else {
                         if (semanticAnalysis._1) {
-                            println(semanticAnalysis)
                             println(symbolTable.children.map(x => x.variableMap))
+                            println(semanticAnalysis)
                         } else {
                             sys.exit(200)
                         }

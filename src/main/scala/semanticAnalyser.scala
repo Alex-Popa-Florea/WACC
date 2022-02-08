@@ -146,31 +146,23 @@ object semanticAnalyser {
                 if (checkedExpr1._2 != None && checkedExpr2._2 != None) {
                     val foundType1 = checkedExpr1._2.get
                     val foundType2 = checkedExpr2._2.get
-                    lhsType match {			
-                        case PairCheck(EmptyPairCheck(), EmptyPairCheck(), 0) => checkedExpr1._1 && checkedExpr2._1 && 
+                    lhsType match {						
+                        case PairCheck(lhsFoundType1, lhsFoundType2, 0) => 
+                            checkedExpr1._1 && checkedExpr2._1 && 
                             (foundType1 match {
-                                case EmptyPairCheck() => true
-                                case PairCheck(_, _, 0) => true
-                                case _ => false
+                                case EmptyPairCheck() | PairCheck(_, _, 0) => lhsFoundType1 match {
+                                    case EmptyPairCheck() => true
+                                    case _ => false
+                                }
+                                case _ => (foundType1 == lhsFoundType1)
                             }) &&
                             (foundType2 match {
-                                case EmptyPairCheck() => true
-                                case PairCheck(_, _, 0) => true
-                                case _ => false
+                                case EmptyPairCheck() | PairCheck(_, _, 0) => lhsFoundType2 match {
+                                    case EmptyPairCheck() => true
+                                    case _ => false
+                                }
+                                case _ => (foundType2 == lhsFoundType2)
                             })	
-                        case PairCheck(EmptyPairCheck(), foundType2, 0) => checkedExpr1._1 && checkedExpr2._1 && 
-                            (foundType1 match {
-                                case EmptyPairCheck() => true
-                                case PairCheck(_, _, 0) => true
-                                case _ => false
-                            })
-                        case PairCheck(foundType1, EmptyPairCheck(), 0) => checkedExpr1._1 && checkedExpr2._1 &&
-                            (foundType2 match {
-                                case EmptyPairCheck() => true
-                                case PairCheck(_, _, 0) => true
-                                case _ => false
-                            })					
-                        case PairCheck(foundType1, foundType2, 0) => checkedExpr1._1 && checkedExpr2._1
                         case _ => false
                     }
                 } else {
@@ -183,8 +175,8 @@ object semanticAnalyser {
                     case None => false
                     case Some(foundType) => foundType match {
                         case PairCheck(EmptyPairCheck(), _, 0) => 
-                            foundType match {
-                                case PairCheck(_, _, _) => checkedExpr._1
+                            lhsType match {
+                                case PairCheck(_, _, 0) => checkedExpr._1
                                 case _ => false
                             }
                         case PairCheck(type1, _, 0) => checkedExpr._1 && (type1 == lhsType)
@@ -198,8 +190,8 @@ object semanticAnalyser {
                     case None => false
                     case Some(foundType) => foundType match {
                         case PairCheck(_, EmptyPairCheck(), 0) => 
-                            foundType match {
-                                case PairCheck(_, _, _) => checkedExpr._1
+                            lhsType match {
+                                case PairCheck(_, _, 0) => checkedExpr._1
                                 case _ => false
                             }
                         case PairCheck(_, type2, 0) => checkedExpr._1 && (type2 == lhsType)
@@ -254,13 +246,13 @@ object semanticAnalyser {
 
     def analyseExpr(expr: Expr, st: SymbolTable): (Boolean, Option[TypeCheck]) = {
         expr match {
-            case IntLiter(x) => (true, Some(IntCheck(0)))
+            case IntLiter(_) => (true, Some(IntCheck(0)))
 
-            case BoolLiter(bool) => (true, Some(BoolCheck(0)))
+            case BoolLiter(_) => (true, Some(BoolCheck(0)))
 
-            case CharLiter(char) => (true, Some(CharCheck(0)))
+            case CharLiter(_) => (true, Some(CharCheck(0)))
 
-            case StrLiter(string) => (true, Some(StrCheck(0)))
+            case StrLiter(_) => (true, Some(StrCheck(0)))
 
             case PairLiter() => (true, Some(EmptyPairCheck()))
 
@@ -274,30 +266,17 @@ object semanticAnalyser {
 					case None => (false, None)
 					case Some(array) =>
 						array match {
-							case IntCheck(nested) =>
-								if (nested >= exprs.size) {
-									(exprs.forall(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))), Some(IntCheck(nested - exprs.size)))
-								} else {
-									(false, None)
-								}
-							case BoolCheck(nested) =>
-								if (nested >= exprs.size) {
-									(exprs.forall(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))), Some(BoolCheck(nested - exprs.size)))
-								} else {
-									(false, None)
-								}
-							case CharCheck(nested) =>
-								if (nested >= exprs.size) {
-									(exprs.forall(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))), Some(CharCheck(nested - exprs.size)))
-								} else {
-									(false, None)
-								}
-							case StrCheck(nested) =>
-								if (nested >= exprs.size) {
-									(exprs.forall(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))), Some(StrCheck(nested - exprs.size)))
-								} else {
-									(false, None)
-								}
+                            case baseTypeCheck: BaseTypeCheck => 
+                                if (baseTypeCheck.nested >= exprs.size) {
+                                    (exprs.forall(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))), baseTypeCheck match {
+                                        case IntCheck(nested) => Some(IntCheck(nested - exprs.size))
+                                        case BoolCheck(nested) => Some(BoolCheck(nested - exprs.size))
+                                        case CharCheck(nested) => Some(CharCheck(nested - exprs.size))
+                                        case StrCheck(nested) => Some(StrCheck(nested - exprs.size))
+                                    })  
+                                } else {
+                                    (false, None)
+                                }
 							case PairCheck(type1, type2, nested) =>
 								if (nested >= exprs.size) {
 									(exprs.forall(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))), Some(PairCheck(type1, type2, nested - exprs.size)))
@@ -321,10 +300,7 @@ object semanticAnalyser {
 				checkedInnerExpr._2 match {
                     case None => (false, None)
                     case Some(extractedCheckedInnerExpr) => extractedCheckedInnerExpr match {
-                        case IntCheck(nested) => (checkedInnerExpr._1 && (nested > 0), Some(IntCheck(0)))
-                        case BoolCheck(nested) => (checkedInnerExpr._1 && (nested > 0), Some(IntCheck(0)))
-                        case CharCheck(nested) => (checkedInnerExpr._1 && (nested > 0), Some(IntCheck(0)))
-                        case StrCheck(nested) => (checkedInnerExpr._1 && (nested > 0), Some(IntCheck(0)))
+                        case baseTypeCheck: BaseTypeCheck => (checkedInnerExpr._1 && (baseTypeCheck.nested > 0), Some(IntCheck(0)))
                         case PairCheck(type1, type2, nested) => (checkedInnerExpr._1 && (nested > 0), Some(IntCheck(0)))
                         case EmptyPairCheck() => (false, None)
                     }

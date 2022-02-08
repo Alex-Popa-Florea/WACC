@@ -57,7 +57,25 @@ object ast {
     case class ArrayType(t: Type, count: Int)(val pos: (Int, Int)) extends Type with PairElemType
 
     sealed trait Expr extends AssignRHS
-    case class IntLiter(x: Int)(val pos: (Int, Int)) extends Expr // change back wiht sign 
+
+    sealed trait BinOpBool extends Expr {
+        val expr1: Expr
+        val expr2: Expr
+    }
+    sealed trait BinOpInt extends Expr {
+        val expr1: Expr
+        val expr2: Expr
+    }
+    sealed trait BinOpEqs extends Expr {
+        val expr1: Expr
+        val expr2: Expr
+    }
+    sealed trait BinOpComp extends Expr {
+        val expr1: Expr
+        val expr2: Expr
+    }
+
+    case class IntLiter(x: Int)(val pos: (Int, Int)) extends Expr
     case class BoolLiter(bool: Boolean)(val pos: (Int, Int)) extends Expr
     case class CharLiter(char: Any)(val pos: (Int, Int)) extends Expr
     case class StrLiter(string: String)(val pos: (Int, Int)) extends Expr
@@ -67,19 +85,19 @@ object ast {
     case class Len(expr1: Expr)(val pos: (Int, Int)) extends Expr
     case class Ord(expr1: Expr)(val pos: (Int, Int)) extends Expr
     case class Chr(expr1: Expr)(val pos: (Int, Int)) extends Expr
-    case class Mul(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr
-    case class Div(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr
-    case class Mod(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr
-    case class Add(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr
-    case class Sub(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr
-    case class GT(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr
-    case class GTE(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr
-    case class LT(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr
-    case class LTE(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr
-    case class EQ(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr
-    case class NEQ(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr
-    case class And(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr
-    case class Or(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr
+    case class Mul(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr with BinOpInt
+    case class Div(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr with BinOpInt
+    case class Mod(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr with BinOpInt
+    case class Add(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr with BinOpInt
+    case class Sub(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr with BinOpInt
+    case class GT(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr with BinOpComp
+    case class GTE(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr with BinOpComp
+    case class LT(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr with BinOpComp
+    case class LTE(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr with BinOpComp
+    case class EQ(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr with BinOpEqs
+    case class NEQ(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr with BinOpEqs
+    case class And(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr with BinOpBool
+    case class Or(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends Expr with BinOpBool
 
     case class Negative()(val pos: (Int, Int)) extends Node
 

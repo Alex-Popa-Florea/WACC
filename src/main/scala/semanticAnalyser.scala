@@ -336,56 +336,21 @@ object semanticAnalyser {
 
 			case Chr(innerExpr) => 
 				var checkedInnerExpr = analyseExpr(innerExpr, st)
-				(checkedInnerExpr._1 && (checkedInnerExpr._2 == Some(CharCheck(0))), Some(IntCheck(0)))
-
-			case Mul(expr1, expr2) => 
-				var checkedExpr1 = analyseExpr(expr1, st)
-				var checkedExpr2 = analyseExpr(expr2, st)
+				(checkedInnerExpr._1 && (checkedInnerExpr._2 == Some(IntCheck(0))), Some(CharCheck(0)))
+            
+            case binOpInt: BinOpInt => 
+                var checkedExpr1 = analyseExpr(binOpInt.expr1, st)
+				var checkedExpr2 = analyseExpr(binOpInt.expr2, st)
 				(checkedExpr1._1 && checkedExpr2._1 && (checkedExpr1._2 == checkedExpr2._2) && (checkedExpr1._2 == Some(IntCheck(0))), Some(IntCheck(0)))
-
-			case Div(expr1, expr2) => 
-				var checkedExpr1 = analyseExpr(expr1, st)
-				var checkedExpr2 = analyseExpr(expr2, st)
-				(checkedExpr1._1 && checkedExpr2._1 && (checkedExpr1._2 == checkedExpr2._2) && (checkedExpr1._2 == Some(IntCheck(0))), Some(IntCheck(0)))
-
-			case Mod(expr1, expr2) => 
-				var checkedExpr1 = analyseExpr(expr1, st)
-				var checkedExpr2 = analyseExpr(expr2, st)
-				(checkedExpr1._1 && checkedExpr2._1 && (checkedExpr1._2 == checkedExpr2._2) && (checkedExpr1._2 == Some(IntCheck(0))), Some(IntCheck(0)))
-
-			case Add(expr1, expr2) => 
-				var checkedExpr1 = analyseExpr(expr1, st)
-				var checkedExpr2 = analyseExpr(expr2, st)
-				(checkedExpr1._1 && checkedExpr2._1 && (checkedExpr1._2 == checkedExpr2._2) && (checkedExpr1._2 == Some(IntCheck(0))), Some(IntCheck(0)))
-
-			case Sub(expr1, expr2) => 
-				var checkedExpr1 = analyseExpr(expr1, st)
-				var checkedExpr2 = analyseExpr(expr2, st)
-				(checkedExpr1._1 && checkedExpr2._1 && (checkedExpr1._2 == checkedExpr2._2) && (checkedExpr1._2 == Some(IntCheck(0))), Some(IntCheck(0)))
-               
-			case GT(expr1, expr2) => 
-				var checkedExpr1 = analyseExpr(expr1, st)
-				var checkedExpr2 = analyseExpr(expr2, st)
+            
+            case binOpComp: BinOpComp => 
+                var checkedExpr1 = analyseExpr(binOpComp.expr1, st)
+				var checkedExpr2 = analyseExpr(binOpComp.expr2, st)
 				(checkedExpr1._1 && checkedExpr2._1 && (checkedExpr1._2 == checkedExpr2._2) && ((checkedExpr1._2 == Some(IntCheck(0))) || (checkedExpr1._2 == Some(CharCheck(0)))), Some(BoolCheck(0)))
-
-			case GTE(expr1, expr2) => 
-				var checkedExpr1 = analyseExpr(expr1, st)
-				var checkedExpr2 = analyseExpr(expr2, st)
-				(checkedExpr1._1 && checkedExpr2._1 && (checkedExpr1._2 == checkedExpr2._2) && ((checkedExpr1._2 == Some(IntCheck(0))) || (checkedExpr1._2 == Some(CharCheck(0)))), Some(BoolCheck(0)))
-
-			case LT(expr1, expr2) => 
-				var checkedExpr1 = analyseExpr(expr1, st)
-				var checkedExpr2 = analyseExpr(expr2, st)
-				(checkedExpr1._1 && checkedExpr2._1 && (checkedExpr1._2 == checkedExpr2._2) && ((checkedExpr1._2 == Some(IntCheck(0))) || (checkedExpr1._2 == Some(CharCheck(0)))), Some(BoolCheck(0)))
-
-			case LTE(expr1, expr2) => 
-				var checkedExpr1 = analyseExpr(expr1, st)
-				var checkedExpr2 = analyseExpr(expr2, st)
-				(checkedExpr1._1 && checkedExpr2._1 && (checkedExpr1._2 == checkedExpr2._2) && ((checkedExpr1._2 == Some(IntCheck(0))) || (checkedExpr1._2 == Some(CharCheck(0)))), Some(BoolCheck(0)))
-
-			case EQ(expr1, expr2) => 
-				var checkedExpr1 = analyseExpr(expr1, st)
-				var checkedExpr2 = analyseExpr(expr2, st)
+            
+            case binOpEqs: BinOpEqs => 
+                var checkedExpr1 = analyseExpr(binOpEqs.expr1, st)
+				var checkedExpr2 = analyseExpr(binOpEqs.expr2, st)
                 if (checkedExpr1._2 == None || checkedExpr2._2 == None) {
                     (false, None)
                 } else {
@@ -404,37 +369,10 @@ object semanticAnalyser {
                         case _ => checkedExpr1._2 == checkedExpr2._2
                     }), Some(BoolCheck(0)))
                 }
-
-			case NEQ(expr1, expr2) => 
-				var checkedExpr1 = analyseExpr(expr1, st)
-				var checkedExpr2 = analyseExpr(expr2, st)
-                if (checkedExpr1._2 == None || checkedExpr2._2 == None) {
-                    (false, None)
-                } else {
-                    (checkedExpr1._1 && checkedExpr2._1 && 
-                    (checkedExpr1._2.get match {
-                        case PairCheck(type1, type2, nested) => checkedExpr2._2.get match {
-                            case EmptyPairCheck() => true
-                            case PairCheck(type1, type2, nested) => true
-                            case _ => false
-                        }
-                        case EmptyPairCheck() => checkedExpr1._2.get match {
-                            case EmptyPairCheck() => true
-                            case PairCheck(type1, type2, nested) => true
-                            case _ => false
-                        }
-                        case _ => checkedExpr1._2 == checkedExpr2._2
-                    }), Some(BoolCheck(0)))
-                }
-
-			case And(expr1, expr2) => 
-				var checkedExpr1 = analyseExpr(expr1, st)
-				var checkedExpr2 = analyseExpr(expr2, st)
-                (checkedExpr1._1 && checkedExpr2._1 && (checkedExpr1._2 == checkedExpr2._2) && (checkedExpr1._2 == Some(BoolCheck(0))), Some(BoolCheck(0)))
-
-			case Or(expr1, expr2) => 
-				var checkedExpr1 = analyseExpr(expr1, st)
-				var checkedExpr2 = analyseExpr(expr2, st)
+            
+            case binOpBool: BinOpBool => 
+                var checkedExpr1 = analyseExpr(binOpBool.expr1, st)
+				var checkedExpr2 = analyseExpr(binOpBool.expr2, st)
                 (checkedExpr1._1 && checkedExpr2._1 && (checkedExpr1._2 == checkedExpr2._2) && (checkedExpr1._2 == Some(BoolCheck(0))), Some(BoolCheck(0)))
 				
 		}

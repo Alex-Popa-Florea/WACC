@@ -53,10 +53,7 @@ object semanticAnalyser {
                 checkedExpr._2 match {
                     case None => (false, false)
                     case Some(foundType) => foundType match {
-                        case IntCheck(nested) => (nested > 0, false)
-						case BoolCheck(nested) => (nested > 0, false)
-						case CharCheck(nested) => (nested > 0, false)
-						case StrCheck(nested) => (nested > 0, false)
+                        case baseTypeCheck: BaseTypeCheck => (baseTypeCheck.nested > 0, false)
 						case PairCheck(_, _, _) => (true, false)
 						case EmptyPairCheck() => (false, false)
                     }
@@ -128,10 +125,13 @@ object semanticAnalyser {
 
             case ArrayLiter(indices) => 
                 lhsType match {
-					case IntCheck(nested) => indices.forall(x => analyseExpr(x, st) == (true, Some(IntCheck(nested - 1))))
-					case BoolCheck(nested) => indices.forall(x => analyseExpr(x, st) == (true, Some(BoolCheck(nested - 1))))
-					case CharCheck(nested) => indices.forall(x => analyseExpr(x, st) == (true, Some(CharCheck(nested - 1))))
-					case StrCheck(nested) => indices.forall(x => analyseExpr(x, st) == (true, Some(StrCheck(nested - 1))))
+                    case baseTypeCheck: BaseTypeCheck =>
+                        indices.forall(x => analyseExpr(x, st) == (true, baseTypeCheck match {
+                            case IntCheck(nested) =>  Some(IntCheck(nested - 1))
+                            case BoolCheck(nested) => Some(BoolCheck(nested - 1))
+                            case CharCheck(nested) => Some(CharCheck(nested - 1))
+                            case StrCheck(nested) => Some(StrCheck(nested - 1))
+                        }))
 					case PairCheck(type1, type2, nested) => 
 						indices.forall(x => {
 							val checkedExpr = analyseExpr(x, st)

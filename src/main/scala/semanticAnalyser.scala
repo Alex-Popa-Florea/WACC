@@ -87,7 +87,19 @@ object semanticAnalyser {
                 val checkedExpr = analyseExpr(expr, st)
                 checkedExpr._1 && (checkedExpr._2 == Some(lhsType))
 
-            case ArrayLiter(array) => true
+            case ArrayLiter(indices) => 
+                lhsType match {
+					case IntCheck(nested) => indices.forall(x => analyseExpr(x, st) == (true, Some(IntCheck(nested - 1))))
+					case BoolCheck(nested) => indices.forall(x => analyseExpr(x, st) == (true, Some(BoolCheck(nested - 1))))
+					case CharCheck(nested) => indices.forall(x => analyseExpr(x, st) == (true, Some(CharCheck(nested - 1))))
+					case StrCheck(nested) => indices.forall(x => analyseExpr(x, st) == (true, Some(StrCheck(nested - 1))))
+					case PairCheck(type1, type2, nested) => 
+						indices.forall(x => {
+							val checkedExpr = analyseExpr(x, st)
+							checkedExpr == (true, Some(PairCheck(type1, type2, nested - 1)))
+						})
+					case _ => false
+				} 
                 
             case NewPair(expr1, expr2) => (analyseExpr(expr1, st)._1 && analyseExpr(expr2, st)._1)
  

@@ -101,11 +101,39 @@ object semanticAnalyser {
 					case _ => false
 				} 
                 
-            case NewPair(expr1, expr2) => (analyseExpr(expr1, st)._1 && analyseExpr(expr2, st)._1)
+            case NewPair(expr1, expr2) => 
+                val checkedExpr1 = analyseExpr(expr1, st)
+				val checkedExpr2 = analyseExpr(expr2, st)
+                if (checkedExpr1._2 != None && checkedExpr2._2 != None) {
+                    val foundType1 = checkedExpr1._2.get
+                    val foundType2 = checkedExpr2._2.get
+                    lhsType match {			
+                        case PairCheck(foundType1, foundType2, 0) => checkedExpr1._1 && checkedExpr2._1
+                        case _ => false
+                    }
+                } else {
+                    false
+                }
  
-            case Fst(expr) => analyseExpr(expr, st)._1
+            case Fst(expr) => 
+                val checkedExpr = analyseExpr(expr, st)
+				checkedExpr._2 match {
+                    case None => false
+                    case Some(foundType) => foundType match {
+                        case PairCheck(type1, _, 0) => checkedExpr._1 && (type1 == lhsType)
+                        case _ => false
+                    } 
+				}
 
-            case Snd(expr) => analyseExpr(expr, st)._1
+            case Snd(expr) => 
+                val checkedExpr = analyseExpr(expr, st)
+				checkedExpr._2 match {
+                    case None => false
+                    case Some(foundType) => foundType match {
+                        case PairCheck(_, type2, 0) => checkedExpr._1 && (type2 == lhsType)
+                        case _ => false
+                    } 
+				}
 
             case Call(id, args) => true
         }

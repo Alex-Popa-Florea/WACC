@@ -26,7 +26,7 @@ object lexer {
     private val lexer = new Lexer(wacc)
 
     private lazy val charLetter = satisfy(c => c != '\\' && c != '\'' && c != '\"' && c > '\u0016') 
-    private lazy val charEscape = '\\' <~> ('0' <|> 'b' <|> 't' <|> 'n' <|> 'f' <|> 'r' <|> '\"' <|> '\'' <|> '\\') 
+    private lazy val charEscape = '\\'  ~> ('0' #> '\u0000' <|> 'b' #> '\b' <|> 't' #> '\t' <|> 'n' #> '\n' <|> 'f' #> '\f' <|> 'r' #> '\r' <|> '\"' <|> '\'' <|> '\\') 
 
     private lazy val characterChar = (charLetter <|> charEscape).label("literal character")
     

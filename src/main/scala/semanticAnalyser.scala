@@ -21,6 +21,7 @@ object semanticAnalyser {
             
 			case Function(t, id, vars, stats) => 
                 var nst = new SymbolTable(Option(st))
+                st.children = nst :: st.children
 				val addedFunction = st.add((id.variable, true), extractType(t))
 				val checkedParams = vars.forall(x => analyse(x, nst, None)._1)
 				val checkedStats = stats.map(x => analyse(x, nst, Some(extractType(t))))
@@ -88,7 +89,9 @@ object semanticAnalyser {
 
 			case If(cond, trueStat, falseStat) =>
 				var trueNst = new SymbolTable(Option(st))
+                st.children = trueNst :: st.children
 				var falseNst = new SymbolTable(Option(st))
+                st.children = falseNst :: st.children
 				val conditionCheck = analyseExpr(cond, st)
 				val trueStatCheck = trueStat.map(x => analyse(x, trueNst, returnType))
 				val falseStatCheck = falseStat.map(x => analyse(x, falseNst, returnType))
@@ -99,12 +102,14 @@ object semanticAnalyser {
 
 			case While(cond, stat) => 
                 var nst = new SymbolTable(Option(st))
+                st.children = nst :: st.children
 				val conditionCheck = analyseExpr(cond, st)
 				(conditionCheck._1 && (conditionCheck._2 == Some(BoolCheck(0))) && 
                  stat.forall(x => analyse(x, nst, returnType)._1), false)
 
 			case NestedBegin(stat) => 
                 var nst = new SymbolTable(Option(st))
+                st.children = nst :: st.children
 				(stat.forall(x => analyse(x, nst, returnType)._1), false)
 			
 			case _ => (false, false)

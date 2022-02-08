@@ -7,6 +7,7 @@ import types._
 object symbolTable {
     class SymbolTable(parent: Option[SymbolTable]) {
         var variableMap: Map[(String, Boolean), TypeCheck] = Map()
+        var children: List[SymbolTable] = List()
 
         def add(variable: (String, Boolean), varType: TypeCheck): Boolean = {
             variableMap.get(variable) match {

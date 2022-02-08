@@ -7,8 +7,10 @@ object parser {
     import lexer.implicits.implicitLexeme
     import lexer._
     import ast._
+    import parsley.character.digit
     import parsley.expr.{precedence, Ops, InfixL, InfixR, NonAssoc, Prefix}
     import parsley.combinator._
+    import parsley.token.Lexer
     
     private def count(p: =>Parsley[_]): Parsley[Int] = p.foldLeft(0)((n, _) => n + 1)
 
@@ -66,7 +68,7 @@ object parser {
 
     lazy val expr: Parsley[Expr] = precedence[Expr](atom)(
         Ops(Prefix)(Not  <# "!"),
-        Ops(Prefix)(Neg  <# "-"),
+        Ops(Prefix)(Neg  <# attempt("-" <~ notFollowedBy(digit))),
         Ops(Prefix)(Len  <# "len"),
         Ops(Prefix)(Ord  <# "ord"),
         Ops(Prefix)(Chr  <# "chr"),

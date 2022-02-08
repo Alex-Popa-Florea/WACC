@@ -1,6 +1,7 @@
 package wacc
 
 import parsley.Parsley, Parsley._
+import parsley.errors.combinator.fail
 import parsley.implicits.zipped.{Zipped2, Zipped3, Zipped4}
 
 object ast {
@@ -275,8 +276,17 @@ object ast {
     // Liters:
     
     object IntLiter {
-         def apply(x: => Parsley[Int]): Parsley[IntLiter] = 
-             pos <**> x.map(IntLiter(_) _)
+         def apply(x: => Parsley[BigInt]): Parsley[IntLiter] = 
+            pos <**> x.map(i => {
+            if (i <= 2147483647 || i >= -2147483648 ){
+                (IntLiter(i.toInt) _)
+            }
+            else {
+                null //CHANGE THIS TO THROW SYNTAX ERROR
+            }})
+
+        
+             
     }
 
     object BoolLiter {

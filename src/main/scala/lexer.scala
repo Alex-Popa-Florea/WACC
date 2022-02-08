@@ -23,7 +23,7 @@ object lexer {
         space = Predicate(c => c == ' ' || c == '\t' || c == '\n')
     )
 
-    private val lexer = new Lexer(wacc)
+    val lexer = new Lexer(wacc)
 
     private lazy val charLetter = satisfy(c => c != '\\' && c != '\'' && c != '\"' && c > '\u0016') 
     private lazy val charEscape = '\\'  ~> ('0' #> '\u0000' <|> 'b' #> '\b' <|> 't' #> '\t' <|> 'n' #> '\n' <|> 'f' #> '\f' <|> 'r' #> '\r' <|> '\"' <|> '\'' <|> '\\') 
@@ -31,7 +31,7 @@ object lexer {
     private lazy val characterChar = (charLetter <|> charEscape).label("literal character")
     
     val VARIABLE = lexer.identifier
-    val INTEGER = lexer.lexeme(digit.foldLeft1(0)((x, d) => x * 10 + d.asDigit)) 
+    val INTEGER: Parsley[BigInt] = lexer.lexeme(attempt('-' ~> many(" ") ~> (digit.foldLeft1(BigInt(0))((x, d) => x * 10 + d.asDigit)).map(x => -1 * x)) <|> (digit.foldLeft1(BigInt(0))((x, d) => x * 10 + d.asDigit)))
     val CHAR = lexer.lexeme(between('\''.label("character"), '\''.label("end of character"), characterChar))
     val STRING = lexer.lexeme(between('\"'.label("string"), '\"'.label("end of string"), many(characterChar))).map(_.mkString)
 

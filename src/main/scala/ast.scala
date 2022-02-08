@@ -278,11 +278,11 @@ object ast {
     object IntLiter {
          def apply(x: => Parsley[BigInt]): Parsley[IntLiter] = 
             pos <**> x.map(i => {
-            if (i <= 2147483647 || i >= -2147483648 ){
+            if (i <= Int.MaxValue && i >= Int.MinValue){
                 (IntLiter(i.toInt) _)
             }
             else {
-                null //CHANGE THIS TO THROW SYNTAX ERROR
+                null
             }})
 
         

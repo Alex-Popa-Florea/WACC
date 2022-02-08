@@ -18,11 +18,11 @@ object semanticAnalyser {
 			
 			case Skip() => true
 
-			case AssignType(t, id, rhs) => true
+			case AssignType(t, id, rhs) => analyseRHS(rhs, st)
 
-			case Assign(lhs, rhs) => true
+			case Assign(lhs, rhs) => analyseLHS(lhs, st) && analyseRHS(rhs, st)
 
-			case Read(lhs) => true
+			case Read(lhs) => analyseLHS(lhs, st)
 
 			case Free(expr) => analyseExpr(expr, st)
 
@@ -44,8 +44,36 @@ object semanticAnalyser {
 		}
 	}
 
-    def analyseExpr(expression: Expr, st: SymbolTable): Boolean = {
-        expression match {
+    def analyseRHS(assignRHS: AssignRHS, st: SymbolTable): Boolean = {
+        assignRHS match {
+            case expr: Expr => analyseExpr(expr, st)
+
+            case ArrayLiter(array) => true
+                
+            case NewPair(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
+ 
+            case Fst(expr) => analyseExpr(expr, st)
+
+            case Snd(expr) => analyseExpr(expr, st)
+
+            case Call(id, args) => true
+        }
+    }
+
+    def analyseLHS(assignLHS: AssignLHS, st: SymbolTable): Boolean = {
+        assignLHS match {
+            case Ident(variable) => true
+
+            case Fst(expr) => analyseExpr(expr, st)
+
+            case Snd(expr) => analyseExpr(expr, st)
+
+            case ArrayElem(id, exprs) => true
+        }
+    }
+
+    def analyseExpr(expr: Expr, st: SymbolTable): Boolean = {
+        expr match {
             case IntLiter(x) => true
 
             case BoolLiter(bool) => true
@@ -60,41 +88,41 @@ object semanticAnalyser {
 
             case ArrayElem(id, exprs) => true    
             
-            case Not(expr1) => true
+            case Not(innerExpr) => analyseExpr(innerExpr, st)
 
-            case Neg(expr1) => true
+            case Neg(innerExpr) => analyseExpr(innerExpr, st)
 
-            case Len(expr1) => true
+            case Len(innerExpr) => analyseExpr(innerExpr, st)
 
-            case Ord(expr1) => true
+            case Ord(innerExpr) => analyseExpr(innerExpr, st)
 
-            case Chr(expr1) => true
+            case Chr(innerExpr) => analyseExpr(innerExpr, st)
 
-            case Mul(expr1, expr2) => true
+            case Mul(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
 
-            case Div(expr1, expr2) => true
+            case Div(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
 
-            case Mod(expr1, expr2) => true
+            case Mod(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
 
-            case Add(expr1, expr2) => true
+            case Add(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
 
-            case Sub(expr1, expr2) => true
+            case Sub(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
 
-            case GT(expr1, expr2) => true
+            case GT(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
 
-            case GTE(expr1, expr2) => true
+            case GTE(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
 
-            case LT(expr1, expr2) => true
+            case LT(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
 
-            case LTE(expr1, expr2) => true
+            case LTE(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
 
-            case EQ(expr1, expr2) => true
+            case EQ(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
 
-            case NEQ(expr1, expr2) => true
+            case NEQ(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
 
-            case And(expr1, expr2) => true
+            case And(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
 
-            case Or(expr1, expr2) => true
+            case Or(expr1, expr2) => analyseExpr(expr1, st) && analyseExpr(expr2, st)
         }
     }
 }

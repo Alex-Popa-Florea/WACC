@@ -24,15 +24,15 @@ object semanticAnalyser {
 
 			case Read(lhs) => true
 
-			case Free(expr) => true
+			case Free(expr) => analyseExpr(expr, st)
 
-			case Return(expr) => true
+			case Return(expr) => analyseExpr(expr, st)
 				
-			case Exit(expr) => true
+			case Exit(expr) => analyseExpr(expr, st)
 
-			case Print(expr) => true
+			case Print(expr) => analyseExpr(expr, st)
 
-			case Println(expr) => true
+			case Println(expr) => analyseExpr(expr, st)
 
 			case If(cond, trueStat, falseStat) => true
 
@@ -40,29 +40,61 @@ object semanticAnalyser {
 
 			case NestedBegin(stat) => true
 			
-			case expr: Expr => true
+			case _ => false
 		}
 	}
 
+    def analyseExpr(expression: Expr, st: SymbolTable): Boolean = {
+        expression match {
+            case IntLiter(x) => true
 
-	def extractType(astType: Type): TypeCheck = {
-		astType match {
-			case IntType() => IntCheck(0)
-			case BoolType() => BoolCheck(0)
-			case CharType() => CharCheck(0)
-			case StrType() => StrCheck(0)
-			case Pair() => EmptyPairCheck()
-			case PairType(elemtype1, elemtype2) => 
-				PairCheck(extractType(elemtype1), extractType(elemtype2), 0)
-			case ArrayType(arrayType, count) => 
-				arrayType match {
-					case IntType() => IntCheck(count)
-					case BoolType() => BoolCheck(count)
-					case CharType() => CharCheck(count)
-					case StrType() => StrCheck(count)
-					case PairType(elemtype1, elemtype2) => PairCheck(extractType(elemtype1), extractType(elemtype2), count)
-					case _ => null
-				}
-		}
-	}
+            case BoolLiter(bool) => true
+
+            case CharLiter(char) => true
+
+            case StrLiter(string) => true
+
+            case PairLiter() => true
+
+            case Ident(variable) => true
+
+            case ArrayElem(id, exprs) => true    
+            
+            case Not(expr1) => true
+
+            case Neg(expr1) => true
+
+            case Len(expr1) => true
+
+            case Ord(expr1) => true
+
+            case Chr(expr1) => true
+
+            case Mul(expr1, expr2) => true
+
+            case Div(expr1, expr2) => true
+
+            case Mod(expr1, expr2) => true
+
+            case Add(expr1, expr2) => true
+
+            case Sub(expr1, expr2) => true
+
+            case GT(expr1, expr2) => true
+
+            case GTE(expr1, expr2) => true
+
+            case LT(expr1, expr2) => true
+
+            case LTE(expr1, expr2) => true
+
+            case EQ(expr1, expr2) => true
+
+            case NEQ(expr1, expr2) => true
+
+            case And(expr1, expr2) => true
+
+            case Or(expr1, expr2) => true
+        }
+    }
 }

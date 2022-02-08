@@ -7,7 +7,7 @@ object parser {
     import lexer.implicits.implicitLexeme
     import lexer._
     import ast._
-    import parsley.expr.{precedence, Ops, InfixL, InfixR, NonAssoc, Prefix, SOps}
+    import parsley.expr.{precedence, InfixL, InfixR, NonAssoc, Prefix, Ops}
     import parsley.combinator._
     
     private def count(p: =>Parsley[_]): Parsley[Int] = p.foldLeft(0)((n, _) => n + 1)
@@ -26,7 +26,7 @@ object parser {
     private lazy val pairElem: Parsley[PairElem] = ("fst" ~> Fst(expr)) <|> ("snd" ~> Snd(expr))
     private lazy val newPair = "newpair" ~> NewPair("(" ~> expr, "," ~> expr <~ ")")
 
-    private lazy val types: Parsley[Type] = attempt((baseType <|> pairType) <~ notFollowedBy("[")) <|> arrayType
+    lazy val types: Parsley[Type] = attempt((baseType <|> pairType) <~ notFollowedBy("[")) <|> arrayType
 
     private lazy val baseType: Parsley[BaseType] = ((IntType <# "int") <|> (StrType <# "string") <|> (BoolType <# "bool") <|> (CharType <# "char"))
     private lazy val arrayType = ArrayType((baseType <|> pairType), count("[" <~ "]"))
@@ -38,7 +38,7 @@ object parser {
     private lazy val param = Parameter(types, " " ~> Ident(VARIABLE))
     private lazy val params = sepBy(param, ",")
     private lazy val function = attempt(Function(types, Ident(VARIABLE), "(" ~> params <~ ")", "is" ~> nestedStatement))
-    private lazy val functions = endBy(function, "end")
+    lazy val functions = endBy(function, "end")
 
     private lazy val call = Call("call" ~> ident, "(" ~> arglist <~ ")")
     
@@ -61,24 +61,24 @@ object parser {
         NestedBegin("begin" ~> nestedStatement <~ "end")
         
         
-    private lazy val program = "begin" ~> (Begin(functions, nestedStatement)) <~ "end"
+    lazy val program = "begin" ~> (Begin(functions, nestedStatement)) <~ "end"
     private lazy val atom =  
         "(" ~> expr <~ ")" <|> attempt(arrayElem) <|> ident <|> charLiter <|> intLiter <|> boolLiter <|> stringLiter <|> pairLiter 
 
     lazy val expr: Parsley[Expr] = precedence[Expr](atom)(
-        SOps(Prefix)(Not  <# "!"),
-        SOps(Prefix)(Neg  <# "-"),
-        SOps(Prefix)(Len  <# "len"),
-        SOps(Prefix)(Ord  <# "ord"),
-        SOps(Prefix)(Chr  <# "chr"),
-        SOps(InfixL)(Mul  <# "*",  Div <# "/"),
-        SOps(InfixL)(Mod  <# "%"),
-        SOps(InfixL)(Add  <# "+",  Sub <# "-"),
-        SOps(NonAssoc)(GT <# ">",  GTE <# ">=",
+        Ops(Prefix)(Not  <# "!"),
+        Ops(Prefix)(Neg  <# "-"),
+        Ops(Prefix)(Len  <# "len"),
+        Ops(Prefix)(Ord  <# "ord"),
+        Ops(Prefix)(Chr  <# "chr"),
+        Ops(InfixL)(Mul  <# "*",  Div <# "/"),
+        Ops(InfixL)(Mod  <# "%"),
+        Ops(InfixL)(Add  <# "+",  Sub <# "-"),
+        Ops(NonAssoc)(GT <# ">",  GTE <# ">=",
                       LT <# "<",  LTE <# "<=",
                       EQ <# "==", NEQ <# "!="),
-        SOps(InfixR)(And  <# "&&"),
-        SOps(InfixR)(Or   <# "||")
+        Ops(InfixR)(And  <# "&&"),
+        Ops(InfixR)(Or   <# "||")
         
     )
     val result = fully(program)

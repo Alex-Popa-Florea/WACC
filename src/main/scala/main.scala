@@ -8,20 +8,28 @@ object main {
     import types._
     import semanticAnalyser._
     import symbolTable._
+    import wacc.symbolTable._
+    import wacc.functionTable._
 
 
     def main(args: Array[String]) = {
        assert(args.head != "")
-            var symbolTable = new SymbolTable(None)
-            result.parse(Source.fromFile(args.head).getLines.toList.mkString("\n")) match {
+            var symbolTable = new SymbolTable("Program", None)
+            var functionTable = new FunctionTable()
+            val answer = result.parse(Source.fromFile(args.head).getLines.toList.mkString("\n"))
+            answer match {
                 case Success(x) => {
                     println(s"${args.head} = $x")
-                    val semanticAnalysis = analyse(x, symbolTable, None)
+                    val semanticAnalysis = analyse(x, symbolTable, functionTable, None)
                     if (!semanticAnalysis._2) {
                         sys.exit(100)
                     } else {
                         if (semanticAnalysis._1) {
-                            println(symbolTable.children.map(x => x.variableMap))
+                            println("")
+                            functionTable.printFunctionTables()
+                            println("")
+                            symbolTable.printSymbolTables(symbolTable, 0)
+                            println("")
                             println(semanticAnalysis)
                         } else {
                             sys.exit(200)

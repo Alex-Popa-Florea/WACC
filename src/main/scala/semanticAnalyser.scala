@@ -8,40 +8,38 @@ import wacc.symbolTable._
 import wacc.functionTable._
 
 object semanticAnalyser {
-    var functionTable = new FunctionTable()
-	def analyse(node: Node, st: SymbolTable, returnType: Option[TypeCheck]): (Boolean, Boolean) = {
+	def analyse(node: Node, st: SymbolTable, ft: FunctionTable, returnType: Option[TypeCheck]): (Boolean, Boolean) = {
 		node match {
 			case Begin(func, stat) =>
-                func.map(function => functionTable.add(function.id.variable, extractType(function.t), function.vars.map(x => extractType(x.t))))
-				val functionsChecked = func.map(x => analyse(x, st, None))
+                val addedFunctions = func.forall(function => ft.add(function.id.variable, extractType(function.t), function.vars.map(x => extractType(x.t))))
+				val functionsChecked = func.map(x => analyse(x, st, ft, None))
                 functionsChecked.reduceOption((x, y) => ((x._1 && y._1), false)) match {
-					case None => (stat.forall(x => analyse(x, st, None)._1), true)
-					case Some(value) => (value._1 && stat.forall(x => analyse(x, st, None)._1), functionsChecked.last._2)
+					case None => (stat.forall(x => analyse(x, st, ft, None)._1), true)
+					case Some(value) => (addedFunctions && value._1 && stat.forall(x => analyse(x, st, ft, None)._1), functionsChecked.last._2)
 				}
             
 			case Function(t, id, vars, stats) => 
-                var nst = new SymbolTable(Option(st))
-                st.children = nst :: st.children
-				val addedFunction = st.add((id.variable, true), extractType(t))
-				val checkedParams = vars.forall(x => analyse(x, nst, None)._1)
-				val checkedStats = stats.map(x => analyse(x, nst, Some(extractType(t))))
-				(addedFunction && checkedParams && checkedStats.reduce((x, y) => ((x._1 && y._1), false))._1, checkedStats.last._2)
+                var nst = new SymbolTable(s"Function ${id.variable}", Option(st))
+                st.children = st.children :+ nst
+				val checkedParams = vars.forall(x => analyse(x, nst, ft, None)._1)
+				val checkedStats = stats.map(x => analyse(x, nst, ft, Some(extractType(t))))
+				(checkedParams && checkedStats.reduce((x, y) => ((x._1 && y._1), false))._1, checkedStats.last._2)
 				
 			case Parameter(t, id) => 
-                (st.add((id.variable, false), extractType(t)), false)
+                (st.add(id.variable, extractType(t)), false)
 			
 			case Skip() => (true, false)
 
 			case AssignType(t, id, rhs) =>
-                val checkedRHS = analyseRHS(rhs, st, extractType(t))
-                val addedVariable = st.add((id.variable, false), extractType(t))
+                val checkedRHS = analyseRHS(rhs, st, ft, extractType(t))
+                val addedVariable = st.add(id.variable, extractType(t))
                 (checkedRHS && addedVariable, false)
 
 			case Assign(lhs, rhs) => 
                 val checkedLHS = analyseLHS(lhs, st)
                 checkedLHS._2 match {
                     case None => (false, false)
-                    case Some(foundType) => ((checkedLHS._1 && analyseRHS(rhs, st, foundType)), false)
+                    case Some(foundType) => ((checkedLHS._1 && analyseRHS(rhs, st, ft, foundType)), false)
                 }
                 
 			case Read(lhs) =>
@@ -85,35 +83,35 @@ object semanticAnalyser {
                 (checkedExpr._1, false)
 
 			case If(cond, trueStat, falseStat) =>
-				var trueNst = new SymbolTable(Option(st))
-                st.children = trueNst :: st.children
-				var falseNst = new SymbolTable(Option(st))
-                st.children = falseNst :: st.children
+				var trueNst = new SymbolTable("True branch of if statement", Option(st))
+                st.children = st.children :+ trueNst
+				var falseNst = new SymbolTable("False branch of if statement", Option(st))
+                st.children = st.children :+ falseNst
 				val conditionCheck = analyseExpr(cond, st)
-				val trueStatCheck = trueStat.map(x => analyse(x, trueNst, returnType))
-				val falseStatCheck = falseStat.map(x => analyse(x, falseNst, returnType))
+				val trueStatCheck = trueStat.map(x => analyse(x, trueNst, ft, returnType))
+				val falseStatCheck = falseStat.map(x => analyse(x, falseNst, ft, returnType))
 			 	(conditionCheck._1 && (conditionCheck._2 == Some(BoolCheck(0))) && 
                  trueStatCheck.reduce((x, y) => ((x._1 && y._1), false))._1 && 
                  falseStatCheck.reduce((x, y) => ((x._1 && y._1), false))._1, 
                  trueStatCheck.last._2 && falseStatCheck.last._2)
 
 			case While(cond, stat) => 
-                var nst = new SymbolTable(Option(st))
-                st.children = nst :: st.children
+                var nst = new SymbolTable("Statements inside while loop", Option(st))
+                st.children = st.children :+ nst
 				val conditionCheck = analyseExpr(cond, st)
 				(conditionCheck._1 && (conditionCheck._2 == Some(BoolCheck(0))) && 
-                 stat.forall(x => analyse(x, nst, returnType)._1), false)
+                 stat.forall(x => analyse(x, nst, ft, returnType)._1), false)
 
 			case NestedBegin(stat) => 
-                var nst = new SymbolTable(Option(st))
-                st.children = nst :: st.children
-				(stat.forall(x => analyse(x, nst, returnType)._1), false)
+                var nst = new SymbolTable("Statements inside nested begin", Option(st))
+                st.children = st.children :+ nst
+				(stat.forall(x => analyse(x, nst, ft, returnType)._1), false)
 			
 			case _ => (false, false)
 		}
 	}
 
-    def analyseRHS(assignRHS: AssignRHS, st: SymbolTable, lhsType: TypeCheck): Boolean = {
+    def analyseRHS(assignRHS: AssignRHS, st: SymbolTable, ft: FunctionTable, lhsType: TypeCheck): Boolean = {
         assignRHS match {
             case expr: Expr => 
                 val checkedExpr = analyseExpr(expr, st)
@@ -201,15 +199,15 @@ object semanticAnalyser {
 
             case Call(id, args) => 
                 val checkedArgs = args.map(x => analyseExpr(x, st))
-				functionTable.funcMap.get(id.variable) match {
+				ft.funcMap.get(id.variable) match {
 					case Some(foundFuncType) =>
                         if (lhsType == EmptyPairCheck()) {
                             foundFuncType._1 match {
-									case PairCheck(type1, type2, nested) => checkedArgs.forall(x => x._1) && functionTable.check(id.variable, checkedArgs.map(x => x._2.get))
-									case _ => foundFuncType._1 == lhsType && checkedArgs.forall(x => x._1) && functionTable.check(id.variable, checkedArgs.map(x => x._2.get))
+									case PairCheck(type1, type2, nested) => checkedArgs.forall(x => x._1) && ft.check(id.variable, checkedArgs.map(x => x._2.get))
+									case _ => foundFuncType._1 == lhsType && checkedArgs.forall(x => x._1) && ft.check(id.variable, checkedArgs.map(x => x._2.get))
 							}
                         } else {
-						    foundFuncType._1 == lhsType && checkedArgs.forall(x => x._1) && functionTable.check(id.variable, checkedArgs.map(x => x._2.get))	
+						    foundFuncType._1 == lhsType && checkedArgs.forall(x => x._1) && ft.check(id.variable, checkedArgs.map(x => x._2.get))	
                         }
 					case _ => false
 				}
@@ -257,11 +255,11 @@ object semanticAnalyser {
             case PairLiter() => (true, Some(EmptyPairCheck()))
 
             case Ident(variable) =>
-                var foundVariableType = st.find((variable, false))
+                var foundVariableType = st.find(variable)
                 (foundVariableType != None, foundVariableType)
 
             case ArrayElem(id, exprs) =>
-                var foundType = st.find((id.variable, false))
+                var foundType = st.find(id.variable)
 				foundType match {
 					case None => (false, None)
 					case Some(array) =>

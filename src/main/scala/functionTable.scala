@@ -39,5 +39,21 @@ object functionTable {
                     equality
             }
         }
+
+        def printFunctionTables(): Unit = {
+            println(s"-- Function Table:")
+            println(s"--- Functions: ")
+            println("")
+            funcMap.foreach({ case (k, v) => 
+                println(s"---- \"$k\":")
+                println(s"----- Return Type: ")
+                println(s"     - ${v._1}")
+                println(s"----- Parameter Types: ")
+                v._2.foreach(x => 
+                    println(s"     - ${x}")    
+                )
+                println("")
+            })
+        }
     }
 }

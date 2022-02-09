@@ -124,8 +124,9 @@ object ast {
     // Function builders:
             
     object Function {
-        def apply(t: => Parsley[Type], id: => Parsley[Ident], vars: => Parsley[List[Parameter]], st: Parsley[List[Statement]]): Parsley[Function] =
-            pos <**> (t, id, vars, st).zipped(Function(_, _, _, _) _)
+        def apply(pair: => Parsley[(Type,Ident)], vars: => Parsley[List[Parameter]], st: Parsley[List[Statement]]): Parsley[Function] = {
+            pos <**> (pair, vars, st).zipped((x, y, z) => Function(x._1, x._2, y, z) _)
+        }
     }
 
     object Parameter {

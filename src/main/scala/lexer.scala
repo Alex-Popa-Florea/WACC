@@ -31,7 +31,7 @@ object lexer {
     private lazy val characterChar = (charLetter <|> charEscape).label("literal character")
     
     val VARIABLE = lexer.identifier
-    val INTEGER: Parsley[BigInt] = lexer.lexeme(attempt('-' ~> many(" ") ~> (digit.foldLeft1(BigInt(0))((x, d) => x * 10 + d.asDigit)).map(x => -1 * x)) <|> (digit.foldLeft1(BigInt(0))((x, d) => x * 10 + d.asDigit)))
+    val INTEGER: Parsley[BigInt] = lexer.lexeme(attempt('-' ~> many(" ") ~> (digit.foldLeft1(BigInt(0))((x, d) => x * 10 + d.asDigit)).map(x => -1 * x)) <|> (option('+') ~> many(" ") ~> digit.foldLeft1(BigInt(0))((x, d) => x * 10 + d.asDigit)))
     val CHAR = lexer.lexeme(between('\''.label("character"), '\''.label("end of character"), characterChar))
     val STRING = lexer.lexeme(between('\"'.label("string"), '\"'.label("end of string"), many(characterChar))).map(_.mkString)
 

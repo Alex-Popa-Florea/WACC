@@ -17,7 +17,7 @@ object parser {
     private lazy val ident = Ident(VARIABLE)
 
     private lazy val charLiter = CharLiter(CHAR)
-    private lazy val intLiter = (attempt(option("+")) ~> IntLiter(INTEGER))
+    private lazy val intLiter = IntLiter(INTEGER)
     private lazy val boolLiter = BoolLiter(("true" ~> pure(true)) <|> ("false" ~> pure(false)))
     private lazy val stringLiter = StrLiter(STRING)
     private lazy val arrayLiter = "[" ~> ArrayLiter(sepBy(expr, ",")) <~ "]"

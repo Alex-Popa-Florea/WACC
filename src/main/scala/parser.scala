@@ -15,7 +15,8 @@ object parser {
         Console.GREEN+msg+Console.RESET
     }
 
-    val explainStatement = s""" Missing Statement(s):
+    val explainStatement = 
+s"""Missing Statement(s):
     Statements are simply instructions.
     To do nothing: ${makeGreen("skip")}
     To assign a variable: ${makeGreen("<type> <name> = <expression>")}
@@ -56,13 +57,15 @@ object parser {
     Logical Or,gives true if one of the bools are true ${makeGreen("<bool> || <bool>")}
     """
 
-    val explainLHS = s"""Left hand side of an assignment, left of the equals:
+    val explainLHS = 
+s"""Left hand side of an assignment, left of the equals:
     Can be an array element: ${makeGreen("<array>[<position>] =")}
     Can be a variable: ${makeGreen("<variable> = ")}
     Can be a pair element: ${makeGreen("fst <pair> =")} 
                            ${makeGreen("snd <pair> =")}
     """
-    val explainPairElem = s"""Acessing pairs using fst and snd are used to access pairs:
+    val explainPairElem = 
+s"""Acessing pairs using fst and snd are used to access pairs:
     to get the first element ${makeGreen("fst <pair>")}
     to get the second element ${makeGreen("snd <pair>")}
     """
@@ -107,17 +110,17 @@ object parser {
     lazy val statement: Parsley[Statement] = 
         ((Skip <# "skip") <|> 
         AssignType(types, ident, "=" ~> assignRHS) <|> 
-        Assign(assignLHS, "=" ~> assignRHS) <|>
-        Read("read" ~> assignLHS) <|>
-        Free("free" ~> expr) <|>
-        Return("return" ~> expr) <|>
-        Exit("exit" ~> expr) <|>
-        Print("print" ~> expr) <|>
-        Println("println" ~> expr) <|>
-        If("if" ~> expr, "then" ~> nestedStatement, "else" ~> nestedStatement <~ "fi") <|>
-        While("while" ~> expr, "do" ~> nestedStatement <~ "done") <|>
+        Assign(assignLHS.explain(explainLHS), "=" ~> assignRHS) <|>
+        Read("read" ~> assignLHS.explain("Read stores user input into a variable/array/pair\n")) <|>
+        Free("free" ~> expr.explain("Free takes in an array/pair")) <|>
+        Return("return" ~> expr.explain("Return used in function to give result")) <|>
+        Exit("exit" ~> expr.explain("Exit exits the program with the given number")) <|>
+        Print("print" ~> expr.explain("Print outputs to the console")) <|>
+        Println("println" ~> expr.explain("Print outputs to the console on a new line")) <|>
+        If("if" ~> expr.explain("If is followed by a boolean condition"), "then" ~> nestedStatement, "else" ~> nestedStatement <~ "fi") <|>
+        While("while" ~> expr.explain("while is followed by a boolean condition"), "do" ~> nestedStatement <~ "done") <|>
         NestedBegin("begin" ~> nestedStatement <~ "end")
-        ).hide.explain(explainStatement)
+        ).hide.explain(explainStatement) //.hide
         
     lazy val program = "begin" ~> (Begin(functions, nestedStatement)) <~ "end"
     private lazy val atom =  

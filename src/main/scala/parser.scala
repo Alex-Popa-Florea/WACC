@@ -35,7 +35,7 @@ object parser {
     
     private lazy val arglist = sepBy(expr, ",")
     
-    private lazy val param = Parameter(types, " " ~> Ident(VARIABLE))
+    private lazy val param = Parameter(types, Ident(VARIABLE))
     private lazy val params = sepBy(param, ",")
     private lazy val function = attempt(Function(types, Ident(VARIABLE), "(" ~> params <~ ")", "is" ~> nestedStatement))
     lazy val functions = endBy(function, "end")

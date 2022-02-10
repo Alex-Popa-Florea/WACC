@@ -56,20 +56,6 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
         println(err)
       }
     }
-    info("with if statements")
-    
-    answer = result.parse(Source.fromFile("./if1.wacc").getLines.toList.mkString("\n"))
-    answer match {
-      case Success(p) => {
-        //println(analyser(p)._1.printSymbolTables(analyser(p)._1, 2))
-        var children = analyser(p)._1.children 
-        children.size should equal (2)
-        children(0).variableMap should equal (Map("c" -> IntCheck(0)))
-      }
-      case Failure(err) => {
-        println(err)
-      }
-    }
   }
   "Functions" should "parse successfully and correct function tables" in
   {
@@ -157,25 +143,27 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
   }
   "Functions" should "parse successfully and have correct number of arguments" in
   {
-    info("with one function declaration")
-    var answer = result.parse("begin int f(int a) is return a + 2 end int y = call f(5); println y end")
+    info("with incorrect function call")
+    var answer = result.parse("begin int f() is return 2 end int y = call f(5); println y end")
     answer match {
       case Success(p) => {
         var symbolTable = analyser(p)._1
-        
+        var error = analyser(p)._3
+        // Check function has incorrect number of arguments.
+        error should equal (List(("Wrong number of arguments in call to function f!",(1,39))))
       }
       case Failure(err) => {
         println(err)
       }
     }
-    info("with one function declaration")
-    answer = result.parse("begin bool f(int a) is return a end skip end")
+    info("with correct function call")
+    answer = result.parse("begin int f(int a) is return a end int y = call f(5) end")
     answer match {
       case Success(p) => {
         var funcMap = analyser(p)._2.funcMap
         // Check function declaration is incorrect and returns semantic error.
         var error = analyser(p)._3
-        error should equal (List(("Expression does not match return type of function, expected bool but expression of type int found!",(1,24))))
+        error should equal (List())
       }
       case Failure(err) => {
         println(err)
@@ -253,6 +241,48 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
         var error = analyser(p)._3
         // Check that > should fail and return three semantic errors
         error.size should equal (3)
+      }
+      case Failure(err) => {
+        println(err)
+      }
+    }
+  }
+  "Variables in programs" should "parse successfully and are defined before used" in
+  {
+    info("with undefined variables outside functions")
+    var answer = result.parse("begin println y end")
+    answer match {
+      case Success(p) => {
+        // Check function has incorrect number of arguments.
+        var error = analyser(p)._3
+        error should equal (List(("y undeclared: ",(1,15))))
+      }
+      case Failure(err) => {
+        println(err)
+      }
+    }
+    info("with undefined variables inside functions")
+    answer = result.parse("begin int f() is return x end skip end")
+    answer match {
+      case Success(p) => {
+        // Check function declaration is incorrect and returns semantic error.
+        var error = analyser(p)._3
+        error should equal (List(("x undeclared: ",(1,25))))
+      }
+      case Failure(err) => {
+        println(err)
+      }
+    }
+  }
+  "Variable" should "declarations should have matching types" in
+  {
+    info("with int and char")
+    var answer = result.parse("begin int a = 'c' end")
+    answer match {
+      case Success(p) => {
+        // Check function has incorrect number of arguments.
+        var error = analyser(p)._3
+        error should equal (List(("Expression of type int expected in right hand side of assignment, but expression of type char found!",(1,15))))
       }
       case Failure(err) => {
         println(err)

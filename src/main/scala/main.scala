@@ -1,5 +1,7 @@
 package wacc
 
+import java.io.FileNotFoundException
+
 object main {
     import parser._
     import parsley.{Success, Failure}
@@ -10,14 +12,22 @@ object main {
     import symbolTable._
     import wacc.symbolTable._
     import wacc.functionTable._
+    import parsley.io.ParseFromIO
+    import java.io.{File,FileNotFoundException}
+    import color._
 
 
     def main(args: Array[String]) = {
        assert(args.head != "")
             var symbolTable = new SymbolTable("Program", None)
             var functionTable = new FunctionTable()
-            val answer = result.parse(Source.fromFile(args.head).getLines.toList.mkString("\n"))
-            answer match {
+            var answer = result.parseFromFile(new File(args.head))
+            answer.recover{
+                case _ : FileNotFoundException => println(makeRed(s"ERROR[FILE NOT FOUND]"))
+                sys.exit()
+            }
+
+            answer.get match {
                 case Success(x) => {
                     println(s"${args.head} = $x")
                     val semanticAnalysis = analyse(x, symbolTable, functionTable, None)

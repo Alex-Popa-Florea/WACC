@@ -1,5 +1,7 @@
 package wacc
 object edata {
+    import color._
+
     sealed trait ErrorType
     case object Syntax extends ErrorType
     case object Semantic extends ErrorType
@@ -7,20 +9,16 @@ object edata {
     //IO
     //LineInfo
 
-
-    private def makeRed(msg:String):String = {
-        Console.RED+msg+Console.RESET
-    }
-
-    def eformat(err:ErrorType,pos:String, lines:String): String  = 
+    def eformat(err:ErrorType,source: Option[String],pos:String, lines:String): String  = 
 s"""${pos}
+${source.getOrElse("")}
 ${makeRed(s"[${err} ERROR]")}
 ${lines}
 """
 
     def errorGenerator(t: ErrorType, errs: List[(String, (Int, Int))]): Unit = {
         for(e <- errs) {
-            println(eformat(t, s"At line: ${e._2._1}, Column: ${e._2._2}", e._1))
+            println(eformat(t,None, s"At line: ${e._2._1}, Column: ${e._2._2}", e._1))
         }
     }
 

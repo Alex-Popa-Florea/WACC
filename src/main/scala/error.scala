@@ -7,7 +7,7 @@ object error {
 
     class StringErrorBuilder extends ErrorBuilder[String] {
         override def format(pos: Position, source: Source, lines: ErrorInfoLines): String = {
-            eformat(Syntax,pos,lines)
+            eformat(Syntax,source,pos,lines)
 
         }
 

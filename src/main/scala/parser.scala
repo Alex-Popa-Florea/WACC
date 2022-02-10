@@ -10,10 +10,7 @@ object parser {
     import parsley.expr.{precedence, InfixL, InfixR, NonAssoc, Prefix, Ops}
     import parsley.combinator._
     import parsley.errors.combinator.ErrorMethods
-    
-    def makeGreen(msg:String):String = {
-        Console.GREEN+msg+Console.RESET
-    }
+    import color._
 
     val explainStatement = 
 s"""Missing Statement(s):

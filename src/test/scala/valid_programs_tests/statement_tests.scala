@@ -151,8 +151,8 @@ class StatParserTest extends AnyFlatSpec with AppendedClues{
     "Exit statements" should "parse successfully and produce a correct AST" in {
         info("exit with error status of -1")
         fully(statement).parse("exit -1") should matchPattern{
-            case Success(Exit(Neg(IntLiter(1))))
-        =>} withClue(" Success(Exit(Neg(IntLiter(1))))")
+            case Success(Exit(IntLiter(-1)))
+        =>} withClue(" Success(Exit(IntLiter(-1)))")
         
         info("exit with normal status of 42")
         fully(statement).parse("exit 42") should matchPattern{

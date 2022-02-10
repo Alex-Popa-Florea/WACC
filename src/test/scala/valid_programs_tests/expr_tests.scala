@@ -25,7 +25,7 @@ class ExprParserTest extends AnyFlatSpec with AppendedClues{
 
     info("with a negative sign")
     fully(expr).parse("-1") should matchPattern {
-    case Success(Neg(IntLiter(1))
+    case Success(IntLiter(-1)
     ) =>} withClue(" Success(Neg(IntLiter(1)))")
   } 
 
@@ -99,7 +99,7 @@ class ExprParserTest extends AnyFlatSpec with AppendedClues{
     
 
     info("negate")
-    fully(expr).parse("- 1") should matchPattern {
+    fully(expr).parse("- (1)") should matchPattern {
     case Success(Neg(IntLiter(1))) =>} withClue( " Success(Neg(IntLiter(1)))")
 
     info("len")

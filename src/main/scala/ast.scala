@@ -1,7 +1,9 @@
 package wacc
 
 import parsley.Parsley, Parsley._
+import parsley.errors.combinator.fail
 import parsley.implicits.zipped.{Zipped2, Zipped3, Zipped4}
+import parsley.lift.lift1
 
 object ast {
     trait Node {
@@ -294,8 +296,17 @@ object ast {
     // Liters:
     
     object IntLiter {
-         def apply(x: => Parsley[Int]): Parsley[IntLiter] = 
-             pos <**> x.map(IntLiter(_) _)
+         def apply(x: => Parsley[BigInt]): Parsley[IntLiter] = {
+
+            def overflow_checker (i:BigInt):Parsley[IntLiter] ={
+               if(i <= Int.MaxValue && i >= Int.MinValue){
+                   pos <**> pure(IntLiter(i.toInt) _)
+               }else{
+                   fail(s"Int overflow Int must be in the range of ${Int.MinValue} and ${Int.MaxValue}")
+               }
+            }
+            join(lift1(overflow_checker,x))
+         }
     }
 
     object BoolLiter {

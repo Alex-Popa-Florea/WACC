@@ -7,6 +7,7 @@ object parser {
     import lexer.implicits.implicitLexeme
     import lexer._
     import ast._
+    import parsley.character.digit
     import parsley.expr.{precedence, InfixL, InfixR, NonAssoc, Prefix, Ops}
     import parsley.combinator._
     import parsley.errors.combinator.ErrorMethods
@@ -75,7 +76,7 @@ s"""Acessing pairs using fst and snd are used to access pairs:
     private lazy val ident = Ident(VARIABLE)
 
     private lazy val charLiter = CharLiter(CHAR)
-    private lazy val intLiter = (attempt(option("+")) ~> IntLiter(INTEGER))
+    private lazy val intLiter = IntLiter(INTEGER)
     private lazy val boolLiter = BoolLiter(("true" ~> pure(true)) <|> ("false" ~> pure(false)))
     private lazy val stringLiter = StrLiter(STRING)
     private lazy val arrayLiter = ("[" ~> ArrayLiter(sepBy(expr, ",")) <~ "]").hide.explain(s"Array can be constructed by having\n  elements, if any, seperated by commas surrounded in square brackets ${makeGreen("[<expression>,<expression>...]")}\n")
@@ -128,7 +129,7 @@ s"""Acessing pairs using fst and snd are used to access pairs:
 
     lazy val expr: Parsley[Expr] = precedence[Expr](atom)(
         Ops(Prefix)(Not  <# "!"),
-        Ops(Prefix)(Neg  <# "-"),
+        Ops(Prefix)(Neg  <# attempt("-" <~ notFollowedBy(digit))),
         Ops(Prefix)(Len  <# "len"),
         Ops(Prefix)(Ord  <# "ord"),
         Ops(Prefix)(Chr  <# "chr"),

@@ -26,7 +26,7 @@ class ExprParserTest extends AnyFlatSpec with AppendedClues{
     info("with a negative sign")
     fully(expr).parse("-1") should matchPattern {
     case Success(IntLiter(-1)
-    ) =>} withClue(" Success(Neg(IntLiter(1)))")
+    ) =>} withClue(" Success(IntLiter(-1))")
   } 
 
     "Bool Literals" should "parse successfully and produce correct AST" in {

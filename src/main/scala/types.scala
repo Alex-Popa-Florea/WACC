@@ -36,4 +36,31 @@ object types {
 				}
 		}
 	}
+
+	def typeCheckToString(typeCheck: TypeCheck): String = {
+		var typeString = ""
+		typeCheck match {
+			case baseType: BaseTypeCheck => 
+				typeCheck match {
+					case IntCheck(nested) => 
+						typeString = "int"
+					case BoolCheck(nested) =>
+						typeString = "bool"
+					case CharCheck(nested) =>
+						typeString = "char"
+					case StrCheck(nested) =>
+						typeString = "string"
+				}
+				for(i <- 0 to baseType.nested) {
+					typeString += "[]"
+				}
+			case PairCheck(type1, type2, nested) => 
+				typeString = s"pair(${typeCheckToString(type1)}, ${typeCheckToString(type2)})"
+				for(i <- 0 to nested) {
+					typeString += "[]"
+				}
+			case EmptyPairCheck() => typeString = "pair"
+		}
+		typeString
+	}
 }

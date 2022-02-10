@@ -17,6 +17,14 @@ object functionTable {
             }
             
         }
+        
+
+        def checkLength(funcName: String, argTypes: List[TypeCheck]): Boolean = {
+            funcMap.get(funcName) match {
+                case None => false
+                case Some(foundArgs) => (foundArgs._2.length == argTypes.length)
+            }
+        }
 
         def check(funcName: String, argTypes: List[TypeCheck]): Boolean = {
             funcMap.get(funcName) match {

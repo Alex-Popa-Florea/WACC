@@ -4,7 +4,8 @@ object error {
     import parsley.Result
     import scala.util._
     import edata._
-
+    
+    //Extends the Default parsely error builder 
     class StringErrorBuilder extends ErrorBuilder[String] {
         override def format(pos: Position, source: Source, lines: ErrorInfoLines): String = {
             eformat(Syntax,source,pos,lines)
@@ -14,7 +15,7 @@ object error {
         override def pos(line: Int, col: Int): Position = s"At line: ${line}, Column: ${col}"
 
         type Source = Option[String]
-        override def source(sourceName: Option[String]): Source =  sourceName.map(name => s"\nFile: $name")
+        override def source(sourceName: Option[String]): Source =  sourceName.map(name => s"File: $name")
 
         type ErrorInfoLines = String
         override def vanillaError(unexpected: UnexpectedLine, expected: ExpectedLine, reasons: Messages, line: LineInfo): ErrorInfoLines = 

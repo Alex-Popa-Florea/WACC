@@ -6,16 +6,19 @@ object edata {
     sealed trait ErrorType
     case object Syntax extends ErrorType
     case object Semantic extends ErrorType
- 
-    //IO
-    //LineInfo
 
+    /*
+        Used to format error message with the type of error, the name of the file, positions and r
+    */
     def eformat(err: ErrorType,source: Option[String],pos: String, reasons: String): String  = 
         s"""${pos}
         |${source.getOrElse("")}
         |${makeRed(s"[${err} ERROR]")}
         |${reasons}""".stripMargin
-
+        
+    /*
+        Used for generating a list of errors
+    */
     def errorGenerator(t: ErrorType, source: Option[String],file: File, errs: List[(String, (Int, Int))]): Unit = {
         val program = scala.io.Source.fromFile(file).getLines().toList
         def errorPointer(caretAt: Int) = s"${" " * caretAt}^"
@@ -32,18 +35,23 @@ object edata {
         }
     }
 
-    def evanillaError(unexpected: Option[String], expected: Option[String], reasons: List[String], lines:String): String ={
+    /*
+        Used by the error builder to make generic errors
+    */
+    def evanillaError(unexpected: Option[String], expected: Option[String], reasons: List[String], lines:String): String =
         s"""
         |${unexpected.get} 
         |${expected.get} 
         |${reasons.mkString("\n")}
         |${lines}""".stripMargin
-    }
 
-    def especialisedError(msgs: List[String], lines:String): String ={
-        s"""${msgs.mkString} 
-        ${lines}""".stripMargin    
-    }
+    /*
+        Used by the error builder to make specfic errors
+    */
+    def especialisedError(msgs: List[String], lines:String): String =
+        s"""|
+        |${msgs.mkString} 
+        |${lines}""".stripMargin
 
 }
 

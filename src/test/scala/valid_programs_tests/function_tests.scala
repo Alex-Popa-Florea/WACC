@@ -33,6 +33,7 @@ class FunctionParserTest extends AnyFlatSpec with AppendedClues
         println(err)
       }
     }
+    
     info("with function without return statement")
     answer = result.parse("begin int f() is int a = 2 skip end")
     answer match {
@@ -47,6 +48,7 @@ class FunctionParserTest extends AnyFlatSpec with AppendedClues
                               ^""".stripMargin)
       }
     }
+
     def syntaxAnalyser(p: Node): (Option[(String, (Int, Int))]) = { 
         val symbolTable = new SymbolTable("Program", None)
         val functionTable = new FunctionTable()

@@ -2,9 +2,12 @@ package valid_programs_tests
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
-import parsley.Success
+import parsley.{Success, Failure}
 import wacc.lexer._
 import wacc.parser._
+import wacc.semanticAnalyser._
+import wacc.symbolTable._
+import wacc.functionTable._
 import wacc.ast._
 import org.scalatest.AppendedClues
 
@@ -241,7 +244,6 @@ class StatParserTest extends AnyFlatSpec with AppendedClues{
                      "List(Assign(Ident(\"x\"), Add(Ident(\"x\"), IntLiter(1)))IntLiter(1))), " +
                      "If(BoolLiter(true), List(Skip()), List(Skip())))")
         
-
         info("inside nested begin statement")
         fully(statement).parse("begin skip; skip; skip end") should matchPattern{
             case Success(NestedBegin(List(Skip(), Skip(), Skip())))
@@ -249,5 +251,58 @@ class StatParserTest extends AnyFlatSpec with AppendedClues{
     
     }
 
+    "Assignment statements" should "have an identifier" in {
+        info("with function without return statement")
+        var answer = result.parse("begin int = 5 end")
+        answer match {
+            case Success(p) => {
+                answer should equal (0)
+            }
+            case Failure(err) => {
+                println(err) 
+                err should equal ("""|(line 1, column 11):
+                                     |  unexpected "="
+                                     |  expected Variable
+                                     |  Use to name expression
+                                     |  >begin int = 5 end
+                                     |             ^""".stripMargin)
+            }
+        }
+    }
 
+    "If statements" should "have a fi" in {
+        info("without fi")
+        var answer = result.parse("begin if true then int a = 3 else int b = 2 end")
+        answer match {
+            case Success(p) => {
+                answer should equal (0)
+            }
+            case Failure(err) => {
+                println(err) 
+                err should equal ("""(line 1, column 45):
+                                    |  unexpected "en"
+                                    |  expected !=, ";", %, &&, *, +, -, /, <, <=, ==, >, >=, fi, or ||
+                                    |  >begin if true then int a = 3 else int b = 2 end
+                                               ^""".stripMargin)
+            }
+        }
+    }
+
+    "Sequence of statements" should "be separated with semicolons" in {
+        info("without semicolons")
+        var answer = result.parse("begin int a = 2 int b = 3 end")
+        answer match {
+            case Success(p) => {
+                answer should equal (0)
+            }
+            case Failure(err) => {
+                println(err) 
+                err should equal ("""(line 1, column 17):
+                                    |  unexpected "int"
+                                    |  expected !=, ";", %, &&, *, +, -, /, <, <=, ==, >, >=, end, or ||
+                                    |  >begin int a = 2 int b = 3 end
+                   ^""".stripMargin)
+            }
+        }
+    }
 }

@@ -47,6 +47,7 @@ class TypeParserTest extends AnyFlatSpec with AppendedClues
       PairType(IntType(), CharType())
     ) =>} withClue("Success(Pair(IntType(), CharType()))")
   }
+  
   "Array Types" should "parse successfully and produce correct AST" in
   {
     info("with type 'int[]'")
@@ -71,5 +72,24 @@ class TypeParserTest extends AnyFlatSpec with AppendedClues
         3
       )
     ) =>} withClue(" Success(ArrayType(IntType(), 3))")
+  }
+
+  "Functions" should "have return type" in
+  {
+    info("without return type")
+    var answer = result.parse("begin f() is return true skip end")
+    answer match {
+        case Success(p) => {
+            answer should equal (0)
+        }
+        case Failure(err) => {
+            println(err) 
+            err should equal ("""(line 1, column 8):
+  unexpected "("
+  expected "="
+  >begin f() is return true skip end
+          ^""".stripMargin)
+        }
+    }
   }
 }

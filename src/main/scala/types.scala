@@ -3,8 +3,17 @@ package wacc
 import wacc.ast._
 
 object types {
+	/*
+		The trait type check is used to store the type of symbols in the symbol table.
+		TypeChecks are used to perform semantic analysis. 
+	*/
     sealed trait TypeCheck
-
+	/* 
+		Type checks for the base types.
+		The parameter nested allows you to represent arrays
+		Nested 0 refers to a normal base type, 1 refers to an array
+		and 2 refers to an array for arrays, etc.
+	*/
     sealed trait BaseTypeCheck extends TypeCheck {
         val nested: Int
     }
@@ -12,10 +21,18 @@ object types {
     case class BoolCheck(nested: Int) extends BaseTypeCheck
     case class CharCheck(nested: Int) extends BaseTypeCheck
     case class StrCheck(nested: Int) extends BaseTypeCheck
+
+	/*
+		TypeChecks for a pair and empty pair. 
+	*/
     
     case class PairCheck(type1: TypeCheck, type2: TypeCheck, nested: Int) extends TypeCheck
     case class EmptyPairCheck() extends TypeCheck
 
+	/*
+		Converts an AST node type to a TypeCheck
+		For pairs and arrays, the function is called recursively to find the base type.
+	*/
     def extractType(astType: Type): TypeCheck = {
 		astType match {
 			case IntType() => IntCheck(0)
@@ -37,6 +54,10 @@ object types {
 		}
 	}
 
+	/* 
+		Function to convert a TypeCheck to a string so that types can be pretty printed
+		in semantic errors. 
+	*/
 	def typeCheckToString(typeCheck: TypeCheck): String = {
 		var typeString = ""
 		typeCheck match {
@@ -51,9 +72,16 @@ object types {
 					case StrCheck(nested) =>
 						typeString = "string"
 				}
+
+				/*
+					Adds square brackets for arrays according to value stored in nested
+				*/
 				for(i <- 0 to baseType.nested - 1) {
 					typeString += "[]"
 				}
+				/*
+					Function is called recursively for pairs to find the base types
+				*/
 			case PairCheck(type1, type2, nested) => 
 				typeString = s"pair(${typeCheckToString(type1)}, ${typeCheckToString(type2)})"
 				for(i <- 0 to nested - 1) {

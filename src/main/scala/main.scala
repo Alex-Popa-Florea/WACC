@@ -15,13 +15,16 @@ object main {
     import parsley.io.ParseFromIO
     import java.io.{File,FileNotFoundException}
     import color._
+    import error.StringErrorBuilder
 
 
     def main(args: Array[String]) = {
        assert(args.head != "")
             var symbolTable = new SymbolTable("Program", None)
             var functionTable = new FunctionTable()
+            implicit val eb = new StringErrorBuilder
             var answer = result.parseFromFile(new File(args.head))
+
             answer.recover{
                 case _ : FileNotFoundException => println(makeRed(s"ERROR[FILE NOT FOUND]"))
                 sys.exit()
@@ -48,7 +51,7 @@ object main {
                 }
                 case Failure(err) => {
                     println(err)
-                    sys.exit(100)
+                    //sys.exit(100)
                 }
             }
     }

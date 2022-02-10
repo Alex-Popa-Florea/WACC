@@ -9,12 +9,11 @@ object edata {
     //IO
     //LineInfo
 
-    def eformat(err:ErrorType,source: Option[String],pos:String, lines:String): String  = 
-s"""${pos}
-${source.getOrElse("")}
-${makeRed(s"[${err} ERROR]")}
-${lines}
-"""
+    def eformat(err: ErrorType,source: Option[String],pos: String, reasons: String): String  = 
+        s"""${pos}
+        |${source.getOrElse("")}
+        |${makeRed(s"[${err} ERROR]")}
+        |${reasons}""".stripMargin
 
     def errorGenerator(t: ErrorType, errs: List[(String, (Int, Int))]): Unit = {
         for(e <- errs) {
@@ -22,14 +21,17 @@ ${lines}
         }
     }
 
-    def evanillaError(unexpected: Option[String], expected: Option[String], reasons: List[String]): String ={
-s"""${unexpected.get} 
-${expected.get} 
-${reasons.mkString("\n")}"""
+    def evanillaError(unexpected: Option[String], expected: Option[String], reasons: List[String], lines:String): String ={
+        s"""
+        |${unexpected.get} 
+        |${expected.get} 
+        |${reasons.mkString("\n")}
+        |${lines}""".stripMargin
     }
 
-    def especialisedError(msgs: List[String]): String ={
-        s"""${msgs.mkString}"""     
+    def especialisedError(msgs: List[String], lines:String): String ={
+        s"""${msgs.mkString} 
+        ${lines}""".stripMargin    
     }
 
 }

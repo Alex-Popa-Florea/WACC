@@ -8,23 +8,22 @@ object error {
     class StringErrorBuilder extends ErrorBuilder[String] {
         override def format(pos: Position, source: Source, lines: ErrorInfoLines): String = {
             eformat(Syntax,source,pos,lines)
-
         }
 
         type Position = String
         override def pos(line: Int, col: Int): Position = s"At line: ${line}, Column: ${col}"
 
         type Source = Option[String]
-        override def source(sourceName: Option[String]): Source =  sourceName.map(name => s"file '$name'")
+        override def source(sourceName: Option[String]): Source =  sourceName.map(name => s"\nFile: $name")
 
         type ErrorInfoLines = String
         override def vanillaError(unexpected: UnexpectedLine, expected: ExpectedLine, reasons: Messages, line: LineInfo): ErrorInfoLines = 
-            evanillaError(unexpected,expected,reasons)
+            evanillaError(unexpected,expected,reasons,line)
         override def specialisedError(msgs: Messages, line: LineInfo): ErrorInfoLines = 
-            especialisedError(msgs)
+            especialisedError(msgs,line)
 
         type ExpectedItems = Option[String]
-        override def combineExpectedItems(alts: Set[Item]): ExpectedItems = Option(alts.toList.filter(_.nonEmpty).mkString)
+        override def combineExpectedItems(alts: Set[Item]): ExpectedItems = Option(alts.toList.filter(_.nonEmpty).mkString("|"))
 
         type Messages = List[Message]
         override def combineMessages(alts: Seq[Message]): Messages = alts.toList
@@ -38,9 +37,21 @@ object error {
         override def reason(reason: String): Message = reason
         override def message(msg: String): Message = msg
 
-        type LineInfo = Unit
-        override def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int): LineInfo = ()
-
+        type LineInfo = String
+        override def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int): LineInfo = {
+            def errorPointer(caretAt: Int) = s"${" " * caretAt}^"
+            val errorLineStart = ">"
+            val before = "" 
+            val after  = ""
+            linesBefore.foreach(line => before + s"$errorLineStart$line ")
+            linesBefore.foreach(line => after  + s"$errorLineStart$line ")
+            s"""
+            |$before
+            |$errorLineStart$line 
+            |${" " * errorLineStart.length}${errorPointer(errorPointsAt)}
+            |$after""".stripMargin
+        }
+        
         type Item = String
         type Raw = String
         type Named = String

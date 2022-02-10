@@ -33,28 +33,29 @@ object symbolTable {
         }
 
         def printSymbolTables(st: SymbolTable, nest: Int): Unit = {
-            println("")
             for (i <- 0 to nest) {
-                print("|--")
+                print("  ")
             }
-            println(s" Symbol Table: ${st.scope} - ${st}")
+            println(s"- Symbol Table ${st.scope} - ${st}")
             for (i <- 0 to nest) {
-                print("|--")
+                print("  ")
             }
             if (st.parent != None) {
-                println(s"- Symbol Table Parent: ${st.parent.get.scope} - ${st.parent.get}")
+                println(s" (i) Symbol Table Parent: ${st.parent.get.scope} - ${st.parent.get}")
             } else {
-                println(s"- Symbol Table Parent: ${st.parent}")
+                println(s" (i) Symbol Table Parent: ${st.parent}")
             }
             for (i <- 0 to nest) {
-                print("|--")
+                print("  ")
             }
-            println(s"- Variables:")
-            if (st.variableMap.size == 0) {
-                println(s"      - None")
-            }
-            st.variableMap.foreach { case (k, x) => 
-                println(s"      - $k -> $x")
+            if (st.variableMap.size > 0) {
+                println(s"(ii) Variables:")
+                st.variableMap.zip(0 until st.variableMap.size).foreach { case ((k, x), i) => 
+                    for (i <- 0 to nest) {
+                        print("  ")
+                    }
+                    println(s" ${i + 1}. \"$k\":")
+                }
             }
             st.children.map(x => {
                 printSymbolTables(x, nest + 1)

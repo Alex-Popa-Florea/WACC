@@ -41,16 +41,15 @@ object functionTable {
         }
 
         def printFunctionTables(): Unit = {
-            println(s"-- Function Table:")
-            println(s"--- Functions: ")
+            println(s"  - Functions: ")
             println("")
-            funcMap.foreach({ case (k, v) => 
-                println(s"---- \"$k\":")
-                println(s"----- Return Type: ")
-                println(s"     - ${v._1}")
-                println(s"----- Parameter Types: ")
+            funcMap.zip(0 until funcMap.size).foreach({ case ((k, v), i) => 
+                println(s"    ${i + 1}. \"$k\":")
+                println(s"\t(i) Return Type: ")
+                println(s"\t - ${v._1}")
+                println(s"\t(ii) Parameter Types: ")
                 v._2.foreach(x => 
-                    println(s"     - ${x}")    
+                    println(s"\t - ${x}")    
                 )
                 println("")
             })

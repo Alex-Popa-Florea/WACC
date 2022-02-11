@@ -15,9 +15,9 @@ object edata {
         |${makeRed(s"[${err} ERROR]")}
         |${reasons}""".stripMargin
 
-    def errorGenerator(t: ErrorType, errs: List[(String, (Int, Int))]): Unit = {
+    def errorGenerator(t: ErrorType, source: Option[String], errs: List[(String, (Int, Int))]): Unit = {
         for(e <- errs) {
-            println(eformat(t,None, s"At line: ${e._2._1}, Column: ${e._2._2}", e._1))
+            println(eformat(t,source, s"At line: ${e._2._1}, Column: ${e._2._2}", e._1))
         }
     }
 

@@ -13,6 +13,7 @@ object main {
     import symbolTable._
     import wacc.symbolTable._
     import wacc.functionTable._
+    import wacc.edata._
     import parsley.io.ParseFromIO
     import java.io.{File,FileNotFoundException}
     import color._
@@ -36,7 +37,7 @@ object main {
                     println(s"${args.head} = $x")
                     val semanticAnalysis = analyse(x, symbolTable, functionTable, None)
                     if (!semanticAnalysis._2) {
-                        sys.exit(100)
+                        //sys.exit(100)
                     } else {
                         if (semanticAnalysis._1) {
                             println("")
@@ -46,13 +47,15 @@ object main {
                             println("")
                             println(semanticAnalysis)
                         } else {
+                            println(errors)
+                            errorGenerator(Semantic, Some(args.head), errors)
                             sys.exit(200)
                         }
                     }
                 }
                 case Failure(err) => {
                     println(err)
-                    //sys.exit(100)
+                    sys.exit(100)
                 }
             }
     }

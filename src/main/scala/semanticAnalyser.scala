@@ -29,7 +29,15 @@ object semanticAnalyser {
         It builds the symbol table and function tables throughout the recursive calls.
     */
 	def analyse(node: Node, st: SymbolTable, ft: FunctionTable, returnType: Option[TypeCheck]): (Boolean, Boolean) = {
+        /*
+            We pattern match over nodes in the AST
+        */
 		node match {
+            /*
+                For the begin node, we check all functions have distinct name and add them to 
+                the function table, then recursively call analyse on the functions and 
+                statements inside the two lists of begin (func and stat) 
+            */
 			case Begin(func, stat) =>
                 var addedFunctions = true
                 for (function <- func){
@@ -45,7 +53,13 @@ object semanticAnalyser {
 					case None => (statsChecked.reduce((x, y) => x && y), true)
 					case Some(value) => (addedFunctions && value._1 && statsChecked.reduce((x, y) => x && y), functionsChecked.last._2)
 				}
-            
+            /*
+                For the function node, we create a new symbol table whose parent becomes
+                the old symbol table, then recursively check its parameters and statements, 
+                passing the return type of the function to the statement analysis, 
+                and checking that the last statement analysed for the function returns
+                true as its second parameter if a return statement is present
+            */
 			case Function(t, id, vars, stats) => 
                 var nst = new SymbolTable(s"Function ${id.variable}", Option(st))
                 st.children = st.children :+ nst
@@ -60,16 +74,26 @@ object semanticAnalyser {
                     case None => (checkedStats.reduce((x, y) => (((x._1._1 && y._1._1), false), y._2))._1._1, checkedStats.last._1._2)
                     case Some(value) => (value && checkedStats.reduce((x, y) => (((x._1._1 && y._1._1), false), y._2))._1._1, checkedStats.last._1._2)
                 }
-				
+	        /*
+                We ensure parameters have unique names
+            */			
 			case Parameter(t, id) => 
                 val addedParam = st.add(id.variable, extractType(t))
                 if (!addedParam) {
                     errors = errors :+ ((s"Cannot duplicate parameter name: ${id.variable}", node.pos))
                 }
                 (addedParam, false)
-			
+            /*
+                Skip is automatically correct semantically
+            */			
 			case Skip() => (true, false)
-
+            /*
+                An AssignType node adds its identifier to the symbol table with
+                the given type, ensuring no identifier of the same name already 
+                exists within its symbol table, and calls analyseRHS on the right hand
+                side of the assignment, giving it the type of the identifier on
+                the left hand side
+            */
 			case AssignType(t, id, rhs) =>
                 val addedVariable = st.add(id.variable, extractType(t))
                 if (!addedVariable) {
@@ -77,14 +101,22 @@ object semanticAnalyser {
                 }
                 val checkedRHS = analyseRHS(rhs, st, ft, extractType(t))
                 (checkedRHS && addedVariable, false)
-
+             /*
+                An Assign node analyses the left hand side of the assignment,
+                returning the type of the left hand side if correct semantically
+                and calls analyseRHS on the right hand side of the assignment, giving 
+                it the type found on the right hand side
+            */  
 			case Assign(lhs, rhs) => 
                 val checkedLHS = analyseLHS(lhs, st)
                 checkedLHS._2 match {
                     case None => (false, false)
                     case Some(foundType) => ((checkedLHS._1 && analyseRHS(rhs, st, ft, foundType)), false)
                 }
-                
+             /*
+                For a Read node we analyse the inner "left hand side" expression
+                and ensure it is of the correct types
+            */            
 			case Read(lhs) =>
                 val checkedLHS = analyseLHS(lhs, st)
                 val correctType = checkedLHS._2 == Some(IntCheck(0)) || checkedLHS._2 == Some(CharCheck(0))
@@ -92,7 +124,10 @@ object semanticAnalyser {
                     errors = errors :+ ((s"Expression of type int or char expected in read statement, but expression of type ${typeCheckToString(checkedLHS._2.get)} found!", node.pos))
                 }
                 (checkedLHS._1 && correctType, false)
-
+            /*
+                For a Free node we analyse the inner expression
+                and ensure it is of the correct types
+            */
 			case Free(expr) => 
                 val checkedExpr = analyseExpr(expr, st)
                 checkedExpr._2 match {
@@ -108,7 +143,13 @@ object semanticAnalyser {
 						case EmptyPairCheck() => (true, false)
                     }
                 }
-
+            /*
+                For a Return node we analyse the inner expression
+                and ensure it is of the correct type based on the return type
+                of the function we recursed from. If no return type exists, 
+                a syntactic error is thrown as return statements are not allowed
+                outside functions
+            */
 			case Return(expr) => 
                 val checkedExpr = analyseExpr(expr, st)
                 returnType match {
@@ -136,7 +177,10 @@ object semanticAnalyser {
                         }
                         (false, false)
 				}
-				
+            /*
+                For an Exit node we analyse the inner expression
+                and ensure it is of the correct types
+            */				
 			case Exit(expr) => 
                 val checkedExpr = analyseExpr(expr, st)
                 val correctType = checkedExpr._2 == Some(IntCheck(0))
@@ -144,15 +188,24 @@ object semanticAnalyser {
                     errors = errors :+ ((s"Expression of type int expected in exit call, but expression of type ${typeCheckToString(checkedExpr._2.get)} found!" , node.pos))
                 }
                 (checkedExpr._1 && correctType, true)
-
+            /*
+                For an Print node we analyse the inner expression
+            */
 			case Print(expr) => 
                 val checkedExpr = analyseExpr(expr, st)
                 (checkedExpr._1, false)
 
+            /*
+                For an Println node we analyse the inner expression
+            */
 			case Println(expr) => 
                 val checkedExpr = analyseExpr(expr, st)
                 (checkedExpr._1, false)
-
+            /*
+                For an If node we analyse the condition, ensuring
+                it is a bool, then recursively analyse the statements in the true 
+                and false branches, ensuring they are sematically valid
+            */
 			case If(cond, trueStat, falseStat) =>
 				var trueNst = new SymbolTable("True branch of if statement", Option(st))
                 st.children = st.children :+ trueNst
@@ -172,7 +225,11 @@ object semanticAnalyser {
                  trueStatCheck.reduce((x, y) => ((x._1 && y._1), false))._1 && 
                  falseStatCheck.reduce((x, y) => ((x._1 && y._1), false))._1, 
                  trueStatCheck.last._2 && falseStatCheck.last._2)
-
+            /*
+                For a While node we analyse the condition, ensuring
+                it is a bool, then recursively analyse the statements
+                in its body, ensuring they are sematically valid
+            */
 			case While(cond, stat) => 
                 var nst = new SymbolTable("Statements inside while loop", Option(st))
                 st.children = st.children :+ nst
@@ -184,7 +241,11 @@ object semanticAnalyser {
                 val correctStats = stat.map(x => analyse(x, nst, ft, returnType)._1).reduce((x, y) => x && y)
 				(conditionCheck._1 && correctType && 
                  correctStats, false)
-
+            
+            /*
+                For a NestedBegin node we recursively analyse the statements
+                in its body, ensuring they are sematically valid
+            */
 			case NestedBegin(stat) => 
                 var nst = new SymbolTable("Statements inside nested begin", Option(st))
                 st.children = st.children :+ nst
@@ -202,6 +263,10 @@ object semanticAnalyser {
         hand sign is valid semantically and has the same type as the left hand side.
     */
     def analyseRHS(assignRHS: AssignRHS, st: SymbolTable, ft: FunctionTable, lhsType: TypeCheck): Boolean = {
+         /*
+            For a expressions, we call analyseExpr, and check the type of 
+            that expr is the same as the given left hand side type.
+        */       
         assignRHS match {
             case expr: Expr => 
                 val checkedExpr = analyseExpr(expr, st)
@@ -215,11 +280,16 @@ object semanticAnalyser {
                     case _ => 
                         val correctType = checkedExpr._2 == Some(lhsType)
                         if (!correctType && checkedExpr._2 != None) {
-                            errors = errors :+ ((s"Expression of type ${lhsType} expected in right hand side of assignment, but expression of type ${typeCheckToString(checkedExpr._2.get)} found!", assignRHS.pos))
+                            errors = errors :+ ((s"Expression of type ${typeCheckToString(lhsType)} expected in right hand side of assignment, but expression of type ${typeCheckToString(checkedExpr._2.get)} found!", assignRHS.pos))
                         }
                         (checkedExpr._1 && correctType)                      
                 }
-
+            /*
+                For a array liter, we call analyseExpr on the elements within
+                the array liter, ensuring they are of the same type as the expected 
+                elements within the left hand side type. This also ensures the left
+                hand side type is an array
+            */
             case ArrayLiter(elements) => 
                 lhsType match {
                     case baseTypeCheck: BaseTypeCheck =>
@@ -254,7 +324,11 @@ object semanticAnalyser {
 
 					case _ => false
 				} 
-                
+             /*
+                For a NewPair node, the inner expresssions are analysed, and
+                checked that they are the same as the 
+                left hand side type's inner expressions
+            */               
             case NewPair(expr1, expr2) => 
                 val checkedExpr1 = analyseExpr(expr1, st)
 				val checkedExpr2 = analyseExpr(expr2, st)
@@ -287,7 +361,11 @@ object semanticAnalyser {
                 } else {
                     false
                 }
- 
+            /*
+                For a Fst node, the inner expresssion is analysed, and
+                checked that the type of its first element is that of the 
+                left hand side
+            */ 
             case Fst(expr) => 
                 val checkedExpr = analyseExpr(expr, st)
 				checkedExpr._2 match {
@@ -312,7 +390,11 @@ object semanticAnalyser {
                     }
 
 				}
-
+            /*
+                For a Snd node, the inner expresssion is analysed, and
+                checked that the type of its second element is that of the 
+                left hand side
+            */
             case Snd(expr) => 
                 val checkedExpr = analyseExpr(expr, st)
 				checkedExpr._2 match {
@@ -336,7 +418,14 @@ object semanticAnalyser {
                             false
                     } 
 				}
-
+            /*
+                For a Call node, the identifier is found in the function
+                table, returning a semantic error if not.
+                If it is found, the return type of that function is checked 
+                to be equal to the left hand side type, and the given arguments
+                are checked to be the same number, and types as the ones found
+                for that function in its function table
+            */
             case Call(id, args) => 
                 val checkedArgs = args.map(x => analyseExpr(x, st))
 				ft.funcMap.get(id.variable) match {
@@ -412,6 +501,10 @@ object semanticAnalyser {
     */
     def analyseLHS(assignLHS: AssignLHS, st: SymbolTable): (Boolean, Option[TypeCheck]) = {
         assignLHS match {
+            /*
+                For a Fst node, the inner expresssion is analysed, and
+                its type is returned if present
+            */
             case Fst(expr) =>
                 var checkedExpr = analyseExpr(expr, st)
 				checkedExpr._2 match {
@@ -421,7 +514,10 @@ object semanticAnalyser {
                     }
                     case None => (false, None)
                 }
-            
+             /*
+                For a Snd node, the inner expresssion is analysed, and
+                its type is returned if present
+            */           
             case Snd(expr) =>
                 var checkedExpr = analyseExpr(expr, st)
 				checkedExpr._2 match {
@@ -431,9 +527,13 @@ object semanticAnalyser {
                     }
                     case None => (false, None)
                 }
-            
+             /*
+                For an arrayElem node, the we call analyseExpr on the arrayelem
+            */           
             case arrayElem: ArrayElem => analyseExpr(arrayElem, st)
-
+            /*
+                For an ident node, the we call ident on the arrayelem
+            */
             case ident: Ident => analyseExpr(ident, st)
         }
     }
@@ -446,16 +546,20 @@ object semanticAnalyser {
     */
     def analyseExpr(expr: Expr, st: SymbolTable): (Boolean, Option[TypeCheck]) = {
         expr match {
+            // Returning true and the int type
             case IntLiter(_) => (true, Some(IntCheck(0)))
-
+            // Returning true and the bool type
             case BoolLiter(_) => (true, Some(BoolCheck(0)))
-
+            // Returning true and the char type
             case CharLiter(_) => (true, Some(CharCheck(0)))
-
+            // Returning true and the str type
             case StrLiter(_) => (true, Some(StrCheck(0)))
-
+            // Returning true and the empty pair type
             case PairLiter() => (true, Some(EmptyPairCheck()))
-
+            /*
+                We check whether the given variable is declared by finding
+                it in the current symbol table, and return its found type
+            */
             case Ident(variable) => 
                 val foundVariableType = st.find(variable)
                 val isFound = foundVariableType != None
@@ -463,7 +567,14 @@ object semanticAnalyser {
                     errors = errors :+ (variable + " " + undeclared, expr.pos)
                 }
                 (isFound, foundVariableType)
-                    
+                     
+            /*
+                We check whether the given array is declared by finding
+                it in the current symbol table. We then ensure that all expressions
+                are integers, and only ints can index an array, and that the number 
+                of indeces is less or equal to the dimension of the array ,
+                returning the type of the element found at those indeces
+            */                   
             case ArrayElem(id, exprs) =>
                 val foundType = st.find(id.variable)
 				foundType match {
@@ -494,7 +605,10 @@ object semanticAnalyser {
 							case _ => (false, None)
 						}					
 				}    
-            
+             /*
+                For a Not node, we analyse the inner expression and ensure it is
+                a bool, and return a bool
+            */           
             case Not(innerExpr) => 
 				val checkedInnerExpr = analyseExpr(innerExpr, st)
                 val correctType = checkedInnerExpr._2 == Some(BoolCheck(0))
@@ -502,7 +616,10 @@ object semanticAnalyser {
                     errors = errors :+ ((s"Expression of type bool expected, but expression of type ${typeCheckToString(checkedInnerExpr._2.get)} found!" , expr.pos))
                 }
 				(checkedInnerExpr._1 && correctType, Some(BoolCheck(0)))
-
+            /*
+                For a Neg node, we analyse the inner expression and ensure it is
+                an int, and return an int
+            */
 			case Neg(innerExpr) => 
 				val checkedInnerExpr = analyseExpr(innerExpr, st)
                 val correctType = checkedInnerExpr._2 == Some(IntCheck(0))
@@ -510,7 +627,10 @@ object semanticAnalyser {
                     errors = errors :+ ((s"Expression of type int expected, but expression of type ${typeCheckToString(checkedInnerExpr._2.get)} found!" , expr.pos))
                 }
 				(checkedInnerExpr._1 && correctType, Some(IntCheck(0)))
-
+            /*
+                For a Len node, we analyse the inner expression and ensure it is
+                an array, and return an int
+            */
 			case Len(innerExpr) => 
 				val checkedInnerExpr = analyseExpr(innerExpr, st)
 				checkedInnerExpr._2 match {
@@ -531,7 +651,11 @@ object semanticAnalyser {
                         case EmptyPairCheck() => (false, None)
                     }
                 }
-
+            
+            /*
+                For a Ord node, we analyse the inner expression and ensure it is
+                a char, and return an int
+            */
 			case Ord(innerExpr) => 
 				val checkedInnerExpr = analyseExpr(innerExpr, st)
                 val correctType = checkedInnerExpr._2 == Some(CharCheck(0))
@@ -539,7 +663,10 @@ object semanticAnalyser {
                     errors = errors :+ ((s"Expression of type char expected, but expression of type ${typeCheckToString(checkedInnerExpr._2.get)} found!" , expr.pos))
                 }
 				(checkedInnerExpr._1 && correctType, Some(IntCheck(0)))
-
+            /*
+                For a Chr node, we analyse the inner expression and ensure it is
+                an int, and return an char
+            */
 			case Chr(innerExpr) => 
 				val checkedInnerExpr = analyseExpr(innerExpr, st)
                 val correctType = checkedInnerExpr._2 == Some(IntCheck(0))
@@ -547,7 +674,10 @@ object semanticAnalyser {
                     errors = errors :+ ((s"Expression of type int expected, but expression of type ${typeCheckToString(checkedInnerExpr._2.get)} found!" , expr.pos))
                 }
 				(checkedInnerExpr._1 && correctType, Some(CharCheck(0)))
-            
+            /*
+                For a binary operation on ints, we analyse the inner expressions and ensure they are
+                ints, and return an int
+            */          
             case binOpInt: BinOpInt => 
                 val checkedExpr1 = analyseExpr(binOpInt.expr1, st)
 				val checkedExpr2 = analyseExpr(binOpInt.expr2, st)
@@ -560,7 +690,10 @@ object semanticAnalyser {
                     errors = errors :+ ((s"Expression of type int expected in ${expr}, but expression of type ${typeCheckToString(checkedExpr2._2.get)} found!" , expr.pos))
                 }
 				(checkedExpr1._1 && checkedExpr2._1 && correctType1 && correctType2, Some(IntCheck(0)))
-            
+            /*
+                For a comaprison operations, we analyse the inner expressions and ensure they are
+                ints or chars, that they are all of the same type, and return an bool
+            */       
             case binOpComp: BinOpComp => 
                 val checkedExpr1 = analyseExpr(binOpComp.expr1, st)
 				val checkedExpr2 = analyseExpr(binOpComp.expr2, st)
@@ -577,7 +710,10 @@ object semanticAnalyser {
                     errors = errors :+ ((s"Expressions in ${expr} have missmatched types: ${typeCheckToString(checkedExpr1._2.get)} and ${typeCheckToString(checkedExpr2._2.get)}!", expr.pos))
                 }
 				(checkedExpr1._1 && checkedExpr2._1 && (checkedExpr1._2 == checkedExpr2._2) && ((checkedExpr1._2 == Some(IntCheck(0))) || (checkedExpr1._2 == Some(CharCheck(0)))), Some(BoolCheck(0)))
-            
+             /*
+                For a comaprison operations, we analyse the inner expressions and ensure 
+                that they are all of the same type, and return an bool
+            */           
             case binOpEqs: BinOpEqs => 
                 var checkedExpr1 = analyseExpr(binOpEqs.expr1, st)
 				var checkedExpr2 = analyseExpr(binOpEqs.expr2, st)
@@ -608,7 +744,10 @@ object semanticAnalyser {
                             matchingType
                     }), Some(BoolCheck(0)))
                 }
-            
+            /*
+                For a binary operation on bools, we analyse the inner expressions and ensure they are
+                bools, and return an bool
+            */               
             case binOpBool: BinOpBool => 
                 var checkedExpr1 = analyseExpr(binOpBool.expr1, st)
 				var checkedExpr2 = analyseExpr(binOpBool.expr2, st)

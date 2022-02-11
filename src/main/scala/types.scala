@@ -41,7 +41,7 @@ object types {
 		var typeString = ""
 		typeCheck match {
 			case baseType: BaseTypeCheck => 
-				typeCheck match {
+				baseType match {
 					case IntCheck(nested) => 
 						typeString = "int"
 					case BoolCheck(nested) =>
@@ -51,12 +51,12 @@ object types {
 					case StrCheck(nested) =>
 						typeString = "string"
 				}
-				for(i <- 0 to baseType.nested) {
+				for(i <- 0 to baseType.nested - 1) {
 					typeString += "[]"
 				}
 			case PairCheck(type1, type2, nested) => 
 				typeString = s"pair(${typeCheckToString(type1)}, ${typeCheckToString(type2)})"
-				for(i <- 0 to nested) {
+				for(i <- 0 to nested - 1) {
 					typeString += "[]"
 				}
 			case EmptyPairCheck() => typeString = "pair"

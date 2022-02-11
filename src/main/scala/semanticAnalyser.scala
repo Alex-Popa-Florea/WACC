@@ -88,7 +88,7 @@ object semanticAnalyser {
 			case Read(lhs) =>
                 val checkedLHS = analyseLHS(lhs, st)
                 val correctType = checkedLHS._2 == Some(IntCheck(0)) || checkedLHS._2 == Some(CharCheck(0))
-                if (correctType) {
+                if (!correctType) {
                     errors = errors :+ ((s"Expression of type int or char expected in read statement, but expression of type ${typeCheckToString(checkedLHS._2.get)} found!", node.pos))
                 }
                 (checkedLHS._1 && correctType, false)

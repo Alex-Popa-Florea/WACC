@@ -1,6 +1,7 @@
 package wacc
 object edata {
     import color._
+    import java.io.File
 
     sealed trait ErrorType
     case object Syntax extends ErrorType
@@ -15,9 +16,19 @@ object edata {
         |${makeRed(s"[${err} ERROR]")}
         |${reasons}""".stripMargin
 
-    def errorGenerator(t: ErrorType, source: Option[String], errs: List[(String, (Int, Int))]): Unit = {
+    def errorGenerator(t: ErrorType, source: Option[String],file: File, errs: List[(String, (Int, Int))]): Unit = {
+        val program = scala.io.Source.fromFile(file).getLines().toList
+        def errorPointer(caretAt: Int) = s"${" " * caretAt}^"
+        val errorLineStart = ">"
         for(e <- errs) {
-            println(eformat(t,source, s"At line: ${e._2._1}, Column: ${e._2._2}", e._1))
+            var line = e._2._1
+            var col  = e._2._2
+            var reason = s"""
+                            |${e._1}
+                            |$errorLineStart${program(line-1)}
+                            |${" " * errorLineStart.length}${errorPointer(col)}""".stripMargin
+
+            println(eformat(t,source, s"At line: $line, Column: $col", reason))
         }
     }
 

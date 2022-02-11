@@ -16,7 +16,18 @@ object semanticAnalyser {
     val argsIncorrect = "Wrong number of arguments"
     val ranks = "Incorrect number of ranks in array access: "
 
+    /*
+        Function that takes in a node, symbol table, function table and an optional return type (used
+        for checked that return statements within functions return the correct type) as
+        parameters, and returns a pair of booleans. The first boolean represents whether the AST is correct
+        semantically, while the second boolean represents whether all functions in the AST have a return or exit
+        statement, and that main does not have return statements.
 
+        This function is first called on a Begin node of the AST, and then called recursivelly on other
+        inner function and statement nodes within the AST.
+
+        It builds the symbol table and function tables throughout the recursive calls.
+    */
 	def analyse(node: Node, st: SymbolTable, ft: FunctionTable, returnType: Option[TypeCheck]): (Boolean, Boolean) = {
 		node match {
 			case Begin(func, stat) =>
@@ -38,9 +49,17 @@ object semanticAnalyser {
 			case Function(t, id, vars, stats) => 
                 var nst = new SymbolTable(s"Function ${id.variable}", Option(st))
                 st.children = st.children :+ nst
-				val checkedParams = vars.map(x => analyse(x, nst, ft, None)._1).reduce((x, y) => x && y)
-				val checkedStats = stats.map(x => analyse(x, nst, ft, Some(extractType(t))))
-				(checkedParams && checkedStats.reduce((x, y) => ((x._1 && y._1), false))._1, checkedStats.last._2)
+				val checkedParams = vars.map(x => analyse(x, nst, ft, None)._1).reduceOption((x, y) => x && y)
+				val checkedStats = stats.map(x => (analyse(x, nst, ft, Some(extractType(t))), x.pos))
+                if (!checkedStats.last._1._2) {
+                    if (returnTypeError == None) {
+                        returnTypeError = Some(s"Function missing return statement", checkedStats.last._2)
+                    }
+                }
+                checkedParams match {
+                    case None => (checkedStats.reduce((x, y) => (((x._1._1 && y._1._1), false), y._2))._1._1, checkedStats.last._1._2)
+                    case Some(value) => (value && checkedStats.reduce((x, y) => (((x._1._1 && y._1._1), false), y._2))._1._1, checkedStats.last._1._2)
+                }
 				
 			case Parameter(t, id) => 
                 val addedParam = st.add(id.variable, extractType(t))
@@ -112,7 +131,9 @@ object semanticAnalyser {
                                 (checkedExpr._1 && correctType, true)
 						}
 					case None => 
-                        errors = errors :+ (s"Cannot have return statement in main", node.pos)
+                        if (returnTypeError == None) {
+                            returnTypeError = Some(s"Cannot have return statement in main", node.pos)
+                        }
                         (false, false)
 				}
 				
@@ -140,6 +161,9 @@ object semanticAnalyser {
 				val conditionCheck = analyseExpr(cond, st)
 				val trueStatCheck = trueStat.map(x => analyse(x, trueNst, ft, returnType))
 				val falseStatCheck = falseStat.map(x => analyse(x, falseNst, ft, returnType))
+                println("hi")
+                println(trueStatCheck)
+                println(falseStatCheck)
                 val correctType = conditionCheck._2 == Some(BoolCheck(0))
                 if (!correctType) {
                     errors = errors :+ ((s"Expression of type bool expected in if statement condition, but expression of type ${typeCheckToString(conditionCheck._2.get)} found!", node.pos))
@@ -171,6 +195,12 @@ object semanticAnalyser {
 		}
 	}
 
+    /*
+        Function called within analyse, to analyse the right hand side of assignment
+        statements. It takes in the AssignRHS node, the symboltable, the function table
+        and the type of the left hand side of the assignment, and returns a boolean if the right
+        hand sign is valid semantically and has the same type as the left hand side.
+    */
     def analyseRHS(assignRHS: AssignRHS, st: SymbolTable, ft: FunctionTable, lhsType: TypeCheck): Boolean = {
         assignRHS match {
             case expr: Expr => 
@@ -312,7 +342,12 @@ object semanticAnalyser {
                                         if (checkedNumArgs && !checkArgs) {
                                             errors = errors :+ ((s"Expected argument types: ${foundFuncType._2.map(x=> typeCheckToString(x))}, but found: ${checkedArgs.map(x => typeCheckToString(x._2.get))}in call to function ${id.variable}!", assignRHS.pos))
                                         }
-                                        checkedArgs.map(x => x._1).reduce((x, y) => x && y) && ft.check(id.variable, checkedArgs.map(x => x._2.get))
+                                        val checkedArgsResult = checkedArgs.map(x => x._1).reduceOption((x, y) => x && y)
+                                        checkedArgsResult match {
+                                            case Some(value) => value && ft.check(id.variable, checkedArgs.map(x => x._2.get))	
+                                            case None => ft.check(id.variable, checkedArgs.map(x => x._2.get))
+                                        }
+                                        
 									case _ =>
                                         val correctType = foundFuncType._1 == lhsType
                                         if (!correctType) {
@@ -327,7 +362,11 @@ object semanticAnalyser {
                                             errors = errors :+ ((s"Expected argument types: ${foundFuncType._2.map(x=> typeCheckToString(x))}, but found: ${checkedArgs.map(x => typeCheckToString(x._2.get))}in call to function ${id.variable}!", assignRHS.pos)) //ja ja ja
                                             
                                         }
-                                        correctType && checkedArgs.map(x => x._1).reduce((x, y) => x && y) && ft.check(id.variable, checkedArgs.map(x => x._2.get))
+                                        val checkedArgsResult = checkedArgs.map(x => x._1).reduceOption((x, y) => x && y)
+                                        checkedArgsResult match {
+                                            case Some(value) => correctType && value && ft.check(id.variable, checkedArgs.map(x => x._2.get))	
+                                            case None => correctType && ft.check(id.variable, checkedArgs.map(x => x._2.get))
+                                        }
 							}
                         } else {
                             val correctType = foundFuncType._1 == lhsType
@@ -342,7 +381,11 @@ object semanticAnalyser {
                             if (checkedNumArgs && !checkArgs) {
                                 errors = errors :+ ((s"Expected argument types: ${foundFuncType._2.map(x=> typeCheckToString(x))}, but found: ${checkedArgs.map(x => typeCheckToString(x._2.get))}in call to function ${id.variable}!", assignRHS.pos)) //ja ja ja
                             }
-                            correctType && checkedArgs.map(x => x._1).reduce((x, y) => x && y) && checkArgs	
+                            val checkedArgsResult = checkedArgs.map(x => x._1).reduceOption((x, y) => x && y)
+                            checkedArgsResult match {
+                                case Some(value) => correctType && value && checkArgs	
+                                case None => correctType && checkArgs
+                            }
                         }
 					case None => 
                         errors = errors :+ ((s"Function ${id.variable} not declared!", assignRHS.pos))
@@ -351,6 +394,12 @@ object semanticAnalyser {
         }
     }
 
+    /*
+        Function called within analyse, to analyse the left hand side of assignment
+        statements. It takes in the AssignLHS node and the symboltable and returns a boolean
+        describing whther the node is valid semantically, as well as an optional type
+        to then pass to the analyseRHS function to check for matching types.
+    */
     def analyseLHS(assignLHS: AssignLHS, st: SymbolTable): (Boolean, Option[TypeCheck]) = {
         assignLHS match {
             case Fst(expr) =>
@@ -379,6 +428,12 @@ object semanticAnalyser {
         }
     }
 
+    /*
+        Function called within other analyse functions, as well as recursively, to analyse
+        and expression node. It takes in the node and a symbol table, and returns a boolean
+        describing whther the node is valid semantically, as well as an optional type
+        to then pass to the analyseRHS function to check for matching types.
+    */
     def analyseExpr(expr: Expr, st: SymbolTable): (Boolean, Option[TypeCheck]) = {
         expr match {
             case IntLiter(_) => (true, Some(IntCheck(0)))

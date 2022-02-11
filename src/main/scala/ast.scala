@@ -6,10 +6,26 @@ import parsley.implicits.zipped.{Zipped2, Zipped3, Zipped4}
 import parsley.lift.lift1
 
 object ast {
+
+    /* All AST nodes have a position, a integer tuple that keeps track of the position
+       in the file being parsed, to allow accurate error messages */
     trait Node {
         val pos: (Int, Int)
     }
 
+    /* There's an AST node for every token in the program (e.g. operators, variables, keywords, literals)
+    
+       AST nodes are defined in a hierarchy from the whole program to individual
+       types and literals. The nodes at the top are defined in terms of the nodes
+       lower in the hierarchy of the AST. 
+       
+       The nodes store the relevent information needed to perform semantic analysis
+       and build a symbol table.
+
+       The sealed traits group the categories of nodes and allow for easier pattern
+       matching in the semantic analyser.*/
+
+    
     sealed trait Program extends Node
 
     case class Begin(func: List[Function], stat: List[Statement])(val pos: (Int, Int)) extends Program 
@@ -103,9 +119,10 @@ object ast {
 
     case class Negative()(val pos: (Int, Int)) extends Node
 
-    // Builders:
 
-    // Generic builders:
+    /* Generic parser builder traits
+       Used to define builders for each type of AST node
+       There are different builders for AST nodes with 0 to 4 arguments */
 
     trait ParserBuilder[T] {
         val parser: Parsley[T]
@@ -132,16 +149,19 @@ object ast {
         val parser = pos.map(p => apply(_, _, _,_)(p))
     }
 
-    // Specific Builders:
+    /* Specific Builders for each AST nodes
+       These are called in the parser
+       They each have an apply method which takes the information from the parser
+       and uses it to construct and AST node */
 
-    // Program builder:
+    /* Program node builder */
         
     object Begin {
         def apply(func: => Parsley[List[Function]], stat: => Parsley[List[Statement]]): Parsley[Begin] = 
             pos <**> (func, stat).zipped(Begin(_, _) _)
     }
 
-    // Function builders:
+    /* Function node builders */
             
     object Function {
         def apply(pair: => Parsley[(Type,Ident)], vars: => Parsley[List[Parameter]], st: Parsley[List[Statement]]): Parsley[Function] = {
@@ -154,7 +174,7 @@ object ast {
             pos <**> (t, id).zipped(Parameter(_,_) _)
     }
 
-    // Call:
+    /* Call node builder */
 
     object Call {
         def apply(id: => Parsley[Ident], args: => Parsley[List[Expr]]): Parsley[Call] =
@@ -162,7 +182,7 @@ object ast {
     }
 
 
-    // Statements:
+    /* Statement node builders */
     
     object Skip extends ParserBuilderPos0[Skip]
 
@@ -222,7 +242,7 @@ object ast {
     }
 
     
-    // Types:
+    /* Type node builders */
 
     object IntType extends ParserBuilderPos0[IntType]
     object StrType extends ParserBuilderPos0[StrType]
@@ -239,7 +259,7 @@ object ast {
             pos <**> (elemtype1, elemtype2).zipped(PairType(_, _) _)
     }
 
-    // Expressions:
+    /* Operator node builders */
 
     object Not extends ParserBuilderPos1[Expr,Not]
     object Neg extends ParserBuilderPos1[Expr,Neg]
@@ -260,14 +280,14 @@ object ast {
     object And extends ParserBuilderPos2[Expr,Expr,And]
     object Or extends ParserBuilderPos2[Expr,Expr,Or]
 
-    // ArrayElem:
+    /* ArrayElem node builder */
 
     object ArrayElem {
         def apply(id: => Parsley[Ident], exprs: Parsley[List[Expr]]): Parsley[ArrayElem] =
             pos <**> (id, exprs).zipped(ArrayElem(_, _) _)
     }
 
-    // Pair:
+    /* Pair node builders */
 
     object Pair extends ParserBuilderPos0[Pair]
 
@@ -286,15 +306,19 @@ object ast {
     }
 
 
-    // Identifier:
+    /* Identifier node builder */
     
     object Ident {
         def apply(variable: =>Parsley[String]): Parsley[Ident] = 
             pos <**> variable.map(Ident(_) _)
     }
 
-    // Liters:
+    /* Literal node builders */
     
+    /*We check for integer overflow in the IntLiter node builder
+      If the big integer is in the integer range (--2147483648 to 2147483647), its 
+      converted to an integer, and the IntLiter node is constructed 
+      In case of an overflow, the fail parser is used to produce an error and message */
     object IntLiter {
          def apply(x: => Parsley[BigInt]): Parsley[IntLiter] = {
 

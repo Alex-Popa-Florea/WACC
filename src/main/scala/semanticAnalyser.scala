@@ -1,8 +1,8 @@
 package wacc
 
 import parsley.Parsley, Parsley._
-import ast._
-import parser._
+import wacc.ast._
+import wacc.parser._
 import wacc.types._
 import wacc.symbolTable._
 import wacc.functionTable._
@@ -88,7 +88,7 @@ object semanticAnalyser {
 			case Read(lhs) =>
                 val checkedLHS = analyseLHS(lhs, st)
                 val correctType = checkedLHS._2 == Some(IntCheck(0)) || checkedLHS._2 == Some(CharCheck(0))
-                if (!correctType) {
+                if (!correctType && checkedLHS._2 != None) {
                     errors = errors :+ ((s"Expression of type int or char expected in read statement, but expression of type ${typeCheckToString(checkedLHS._2.get)} found!", node.pos))
                 }
                 (checkedLHS._1 && correctType, false)
@@ -100,7 +100,7 @@ object semanticAnalyser {
                     case Some(foundType) => foundType match {
                         case baseTypeCheck: BaseTypeCheck => 
                             val correctType = baseTypeCheck.nested > 0
-                            if (!correctType) {
+                            if (!correctType && checkedExpr._2 != None) {
                                 errors = errors :+ ((s"Array or Pair expected in free statement, but expression of type ${typeCheckToString(checkedExpr._2.get)} found!", node.pos))
                             }
                             (correctType, false)
@@ -119,13 +119,13 @@ object semanticAnalyser {
                                 (false, true)
                             case PairCheck(_, _, _) =>
                                 val correctType = checkedExpr._2 == returnType || checkedExpr._2 == Some(EmptyPairCheck())
-                                if (!correctType) {
+                                if (!correctType && checkedExpr._2 != None) {
                                     errors = errors :+ ((s"Expression does not match return type of function, expected ${typeCheckToString(foundReturnType)} but expression of type ${typeCheckToString(checkedExpr._2.get)} found!", node.pos))
                                 }
 								(checkedExpr._1 && correctType, true)
                             case _ => 
                                 val correctType = checkedExpr._2 == returnType
-                                if (!correctType) {
+                                if (!correctType && checkedExpr._2 != None) {
                                     errors = errors :+ ((s"Expression does not match return type of function, expected ${typeCheckToString(foundReturnType)} but expression of type ${typeCheckToString(checkedExpr._2.get)} found!", node.pos))
                                 }
                                 (checkedExpr._1 && correctType, true)
@@ -140,7 +140,7 @@ object semanticAnalyser {
 			case Exit(expr) => 
                 val checkedExpr = analyseExpr(expr, st)
                 val correctType = checkedExpr._2 == Some(IntCheck(0))
-                if (!correctType) {
+                if (!correctType && checkedExpr._2 != None) {
                     errors = errors :+ ((s"Expression of type int expected in exit call, but expression of type ${typeCheckToString(checkedExpr._2.get)} found!" , node.pos))
                 }
                 (checkedExpr._1 && correctType, true)
@@ -165,7 +165,7 @@ object semanticAnalyser {
                 println(trueStatCheck)
                 println(falseStatCheck)
                 val correctType = conditionCheck._2 == Some(BoolCheck(0))
-                if (!correctType) {
+                if (!correctType && conditionCheck._2 != None) {
                     errors = errors :+ ((s"Expression of type bool expected in if statement condition, but expression of type ${typeCheckToString(conditionCheck._2.get)} found!", node.pos))
                 }
 			 	(conditionCheck._1 && correctType && 
@@ -208,13 +208,13 @@ object semanticAnalyser {
                 lhsType match {
                     case PairCheck(type1, type2, nested) => 
                         val correctType =  checkedExpr._2 == Some(lhsType) || checkedExpr._2 == Some(EmptyPairCheck())
-                        if (!correctType) {
+                        if (!correctType && checkedExpr._2 != None) {
                             errors = errors :+ ((s"Expression of type pair expected in right hand side of assignment, but expression of type ${typeCheckToString(checkedExpr._2.get)} found!", assignRHS.pos))
                         }
                         (checkedExpr._1 && correctType)
                     case _ => 
                         val correctType = checkedExpr._2 == Some(lhsType)
-                        if (!correctType) {
+                        if (!correctType && checkedExpr._2 != None) {
                             errors = errors :+ ((s"Expression of type ${lhsType} expected in right hand side of assignment, but expression of type ${typeCheckToString(checkedExpr._2.get)} found!", assignRHS.pos))
                         }
                         (checkedExpr._1 && correctType)                      
@@ -228,20 +228,30 @@ object semanticAnalyser {
                             case BoolCheck(nested) => Some(BoolCheck(nested - 1))
                             case CharCheck(nested) => Some(CharCheck(nested - 1))
                             case StrCheck(nested) => Some(StrCheck(nested - 1))
-                        })).reduce((x, y) => x && y)
-                        if (!correctType) {
-                            errors = errors :+ ((s"Elements in array must all be of type ${typeCheckToString(baseTypeCheck)}!", assignRHS.pos))
+                        })).reduceOption((x, y) => x && y)
+                        correctType match {
+                            case None => true
+                            case Some(value) => 
+                                if (!value ) {
+                                    errors = errors :+ ((s"Elements in array must all be of type ${typeCheckToString(baseTypeCheck)}!", assignRHS.pos))
+                                }
+                                value
                         }
-                        correctType
+                        
 					case PairCheck(type1, type2, nested) => 
 						val correctType = elements.map(x => {
 							val checkedExpr = analyseExpr(x, st)
 							checkedExpr == (true, Some(PairCheck(type1, type2, nested - 1))) || checkedExpr == (true, Some(EmptyPairCheck()))
-						}).reduce((x, y) => x && y)
-                        if (!correctType) {
-                            errors = errors :+ ((s"Elements in array must all be of type ${typeCheckToString(PairCheck(type1, type2, nested - 1))}!", assignRHS.pos))
+						}).reduceOption((x, y) => x && y)
+                        correctType match {
+                            case None => true
+                            case Some(value) => 
+                                if (!value) {
+                                    errors = errors :+ ((s"Elements in array must all be of type ${typeCheckToString(PairCheck(type1, type2, nested - 1))}!", assignRHS.pos))
+                                }
+                                value      
                         }
-                        correctType
+
 					case _ => false
 				} 
                 
@@ -488,7 +498,7 @@ object semanticAnalyser {
             case Not(innerExpr) => 
 				val checkedInnerExpr = analyseExpr(innerExpr, st)
                 val correctType = checkedInnerExpr._2 == Some(BoolCheck(0))
-                if (!correctType) {
+                if (!correctType && checkedInnerExpr._2 != None) {
                     errors = errors :+ ((s"Expression of type bool expected, but expression of type ${typeCheckToString(checkedInnerExpr._2.get)} found!" , expr.pos))
                 }
 				(checkedInnerExpr._1 && correctType, Some(BoolCheck(0)))
@@ -496,7 +506,7 @@ object semanticAnalyser {
 			case Neg(innerExpr) => 
 				val checkedInnerExpr = analyseExpr(innerExpr, st)
                 val correctType = checkedInnerExpr._2 == Some(IntCheck(0))
-                if (!correctType) {
+                if (!correctType && checkedInnerExpr._2 != None) {
                     errors = errors :+ ((s"Expression of type int expected, but expression of type ${typeCheckToString(checkedInnerExpr._2.get)} found!" , expr.pos))
                 }
 				(checkedInnerExpr._1 && correctType, Some(IntCheck(0)))
@@ -508,13 +518,13 @@ object semanticAnalyser {
                     case Some(extractedCheckedInnerExpr) => extractedCheckedInnerExpr match {
                         case baseTypeCheck: BaseTypeCheck =>
                             val correctNesting = baseTypeCheck.nested > 0
-                            if (!correctNesting) {
+                            if (!correctNesting && checkedInnerExpr._2 != None) {
                                 errors = errors :+ ((s"Array  expected, but expression of type ${typeCheckToString(checkedInnerExpr._2.get)} found!" , expr.pos))
                             } 
                             (checkedInnerExpr._1 && correctNesting, Some(IntCheck(0)))
                         case PairCheck(type1, type2, nested) => 
                             val correctNesting = nested > 0
-                            if (!correctNesting) {
+                            if (!correctNesting && checkedInnerExpr._2 != None) {
                                 errors = errors :+ ((s"Array expected, but expression of type ${typeCheckToString(checkedInnerExpr._2.get)} found!" , expr.pos))
                             }
                             (checkedInnerExpr._1 && correctNesting, Some(IntCheck(0)))
@@ -525,7 +535,7 @@ object semanticAnalyser {
 			case Ord(innerExpr) => 
 				val checkedInnerExpr = analyseExpr(innerExpr, st)
                 val correctType = checkedInnerExpr._2 == Some(CharCheck(0))
-                if (!correctType) {
+                if (!correctType && checkedInnerExpr._2 != None) {
                     errors = errors :+ ((s"Expression of type char expected, but expression of type ${typeCheckToString(checkedInnerExpr._2.get)} found!" , expr.pos))
                 }
 				(checkedInnerExpr._1 && correctType, Some(IntCheck(0)))
@@ -533,7 +543,7 @@ object semanticAnalyser {
 			case Chr(innerExpr) => 
 				val checkedInnerExpr = analyseExpr(innerExpr, st)
                 val correctType = checkedInnerExpr._2 == Some(IntCheck(0))
-                if (!correctType) {
+                if (!correctType && checkedInnerExpr._2 != None) {
                     errors = errors :+ ((s"Expression of type int expected, but expression of type ${typeCheckToString(checkedInnerExpr._2.get)} found!" , expr.pos))
                 }
 				(checkedInnerExpr._1 && correctType, Some(CharCheck(0)))
@@ -542,11 +552,11 @@ object semanticAnalyser {
                 val checkedExpr1 = analyseExpr(binOpInt.expr1, st)
 				val checkedExpr2 = analyseExpr(binOpInt.expr2, st)
                 val correctType1 = checkedExpr1._2 == Some(IntCheck(0))
-                if (!correctType1) {
+                if (!correctType1 && checkedExpr1._2 != None) {
                     errors = errors :+ ((s"Expression of type int expected in ${expr}, but expression of type ${typeCheckToString(checkedExpr1._2.get)} found!" , expr.pos))
                 }
                 val correctType2 = checkedExpr2._2 == Some(IntCheck(0))
-                if (!correctType2) {
+                if (!correctType2 && checkedExpr2._2 != None) {
                     errors = errors :+ ((s"Expression of type int expected in ${expr}, but expression of type ${typeCheckToString(checkedExpr2._2.get)} found!" , expr.pos))
                 }
 				(checkedExpr1._1 && checkedExpr2._1 && correctType1 && correctType2, Some(IntCheck(0)))
@@ -555,15 +565,15 @@ object semanticAnalyser {
                 val checkedExpr1 = analyseExpr(binOpComp.expr1, st)
 				val checkedExpr2 = analyseExpr(binOpComp.expr2, st)
                 val correctType1 = checkedExpr1._2 == Some(IntCheck(0)) || checkedExpr1._2 == Some(CharCheck(0))
-                if (!correctType1) {
+                if (!correctType1 && checkedExpr1._2 != None)   {
                     errors = errors :+ ((s"Expression of type int or char expected in ${expr}, but expression of type ${typeCheckToString(checkedExpr1._2.get)} found!" , expr.pos))
                 }
                 val correctType2 = checkedExpr2._2 == Some(IntCheck(0)) || checkedExpr2._2 == Some(CharCheck(0))
-                if (!correctType2) {
+                if (!correctType2 && checkedExpr2._2 != None) {
                     errors = errors :+ ((s"Expression of type int or char expected in ${expr}, but expression of type ${typeCheckToString(checkedExpr2._2.get)} found!" , expr.pos))
                 }
                 val matchingType = checkedExpr1._2 == checkedExpr2._2
-                if (!matchingType) {
+                if (!matchingType && checkedExpr1._2 != None && checkedExpr2._2 != None) {
                     errors = errors :+ ((s"Expressions in ${expr} have missmatched types: ${typeCheckToString(checkedExpr1._2.get)} and ${typeCheckToString(checkedExpr2._2.get)}!", expr.pos))
                 }
 				(checkedExpr1._1 && checkedExpr2._1 && (checkedExpr1._2 == checkedExpr2._2) && ((checkedExpr1._2 == Some(IntCheck(0))) || (checkedExpr1._2 == Some(CharCheck(0)))), Some(BoolCheck(0)))
@@ -603,11 +613,11 @@ object semanticAnalyser {
                 var checkedExpr1 = analyseExpr(binOpBool.expr1, st)
 				var checkedExpr2 = analyseExpr(binOpBool.expr2, st)
                 val correctType1 = checkedExpr1._2 == Some(BoolCheck(0))
-                if (!correctType1) {
+                if (!correctType1 && checkedExpr1._2 != None) {
                     errors = errors :+ (s"Expression of type bool expected in ${expr}, but expression of type ${typeCheckToString(checkedExpr1._2.get)}  found!" , expr.pos)
                 }
                 val correctType2 = checkedExpr2._2 == Some(BoolCheck(0))
-                if (!correctType2) {
+                if (!correctType2 && checkedExpr2._2 != None) {
                     errors = errors :+ (s"Expression of type bool expected in ${expr}, but expression of type ${typeCheckToString(checkedExpr2._2.get)}  found!" , expr.pos)
                 }
                 (checkedExpr1._1 && checkedExpr2._1 && correctType1 && correctType2, Some(BoolCheck(0)))

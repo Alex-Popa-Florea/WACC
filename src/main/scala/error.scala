@@ -24,7 +24,7 @@ object error {
             especialisedError(msgs,line)
 
         type ExpectedItems = Option[String]
-        override def combineExpectedItems(alts: Set[Item]): ExpectedItems = Option(alts.toList.filter(_.nonEmpty).mkString("|"))
+        override def combineExpectedItems(alts: Set[Item]): ExpectedItems = Option(alts.toList.filter(_.nonEmpty).mkString(" , "))
 
         type Messages = List[Message]
         override def combineMessages(alts: Seq[Message]): Messages = alts.toList

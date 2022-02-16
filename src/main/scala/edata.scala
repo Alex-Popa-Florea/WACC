@@ -33,7 +33,7 @@ object edata {
             var reason = s"""
                             |${e._1}
                             |$errorLineStart${program(line-1)}
-                            |${" " * errorLineStart.length}${errorPointer(col)}""".stripMargin
+                            |${" " * errorLineStart.length}${errorPointer(col-1)}""".stripMargin
 
             println(eformat(t,source, s"At line: $line, Column: $col", reason))
         }

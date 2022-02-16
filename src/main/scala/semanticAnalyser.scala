@@ -68,7 +68,7 @@ object semanticAnalyser {
 				val checkedStats = stats.map(x => (analyse(x, nst, ft, Some(extractType(t))), x.pos))
                 if (!checkedStats.last._1._2) {
                     if (returnTypeError == None) {
-                        returnTypeError = Some(s"Function missing return statement", checkedStats.last._2)
+                        returnTypeError = Some(s"Function ${id.variable} missing return statement", checkedStats.last._2)
                     }
                 }
                 checkedParams match {

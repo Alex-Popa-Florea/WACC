@@ -27,7 +27,7 @@ object parser {
     /*
         Constructs an AST ArrayLiter node by parsing a comma seperated list surrounded by square brackets 
     */
-    private lazy val arrayLiter = ("[" ~> ArrayLiter(sepBy(expr, ",")) <~ "]").hide.explain(s"Array " +
+    private lazy val arrayLiter = ("[" ~> ArrayLiter(sepBy(expr, ",")) <~ "]").explain(s"Array " +
       s"can be constructed by having\n  elements, if any, seperated by commas surrounded in square " +
       s"brackets ${makeGreen("[<expression>,<expression>...]")}\n")
 
@@ -45,12 +45,12 @@ object parser {
     /*
         Pair elements are made up of the key word fst or snd followed by an expression (identifier of a pair) 
     */
-    private lazy val pairElem: Parsley[PairElem] = ("fst" ~> Fst(expr)) <|> ("snd" ~> Snd(expr)).hide
+    private lazy val pairElem: Parsley[PairElem] = ("fst" ~> Fst(expr)) <|> ("snd" ~> Snd(expr))
 
     /* 
         Parser to construct a NewPair AST node
     */
-    private lazy val newPair = "newpair" ~> NewPair("(" ~> expr, "," ~> expr <~ ")").hide.explain(s"Pairs" +
+    private lazy val newPair = "newpair" ~> NewPair("(" ~> expr, "," ~> expr <~ ")").explain(s"Pairs" +
       s" are contrusted using newpair: ${makeGreen("newpair (<expression>, <expression>)")}\n")
 
 
@@ -60,10 +60,10 @@ object parser {
         in array type parser. 
     */
 
-    lazy val types: Parsley[Type] = (attempt((baseType <|> pairType) <~ notFollowedBy("[")) <|> arrayType).hide
+    lazy val types: Parsley[Type] = (attempt((baseType <|> pairType) <~ notFollowedBy("[")) <|> arrayType)
 
     private lazy val baseType: Parsley[BaseType] = ((IntType <# "int") <|> (StrType <# "string") <|> (BoolType <# "bool") 
-                                                <|> (CharType <# "char")).hide
+                                                <|> (CharType <# "char"))
     /* 
         Constructing the ArrayType node using the count parser to store how nested the array is 
     */
@@ -103,13 +103,13 @@ object parser {
         Parses a function call and creates an AST node for it, which stores the name 
         of the function being called and its arguments 
     */
-    private lazy val call = Call("call" ~> ident, "(" ~> arglist <~ ")").hide.explain(s"To call a " +
+    private lazy val call = Call("call" ~> ident, "(" ~> arglist <~ ")").explain(s"To call a " +
       s"function: ${makeGreen("call <name of function>(<argument>,<argument>)")}\n")
     
     /* 
         Parsers for the left and right hand of an assignment statement 
     */
-    private lazy val assignLHS: Parsley[AssignLHS] = (attempt(arrayElem) <|> ident <|> pairElem).hide
+    private lazy val assignLHS: Parsley[AssignLHS] = (attempt(arrayElem) <|> ident <|> pairElem)
     private lazy val assignRHS = expr.explain(explainExpr) <|> arrayLiter <|> newPair <|> pairElem.explain(explainPairElem) <|> call
     
     /*
@@ -130,7 +130,7 @@ object parser {
         If("if" ~> expr.explain("If is followed by a boolean condition"), "then" ~> nestedStatement, "else" ~> nestedStatement <~ "fi") <|>
         While("while" ~> expr.explain("while is followed by a boolean condition"), "do" ~> nestedStatement <~ "done") <|>
         NestedBegin("begin" ~> nestedStatement <~ "end")
-        ).hide.explain(explainStatement) 
+        ).explain(explainStatement) 
     
     /* 
         Programs must start with a begin, any functions are defined next, followed by statements and the end keyword 
@@ -164,6 +164,6 @@ object parser {
         Ops(InfixR)(And  <# "&&"),
         Ops(InfixR)(Or   <# "||")
         
-    ).hide.label("operators")
+    ).label("operators")
     val result = fully(program)
 }

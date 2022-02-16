@@ -1,24 +1,25 @@
 package wacc
 
 import java.io.FileNotFoundException
+import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.Map
+import parser._
+import parsley.{Success, Failure}
+import parsley.io.ParseFromIO
+import scala.io.Source
+import ast._
+import types._
+import semanticAnalyser._
+import symbolTable._
+import symbolTable._
+import functionTable._
+import edata._
+import parsley.io.ParseFromIO
+import java.io.{File,FileNotFoundException}
+import color._
+import error.StringErrorBuilder
 
 object main {
-    import parser._
-    import parsley.{Success, Failure}
-    import parsley.io.ParseFromIO
-    import scala.io.Source
-    import ast._
-    import types._
-    import semanticAnalyser._
-    import symbolTable._
-    import symbolTable._
-    import functionTable._
-    import edata._
-    import parsley.io.ParseFromIO
-    import java.io.{File,FileNotFoundException}
-    import color._
-    import error.StringErrorBuilder
-
 
     def main(args: Array[String]) = {
         /* 
@@ -60,7 +61,7 @@ object main {
                         Errors relating to missing return statements in functions are found 
                         in the semantic analyser but are actually syntax errors, so the exit code is 100
                     */
-                    errorGenerator(Syntax, Some(args.head), file, List(returnTypeError.get))
+                    errorGenerator(Syntax, Some(args.head), file, ListBuffer(returnTypeError.get))
                     sys.exit(100)
                 } else {
                     /*

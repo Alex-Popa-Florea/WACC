@@ -3,6 +3,8 @@ package wacc
 import parsley.Parsley, Parsley._
 import ast._
 import types._
+import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.Map
 
 object functionTable {
     /*
@@ -12,7 +14,7 @@ object functionTable {
         It is a unique global table 
     */
     class FunctionTable() {
-        var funcMap: Map[String, (TypeCheck, List[TypeCheck])] = Map()
+        var funcMap: Map[String, (TypeCheck, List[TypeCheck])] = Map.empty
         /*
             The add method adds a function to the function table, returning true
             if the addition succeded, as in there was no function of that
@@ -21,7 +23,7 @@ object functionTable {
         def add(funcName: String, funcType: TypeCheck, paramTypes: List[TypeCheck]): Boolean = {
             funcMap.get(funcName) match {
                 case None => 
-                    funcMap += (funcName -> (funcType, paramTypes))
+                    funcMap.addOne(funcName -> (funcType, paramTypes))
                     true
                 case _ => false
             }

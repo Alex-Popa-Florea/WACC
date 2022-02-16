@@ -1,4 +1,8 @@
 package wacc
+
+import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.Map
+
 object edata {
     import color._
     import java.io.File
@@ -19,7 +23,7 @@ object edata {
     /*
         Used for generating a list of errors
     */
-    def errorGenerator(t: ErrorType, source: Option[String],file: File, errs: List[(String, (Int, Int))]): Unit = {
+    def errorGenerator(t: ErrorType, source: Option[String],file: File, errs: ListBuffer[(String, (Int, Int))]): Unit = {
         val program = scala.io.Source.fromFile(file).getLines().toList
         def errorPointer(caretAt: Int) = s"${" " * caretAt}^"
         val errorLineStart = ">"

@@ -12,6 +12,7 @@ import wacc.parser._
 import wacc.lexer._
 import scala.io.Source
 import org.scalatest.AppendedClues
+import scala.collection.mutable.ListBuffer
 
 class SemanticTest extends AnyFlatSpec with AppendedClues{
   info ("SEMANTIC TESTS")
@@ -289,12 +290,12 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
       }
     }
   }
-  def analyser(p: Node): (SymbolTable, FunctionTable, List[(String, (Int, Int))]) = { 
+  def analyser(p: Node): (SymbolTable, FunctionTable, ListBuffer[(String, (Int, Int))]) = { 
     val symbolTable = new SymbolTable("Program", None)
     val functionTable = new FunctionTable()
     analyse(p, symbolTable, functionTable, None)
     val e = errors
-    errors = List()
+    errors = ListBuffer.empty
     (symbolTable, functionTable, e)
   }
 }

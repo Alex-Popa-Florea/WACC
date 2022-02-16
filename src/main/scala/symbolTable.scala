@@ -4,6 +4,8 @@ import parsley.Parsley, Parsley._
 import ast._
 import types._
 import wacc.functionTable._
+import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.Map
 
 object symbolTable {
     /*
@@ -16,8 +18,8 @@ object symbolTable {
         in the function table
     */
     class SymbolTable(_scope: String, _parent: Option[SymbolTable]) {
-        var variableMap: Map[String, TypeCheck] = Map()
-        var children: List[SymbolTable] = List()
+        var variableMap: Map[String, TypeCheck] = Map.empty
+        var children: ListBuffer[SymbolTable] = ListBuffer.empty
         var scope: String = _scope
         var parent: Option[SymbolTable] = _parent
 
@@ -26,10 +28,11 @@ object symbolTable {
             if the addition succeded, as in there was no variable of that
             name previously added, false otherwise.
         */
-        def add(variable: String, varType: TypeCheck): Boolean = {
-            variableMap.get(variable) match {
+        def add(ident: Ident, varType: TypeCheck): Boolean = {
+            ident.semanticTable = Some(this)
+            variableMap.get(ident.variable) match {
                 case None => 
-                    variableMap += (variable -> varType)
+                    variableMap.addOne(ident.variable -> varType)
                     true
                 case _ => false
             }
@@ -41,14 +44,16 @@ object symbolTable {
             the most inner declaration, or returning false is no variable of that
             name is found
         */
-        def find(variable: String): Option[TypeCheck] = {
-            var foundType = variableMap.get(variable)
+        def find(ident: Ident): Option[TypeCheck] = {
+            var foundType = variableMap.get(ident.variable)
             foundType match {
                 case None => parent match {
                     case None => None
-                    case _ => parent.get.find(variable)
+                    case _ => parent.get.find(ident)
                 }
-                case _ => foundType
+                case _ => 
+                    ident.semanticTable = Some(this)
+                    foundType
             }
         }
         /*
@@ -76,7 +81,7 @@ object symbolTable {
                     for (i <- 0 to nest) {
                         print("  ")
                     }
-                    println(s" ${i + 1}. \"$k\":")
+                    println(s" ${i + 1}. \"$k\": \"${typeCheckToString(x)}\"")
                 }
             }
             st.children.map(x => {

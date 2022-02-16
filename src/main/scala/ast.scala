@@ -53,7 +53,9 @@ object ast {
     case class NestedBegin(stat: List[Statement])(val pos: (Int, Int)) extends Statement
 
     sealed trait AssignLHS extends Node
-    case class Ident(variable: String)(val pos: (Int, Int)) extends AssignLHS with Expr
+    case class Ident(variable: String)(val pos: (Int, Int)) extends AssignLHS with Expr {
+        var semanticTable: Option[symbolTable.SymbolTable] = None
+    }
     case class ArrayElem(id: Ident, exprs: List[Expr])(val pos: (Int, Int)) extends AssignLHS with Expr
 
     sealed trait AssignRHS extends Node 

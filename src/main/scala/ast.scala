@@ -1,7 +1,8 @@
 package wacc
 
 import parsley.Parsley, Parsley._
-import parsley.errors.combinator.fail
+import parsley.errors.combinator._
+import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.zipped.{Zipped2, Zipped3, Zipped4}
 import parsley.lift.lift1
 
@@ -351,15 +352,11 @@ object ast {
     */
     object IntLiter {
          def apply(x: => Parsley[BigInt]): Parsley[IntLiter] = {
-
-            def overflow_checker (i:BigInt):Parsley[IntLiter] ={
-               if(i <= Int.MaxValue && i >= Int.MinValue){
-                   pos <**> pure(IntLiter(i.toInt) _)
-               }else{
-                   fail(s"Int overflow Int must be in the range of ${Int.MinValue} and ${Int.MaxValue}")
-               }
+            val checker: PartialFunction[IntLiter,String] = {
+                case IntLiter(i) if i <= Int.MaxValue && i >= Int.MinValue => s"Int overflow Int must be in the range of ${Int.MinValue} and ${Int.MaxValue} currently $i"
             }
-            join(lift1(overflow_checker,x))
+            val p = pos <**> x.map(i => IntLiter(i.toInt) _)
+            p.guardAgainst(checker)
          }
     }
 

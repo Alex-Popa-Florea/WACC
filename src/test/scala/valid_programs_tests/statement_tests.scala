@@ -259,7 +259,6 @@ class StatParserTest extends AnyFlatSpec with AppendedClues{
                 answer should equal (0)
             }
             case Failure(err) => {
-                println(err) 
                 err should equal ("""|(line 1, column 11):
                                      |  unexpected "="
                                      |  expected Variable
@@ -278,7 +277,6 @@ class StatParserTest extends AnyFlatSpec with AppendedClues{
                 answer should equal (0)
             }
             case Failure(err) => {
-                println(err) 
                 err should equal ("""(line 1, column 45):
                                     |  unexpected "en"
                                     |  expected !=, ";", %, &&, *, +, -, /, <, <=, ==, >, >=, fi, or ||
@@ -296,7 +294,6 @@ class StatParserTest extends AnyFlatSpec with AppendedClues{
                 answer should equal (0)
             }
             case Failure(err) => {
-                println(err) 
                 err should equal ("""(line 1, column 17):
                                     |  unexpected "int"
                                     |  expected !=, ";", %, &&, *, +, -, /, <, <=, ==, >, >=, end, or ||

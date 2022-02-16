@@ -354,11 +354,11 @@ object ast {
     */
     object IntLiter {
          def apply(x: => Parsley[BigInt]): Parsley[IntLiter] = {
-            val checker: PartialFunction[IntLiter,String] = {
-                case IntLiter(i) if i <= Int.MaxValue && i >= Int.MinValue => s"Int overflow Int must be in the range of ${Int.MinValue} and ${Int.MaxValue} currently $i"
+            val checker: PartialFunction[BigInt,String] = {
+                case i if i > Int.MaxValue || i < Int.MinValue => s"Int overflow Int must be in the range of ${Int.MinValue} and ${Int.MaxValue} currently $i"
             }
-            val p = pos <**> x.map(i => IntLiter(i.toInt) _)
-            p.guardAgainst(checker)
+            val c = x.guardAgainst(checker)
+            pos <**> c.map(i => IntLiter(i.toInt) _)
          }
     }
 

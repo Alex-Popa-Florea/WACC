@@ -18,6 +18,7 @@ import parsley.io.ParseFromIO
 import java.io.{File,FileNotFoundException}
 import color._
 import error.StringErrorBuilder
+import backend.codeGenerator.generate
 
 object main {
 
@@ -72,6 +73,9 @@ object main {
                         functionTable.printFunctionTables()
                         println("")
                         symbolTable.printSymbolTables(symbolTable, 0)
+                        val fileName = args.head
+
+                        generate(x, (fileName.dropRight(4) + "s"))
                     } else {
                         /*
                         Otherwise, print the errors produced using the error generator

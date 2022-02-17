@@ -1,12 +1,12 @@
 package valid_programs_tests
 
+import frontend.lexer._
+import frontend.parser._
+import org.scalatest.AppendedClues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
 import parsley.Success
-import wacc.lexer._
-import wacc.parser._
 import wacc.ast._
-import org.scalatest.AppendedClues
 
 class ExprParserTest extends AnyFlatSpec with AppendedClues{
     

@@ -1,10 +1,14 @@
 package wacc
 
-import parsley.Parsley, Parsley._
-import parsley.errors.combinator._
+import parsley.Parsley
 import parsley.errors.combinator.ErrorMethods
-import parsley.implicits.zipped.{Zipped2, Zipped3, Zipped4}
+import parsley.errors.combinator._
+import parsley.implicits.zipped.Zipped2
+import parsley.implicits.zipped.Zipped3
+import parsley.implicits.zipped.Zipped4
 import parsley.lift.lift1
+
+import Parsley._
 
 object ast {
 
@@ -102,7 +106,7 @@ object ast {
 
     case class IntLiter(x: Int)(val pos: (Int, Int)) extends Expr
     case class BoolLiter(bool: Boolean)(val pos: (Int, Int)) extends Expr
-    case class CharLiter(char: Any)(val pos: (Int, Int)) extends Expr
+    case class CharLiter(char: Char)(val pos: (Int, Int)) extends Expr
     case class StrLiter(string: String)(val pos: (Int, Int)) extends Expr
     case class PairLiter()(val pos: (Int, Int)) extends Expr
     case class Not(expr1: Expr)(val pos: (Int, Int)) extends Expr
@@ -368,7 +372,7 @@ object ast {
     }
 
     object CharLiter {
-        def apply(char: => Parsley[Any]): Parsley[CharLiter] = 
+        def apply(char: => Parsley[Char]): Parsley[CharLiter] = 
             pos <**> char.map(CharLiter(_) _)
     }
 

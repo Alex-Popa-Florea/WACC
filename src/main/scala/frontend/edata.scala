@@ -1,4 +1,4 @@
-package wacc
+package frontend
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.Map

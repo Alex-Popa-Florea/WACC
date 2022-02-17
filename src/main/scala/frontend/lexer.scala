@@ -1,5 +1,8 @@
-package wacc
-import parsley.Parsley, Parsley._
+package frontend
+
+import parsley.Parsley
+
+import Parsley._
 
 object lexer {
     import parsley.token.{Lexer, Predicate, LanguageDef}

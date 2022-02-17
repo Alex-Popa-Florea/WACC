@@ -1,24 +1,26 @@
 package wacc
 
+import backend.codeGenerator.generate
+import frontend.color._
+import frontend.edata._
+import frontend.error.StringErrorBuilder
+import frontend.parser._
+import frontend.semanticAnalyser._
+import parsley.Failure
+import parsley.Success
+import parsley.io.ParseFromIO
+
+import java.io.File
 import java.io.FileNotFoundException
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.Map
-import parser._
-import parsley.{Success, Failure}
-import parsley.io.ParseFromIO
 import scala.io.Source
+
 import ast._
 import types._
-import semanticAnalyser._
 import symbolTable._
 import symbolTable._
 import functionTable._
-import edata._
-import parsley.io.ParseFromIO
-import java.io.{File,FileNotFoundException}
-import color._
-import error.StringErrorBuilder
-import backend.codeGenerator.generate
 
 object main {
 

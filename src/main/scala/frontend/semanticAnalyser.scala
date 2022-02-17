@@ -1,12 +1,15 @@
-package wacc
+package frontend
 
-import parsley.Parsley, Parsley._
+import parsley.Parsley
 import wacc.ast._
-import wacc.parser._
-import wacc.types._
-import wacc.symbolTable._
 import wacc.functionTable._
+import wacc.symbolTable._
+import wacc.types._
+
 import scala.collection.mutable.ListBuffer
+
+import Parsley._
+import parser._
 
 object semanticAnalyser {
     var errors: ListBuffer[(String, (Int, Int))] = ListBuffer.empty

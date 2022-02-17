@@ -1,11 +1,14 @@
 package wacc
 
-import parsley.Parsley, Parsley._
-import ast._
-import types._
+import parsley.Parsley
 import wacc.functionTable._
+
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.Map
+
+import Parsley._
+import ast._
+import types._
 
 object symbolTable {
     /*

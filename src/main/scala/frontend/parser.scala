@@ -1,12 +1,14 @@
-package wacc
+package frontend
 
-import parsley.Parsley, Parsley._
+import parsley.Parsley
 import parsley.debug._
+
+import Parsley._
 
 object parser {
     import lexer.implicits.implicitLexeme
     import lexer._
-    import ast._
+    import wacc.ast._
     import parsley.character.digit
     import parsley.expr.{precedence, InfixL, InfixR, NonAssoc, Prefix, Ops}
     import parsley.combinator._

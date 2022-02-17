@@ -1,9 +1,10 @@
 package backend
 
-import java.io.FileWriter
-import java.io.File
-import java.io.BufferedWriter
 import wacc.ast._
+
+import java.io.BufferedWriter
+import java.io.File
+import java.io.FileWriter
 
 object codeGenerator {
     

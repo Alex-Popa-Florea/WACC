@@ -1,18 +1,20 @@
 package valid_programs_tests
 
+import frontend.lexer._
+import frontend.parser._
+import frontend.semanticAnalyser._
+import org.scalatest.AppendedClues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
-import parsley.{Success, Failure}
-import wacc.semanticAnalyser._
+import parsley.Failure
+import parsley.Success
+import wacc.ast._
+import wacc.functionTable._
 import wacc.symbolTable._
 import wacc.types._
-import wacc.functionTable._
-import wacc.ast._
-import wacc.parser._
-import wacc.lexer._
-import scala.io.Source
-import org.scalatest.AppendedClues
+
 import scala.collection.mutable.ListBuffer
+import scala.io.Source
 
 class SemanticTest extends AnyFlatSpec with AppendedClues{
   info ("SEMANTIC TESTS")

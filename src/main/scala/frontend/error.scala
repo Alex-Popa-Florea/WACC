@@ -1,4 +1,5 @@
-package wacc
+package frontend
+
 object error {
     import parsley.errors.ErrorBuilder
     import parsley.Result

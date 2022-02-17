@@ -1,4 +1,5 @@
-package wacc
+package frontend
+
 import color._
 /* 
     Explanations for each type of syntax error to help make the error messages

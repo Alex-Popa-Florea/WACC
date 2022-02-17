@@ -1,16 +1,18 @@
 package valid_programs_tests
 
+import frontend.lexer._
+import frontend.parser._
+import frontend.semanticAnalyser._
+import org.scalatest.AppendedClues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
-import scala.io.Source
-import parsley.{Success, Failure}
-import wacc.lexer._
-import wacc.symbolTable._
-import wacc.functionTable._
-import wacc.semanticAnalyser._
-import wacc.parser._
+import parsley.Failure
+import parsley.Success
 import wacc.ast._
-import org.scalatest.AppendedClues
+import wacc.functionTable._
+import wacc.symbolTable._
+
+import scala.io.Source
 
 class FunctionParserTest extends AnyFlatSpec with AppendedClues
 {

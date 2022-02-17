@@ -5,6 +5,9 @@ target
 #ignore files
 *.jar
 *.class
+*.s
+*.wacc
+*.sh
 
 #.folders
 .vscode

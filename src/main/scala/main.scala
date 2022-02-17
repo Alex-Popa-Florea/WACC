@@ -75,7 +75,7 @@ object main {
                         symbolTable.printSymbolTables(symbolTable, 0)
                         val fileName = args.head
 
-                        generate(x, (fileName.dropRight(4) + "s"))
+                        generate(x, (fileName.split("/").last.replace(".wacc",".s")))
                     } else {
                         /*
                         Otherwise, print the errors produced using the error generator

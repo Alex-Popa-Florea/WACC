@@ -24,9 +24,9 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer match {
       case Success(p) => {
         // Check variable map is generated correctly.
-        analyser(p)._1.variableMap should equal (Map("i" -> IntCheck(0), "b" -> BoolCheck(0), "c" -> CharCheck(0), "h" -> StrCheck(0)))
+        analyser(p)._1.getVariableMap() should equal (Map("i" -> IntCheck(0), "b" -> BoolCheck(0), "c" -> CharCheck(0), "h" -> StrCheck(0)))
         // Check function table is empty.
-        analyser(p)._2.funcMap.size should equal (0)
+        analyser(p)._2.getFuncMap().size should equal (0)
       }
       case Failure(err) => {
         println(err)
@@ -40,7 +40,7 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer match {
       case Success(p) => {
         // Check program with if statement has two children i.e true table and false table.
-        analyser(p)._1.children.size should equal (2)
+        analyser(p)._1.getChildren().size should equal (2)
       }
       case Failure(err) => {
         println(err)
@@ -51,7 +51,7 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer match {
       case Success(p) => {
         // Check program with while statement has 1 child.
-        analyser(p)._1.children.size should equal (1)
+        analyser(p)._1.getChildren().size should equal (1)
       }
       case Failure(err) => {
         println(err)
@@ -64,7 +64,7 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     var answer = result.parse("begin int f() is return 0 end skip end")
     answer match {
       case Success(p) => {
-        var funcMap = analyser(p)._2.funcMap 
+        var funcMap = analyser(p)._2.getFuncMap()
         // Check function map contains only one key value pair.
         funcMap.size should equal (1)
         // Check function f's paramater list has size 0.
@@ -78,7 +78,7 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer = result.parse("begin int f(int a, int b) is int c = 5; return a + b end skip end")
     answer match {
       case Success(p) => {
-        var funcMap = analyser(p)._2.funcMap 
+        var funcMap = analyser(p)._2.getFuncMap()
         // Check function map contains only one key value pair.
         funcMap.size should equal (1)
         // Check function f's paramater list has two elements.
@@ -87,7 +87,8 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
         // Check function stores correct return type.
         funcMap.map({case (_, (t, _)) => t}) should equal (List(IntCheck(0)))
         // Check symbol table for function has three key value pairs in the variable map.
-        analyser(p)._1.children(0).variableMap.size should equal (3)
+        val children = analyser(p)._1.getChildren()
+        children(0).getVariableMap().size should equal (3)
       }
       case Failure(err) => {
         println(err)
@@ -98,10 +99,10 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer match {
       case Success(p) => {
         // Check function map has two key value pairs.
-        var funcMap = analyser(p)._2.funcMap
+        var funcMap = analyser(p)._2.getFuncMap()
         funcMap.size should equal (2)
         // Check symbol table has two children.
-        var children = analyser(p)._1.children
+        var children = analyser(p)._1.getChildren()
         children.size should equal (2)
       }
       case Failure(err) => {
@@ -116,10 +117,10 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer match {
       case Success(p) => {
         // Check function map has two key value pairs.
-        var funcMap = analyser(p)._2.funcMap
+        var funcMap = analyser(p)._2.getFuncMap()
         funcMap.size should equal (2)
         // Check symbol table has two children.
-        var children = analyser(p)._1.children
+        var children = analyser(p)._1.getChildren()
         children.size should equal (2)
         // Check Function has correct return type.
         funcMap.map({case (_, (t, _)) => t}) should equal (funcMap.flatMap({case (_, (_, ts)) => ts}))
@@ -132,7 +133,7 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer = result.parse("begin bool f(int a) is return a end skip end")
     answer match {
       case Success(p) => {
-        var funcMap = analyser(p)._2.funcMap
+        var funcMap = analyser(p)._2.getFuncMap()
         // Check function declaration is incorrect and returns semantic error.
         var error = analyser(p)._3
         error should equal (List(("Expression does not match return type of function, expected bool but expression of type int found!",(1,24))))
@@ -161,7 +162,7 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer = result.parse("begin int f(int a) is return a end int y = call f(5) end")
     answer match {
       case Success(p) => {
-        var funcMap = analyser(p)._2.funcMap
+        var funcMap = analyser(p)._2.getFuncMap()
         // Check function declaration is incorrect and returns semantic error.
         var error = analyser(p)._3
         error should equal (List())
@@ -177,7 +178,7 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     var answer = result.parse("begin int i = 5; bool b = true; println i == b end")
     answer match {
       case Success(p) => {
-        val variableMap = analyser(p)._1.variableMap
+        val variableMap = analyser(p)._1.getVariableMap()
         var lhsType = variableMap.filter({case (x, _) => x == "i"}).map({case (_, t) => t})
         var rhsType = variableMap.filter({case (x, _) => x == "b"}).map({case (_, t) => t})
         lhsType should equal (List(IntCheck(0)))
@@ -194,7 +195,7 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer = result.parse("begin int i = 5; int j = 7; println i == j end")
     answer match {
       case Success(p) => {
-        val variableMap = analyser(p)._1.variableMap
+        val variableMap = analyser(p)._1.getVariableMap()
         var lhsType = variableMap.filter({case (x, _) => x == "i"}).map({case (_, t) => t})
         var rhsType = variableMap.filter({case (x, _) => x == "j"}).map({case (_, t) => t})
         // Check that lhs and rhs have equal types
@@ -208,7 +209,7 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer = result.parse("begin int i = 5; char c = 'a'; println i > c end")
     answer match {
       case Success(p) => {
-        val variableMap = analyser(p)._1.variableMap
+        val variableMap = analyser(p)._1.getVariableMap()
         var lhsType = variableMap.filter({case (x, _) => x == "i"}).map({case (_, t) => t})
         var rhsType = variableMap.filter({case (x, _) => x == "c"}).map({case (_, t) => t})
         lhsType should equal (List(IntCheck(0)))
@@ -225,7 +226,7 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer = result.parse("begin int i = 5; int j = 7; println i > j end")
     answer match {
       case Success(p) => {
-        val variableMap = analyser(p)._1.variableMap
+        val variableMap = analyser(p)._1.getVariableMap()
         var lhsType = variableMap.filter({case (x, _) => x == "i"}).map({case (_, t) => t})
         var rhsType = variableMap.filter({case (x, _) => x == "j"}).map({case (_, t) => t})
         // Check that lhs and rhs have equal types

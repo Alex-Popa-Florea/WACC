@@ -14,7 +14,7 @@ object functionTable {
         It is a unique global table 
     */
     class FunctionTable() {
-        var funcMap: Map[String, (TypeCheck, List[TypeCheck])] = Map.empty
+        private var funcMap: Map[String, (TypeCheck, List[TypeCheck])] = Map.empty
         /*
             The add method adds a function to the function table, returning true
             if the addition succeded, as in there was no function of that
@@ -27,7 +27,14 @@ object functionTable {
                     true
                 case _ => false
             }
-            
+        }
+
+        def getFunction(variable: String): Option[(TypeCheck, List[TypeCheck])] = {
+            funcMap.get(variable)
+        }
+
+        def getFuncMap(): Map[String, (TypeCheck, List[TypeCheck])] = {
+            funcMap
         }
         
         /*

@@ -63,7 +63,7 @@ object semanticAnalyser {
             */
 			case Function(t, id, vars, stats) => 
                 var nst = new SymbolTable(s"Function ${id.variable}", Some(st))
-                st.children.addOne(nst)
+                st.addChildSt(nst)
 				val checkedParams = vars.map(x => analyse(x, nst, ft, None)._1).reduceOption((x, y) => x && y)
 				val checkedStats = stats.map(x => (analyse(x, nst, ft, Some(extractType(t))), x.pos))
                 if (!checkedStats.last._1._2) {
@@ -216,9 +216,9 @@ object semanticAnalyser {
             */
 			case If(cond, trueStat, falseStat) =>
 				var trueNst = new SymbolTable("True branch of if statement", Some(st))
-                st.children.addOne(trueNst)
+                st.addChildSt(trueNst)
 				var falseNst = new SymbolTable("False branch of if statement", Some(st))
-                st.children.addOne(falseNst)
+                st.addChildSt(falseNst)
 				val conditionCheck = analyseExpr(cond, st)
 				val trueStatCheck = trueStat.map(x => analyse(x, trueNst, ft, returnType))
 				val falseStatCheck = falseStat.map(x => analyse(x, falseNst, ft, returnType))
@@ -238,7 +238,7 @@ object semanticAnalyser {
             */
 			case While(cond, stat) => 
                 var nst = new SymbolTable("Statements inside while loop", Some(st))
-                st.children.addOne(nst)
+                st.addChildSt(nst)
 				val conditionCheck = analyseExpr(cond, st)
                 val correctType = conditionCheck._2 == Some(BoolCheck(0))
                 if (!correctType && conditionCheck._2 != None) {
@@ -255,7 +255,7 @@ object semanticAnalyser {
             */
 			case NestedBegin(stat) => 
                 var nst = new SymbolTable("Statements inside nested begin", Some(st))
-                st.children.addOne(nst)
+                st.addChildSt(nst)
                 val correctStats = stat.map(x => analyse(x, nst, ft, returnType)._1).reduce((x, y) => x && y)
 				(correctStats, false)
 			
@@ -444,7 +444,7 @@ object semanticAnalyser {
             */
             case Call(id, args) => 
                 val checkedArgs = args.map(x => analyseExpr(x, st))
-				ft.funcMap.get(id.variable) match {
+				ft.getFunction(id.variable) match {
 					case Some(foundFuncType) =>
                         if (lhsType == EmptyPairCheck()) {
                             foundFuncType._1 match {

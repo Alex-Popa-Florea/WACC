@@ -55,8 +55,8 @@ object main {
         answer.get match {
             case Success(x) => {
                 println(s"${args.head} = $x")
-                val semanticAnalysis = analyse(x, symbolTable, functionTable, None)
-                if (!semanticAnalysis._2) {
+                val (semanticallyValid, hasReturnStatements) = analyse(x, symbolTable, functionTable, None)
+                if (!hasReturnStatements) {
                     /*
                         Errors relating to missing return statements in functions are found 
                         in the semantic analyser but are actually syntax errors, so the exit code is 100
@@ -67,13 +67,11 @@ object main {
                     /*
                         If semantic analysis passes, print the AST, symbol table and function table
                     */
-                    if (semanticAnalysis._1) {
+                    if (semanticallyValid) {
                         println("")
                         functionTable.printFunctionTables()
                         println("")
                         symbolTable.printSymbolTables(symbolTable, 0)
-                        println("")
-                        println(semanticAnalysis)
                     } else {
                         /*
                         Otherwise, print the errors produced using the error generator

@@ -17,11 +17,9 @@ object symbolTable {
         We only store variables within the symbol tables, functions are stored
         in the function table
     */
-    class SymbolTable(_scope: String, _parent: Option[SymbolTable]) {
-        var variableMap: Map[String, TypeCheck] = Map.empty
-        var children: ListBuffer[SymbolTable] = ListBuffer.empty
-        var scope: String = _scope
-        var parent: Option[SymbolTable] = _parent
+    class SymbolTable(private var scope: String, private var parent: Option[SymbolTable]) {
+        private var variableMap: Map[String, TypeCheck] = Map.empty
+        private var children: ListBuffer[SymbolTable] = ListBuffer.empty
 
         /*
             The add method adds a variable to the symbol table, returning true
@@ -36,6 +34,10 @@ object symbolTable {
                     true
                 case _ => false
             }
+        }
+
+        def addChildSt(st: SymbolTable) = {
+            children.addOne(st)
         }
 
         /*
@@ -56,6 +58,15 @@ object symbolTable {
                     foundType
             }
         }
+
+        def getVariableMap(): collection.immutable.Map[String, TypeCheck] = {
+            variableMap.toMap
+        }
+
+        def getChildren(): List[SymbolTable] = {
+            children.toList
+        }
+
         /*
             Method that prints the symbol table and its children recursively
         */

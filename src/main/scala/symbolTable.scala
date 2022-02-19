@@ -21,8 +21,9 @@ object symbolTable {
         in the function table
     */
     class SymbolTable(private var scope: String, private var parent: Option[SymbolTable]) {
-        private var variableMap: Map[String, TypeCheck] = Map.empty
+        private var variableMap: Map[String, (TypeCheck, Int)] = Map.empty
         private var children: ListBuffer[SymbolTable] = ListBuffer.empty
+        private var size: Int = 0
 
         /*
             The add method adds a variable to the symbol table, returning true
@@ -33,7 +34,20 @@ object symbolTable {
             ident.semanticTable = Some(this)
             variableMap.get(ident.variable) match {
                 case None => 
-                    variableMap.addOne(ident.variable -> varType)
+                    varType match {
+                        case IntCheck(nested) => 
+                            size += 4
+                        case BoolCheck(nested) => 
+                            size += 1
+                        case CharCheck(nested) => 
+                            size += 1
+                        case StrCheck(nested) => 
+                            size += 4
+                        case PairCheck(type1, type2, nested) => 
+                            size += 8
+                        case _ =>
+                        }
+                    variableMap(ident.variable) = (varType, size)
                     true
                 case _ => false
             }
@@ -58,16 +72,33 @@ object symbolTable {
                 }
                 case _ => 
                     ident.semanticTable = Some(this)
-                    foundType
+                    Some(foundType.get._1)
             }
         }
 
-        def getVariableMap(): collection.immutable.Map[String, TypeCheck] = {
+        def findId(ident: Ident): Option[Int] = {
+            var foundType = variableMap.get(ident.variable)
+            foundType match {
+                case None => parent match {
+                    case None => None
+                    case _ => parent.get.findId(ident)
+                }
+                case _ => 
+                    ident.semanticTable = Some(this)
+                    Some(foundType.get._2)
+            }
+        }
+
+        def getVariableMap(): collection.immutable.Map[String, (TypeCheck, Int)] = {
             variableMap.toMap
         }
 
         def getChildren(): List[SymbolTable] = {
             children.toList
+        }
+
+        def getSize(): Int = {
+            size
         }
 
         /*
@@ -95,7 +126,7 @@ object symbolTable {
                     for (i <- 0 to nest) {
                         print("  ")
                     }
-                    println(s" ${i + 1}. \"$k\": \"${typeCheckToString(x)}\"")
+                    println(s" ${i + 1}. \"$k\": \"${typeCheckToString(x._1)}\"")
                 }
             }
             st.children.map(x => {

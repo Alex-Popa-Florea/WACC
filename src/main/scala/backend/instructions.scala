@@ -135,11 +135,35 @@ object instructions {
             ldrString
         }
     }
+    case class LDRB(cond: Option[Cond], rd: Register, a_mode2: A_mode2) extends Load {
+        override def toString() : String = {
+            var ldrString = s"    LDR${cond.getOrElse("").toString()}B ${rd.toString()}, "
+            a_mode2 match {
+                case OImmediateOffset(rn, immed) => ldrString += s"${a_mode2.toString()}\n"
+                case ZeroOffset(rn) => ldrString += s"${a_mode2.toString()}\n"
+                case Immed(kind, value) => ldrString += s"=${a_mode2.toString()}\n"
+                case Label(value) => ldrString += s"=${a_mode2.toString()}\n"
+                case _ => ldrString += s"#${a_mode2.toString()}\n"
+            }
+            ldrString
+        }
+    }
 
     sealed trait Store extends Instruction
     case class STR(cond: Option[Cond], rd: Register, a_mode2: A_mode2) extends Store {
         override def toString() : String = {
             var strString = s"    STR${cond.getOrElse("").toString()} ${rd.toString()}, "
+            a_mode2 match {
+                case Immed(kind, value) => strString += s"=${a_mode2.toString()}\n"
+                case Label(value) => strString += s"=${a_mode2.toString()}\n"
+                case _ => strString += s"${a_mode2.toString()}\n"
+            }
+            strString
+        }
+    }
+    case class STRB(cond: Option[Cond], rd: Register, a_mode2: A_mode2) extends Store {
+        override def toString() : String = {
+            var strString = s"    STR${cond.getOrElse("").toString()}B ${rd.toString()}, "
             a_mode2 match {
                 case Immed(kind, value) => strString += s"=${a_mode2.toString()}\n"
                 case Label(value) => strString += s"=${a_mode2.toString()}\n"

@@ -11,6 +11,12 @@ import wacc.symbolTable._
 import wacc.functionTable._
 import backend.instructions._
 import backend.operators._
+import wacc.types.IntCheck
+import wacc.types.BoolCheck
+import wacc.types.CharCheck
+import wacc.types.StrCheck
+import wacc.types.PairCheck
+import wacc.types.EmptyPairCheck
 
 object codeGenerator {
     
@@ -63,7 +69,7 @@ object codeGenerator {
     }
 
     def generateNode(node: Node, symbolTable: SymbolTable, functionTable: FunctionTable, label: String, dataMap: Map[String, String], textMap: Map[String, ListBuffer[Instruction]]): Unit = {
-        
+
         node match {
             case Begin(func, stat) =>
                 // Generating the code for user defined functions
@@ -111,20 +117,43 @@ object codeGenerator {
 
             case AssignType(t, id, rhs) => 
                 generateRHS(rhs, symbolTable, functionTable, label, 4, dataMap, textMap)
+                var a_mode2: A_mode2 = null
                 if (symbolTable.getSize() - symbolTable.findId(id).get == 0) {
-                    textMap(label).addOne(STR(None, R(4), ZeroOffset(SP())))
+                    a_mode2 = ZeroOffset(SP())       
                 } else {
-                    textMap(label).addOne(STR(None, R(4), OImmediateOffset(SP(), Immed("", symbolTable.getSize() - symbolTable.findId(id).get))))
+                    a_mode2 = OImmediateOffset(SP(), Immed("", symbolTable.getSize() - symbolTable.findId(id).get))
                 }
-            
+                symbolTable.find(id) match {
+                    case Some(typeCheck) => typeCheck match {
+                        case IntCheck(nested) => textMap(label).addOne(STR(None, R(4), a_mode2))
+                        case BoolCheck(nested) => textMap(label).addOne(STRB(None, R(4), a_mode2))
+                        case CharCheck(nested) => textMap(label).addOne(STRB(None, R(4), a_mode2))
+                        case StrCheck(nested) => textMap(label).addOne(STR(None, R(4), a_mode2))
+                        case PairCheck(type1, type2, nested) => textMap(label).addOne(STR(None, R(4), a_mode2))
+                        case _ =>
+                    }
+                    case None =>
+                }
             case Assign(lhs, rhs) => 
                 generateRHS(rhs, symbolTable, functionTable, label, 4, dataMap, textMap)
                 lhs match {
                     case ident: Ident => 
+                        var a_mode2: A_mode2 = null
                         if (symbolTable.getSize() - symbolTable.findId(ident).get == 0) {
-                            textMap(label).addOne(STR(None, R(4), ZeroOffset(SP())))
+                            a_mode2 = ZeroOffset(SP())       
                         } else {
-                            textMap(label).addOne(STR(None, R(4), OImmediateOffset(SP(), Immed("", symbolTable.getSize() - symbolTable.findId(ident).get))))
+                            a_mode2 = OImmediateOffset(SP(), Immed("", symbolTable.getSize() - symbolTable.findId(ident).get))
+                        }
+                        symbolTable.find(ident) match {
+                            case Some(typeCheck) => typeCheck match {
+                                case IntCheck(nested) => textMap(label).addOne(STR(None, R(4), a_mode2))
+                                case BoolCheck(nested) => textMap(label).addOne(STRB(None, R(4), a_mode2))
+                                case CharCheck(nested) => textMap(label).addOne(STRB(None, R(4), a_mode2))
+                                case StrCheck(nested) => textMap(label).addOne(STR(None, R(4), a_mode2))
+                                case PairCheck(type1, type2, nested) => textMap(label).addOne(STR(None, R(4), a_mode2))
+                                case _ =>
+                            }
+                            case None =>
                         }
                     case ArrayElem(id, exprs) =>
                     case Fst(expr) =>
@@ -220,6 +249,8 @@ object codeGenerator {
             case EQ(expr1, expr2) => 
             case NEQ(expr1, expr2) => 
             case binOpBool: BinOpBool => 
+                generateExpr(binOpBool.expr1, symbolTable, functionTable, label, register, dataMap, textMap) 
+                generateExpr(binOpBool.expr2, symbolTable, functionTable, label , register + 1, dataMap, textMap)
                 binOpBool match {
                     case And(expr1, expr2) => 
                         textMap(label).addOne(AND(None, false, R(register), R(register), R(register + 1)))

@@ -1,13 +1,19 @@
 stages:          
   - build
-  - test
+  - syntax-test
+  - semantic-test
 
 build-job:       
   stage: build
   script:
     - sbt clean compile
 
-test-job:
-  stage: test
+semantic-test-job:
+  stage: semantic-test
   script:
-    - sbt clean test
+    - sbt clean "testOnly valid_programs_tests.SemanticTest"
+
+syntax-test-job:
+  stage: syntax-test
+  script:
+    - sbt clean "testOnly valid_programs_tests.ExprParserTest valid_programs_tests.ProgramParserTest valid_programs_tests.FunctionParserTest valid_programs_tests.TypeParserTest valid_programs_tests.StatParserTest"    

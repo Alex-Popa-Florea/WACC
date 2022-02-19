@@ -52,10 +52,8 @@ object codeGenerator {
             } else {
                 label
             }))
-        bw.write("main:\n")
-        bw.write(textMap("main").foldLeft("")((a, b) => a + b.toString()))
-        bw.write("    .ltorg\n")
-        bw.write(textMap.foldLeft("")((label, element) => 
+        bw.write(textMap("main").foldLeft("main:\n")((a, b) => a + b.toString()))
+        bw.write(textMap.foldLeft("    .ltorg\n")((label, element) => 
             if (element._1.charAt(0) == 'p') {
                 label + element._1 + "\n" + element._2.foldLeft("")((a, b) => a + b.toString())
             } else {
@@ -70,12 +68,27 @@ object codeGenerator {
             case Begin(func, stat) =>
                 func.map(function => generateNode(function, symbolTable, functionTable, "f_" + function.id.variable, dataMap, textMap))
                 textMap(label) = ListBuffer(PUSH(List(LR())))
-                if (symbolTable.getSize() != 0) {
-                    textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", symbolTable.getSize())))
+                var i = symbolTable.getSize()
+                while (i > 0) {
+                    if (i > 1024) {
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", 1024)))
+                        i -= 1024
+                    } else {
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", i)))
+                        i = 0
+                    }
                 }
+                
                 stat.map(statement => generateNode(statement, symbolTable, functionTable, label, dataMap, textMap))
-                if (symbolTable.getSize() != 0) {
-                    textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", symbolTable.getSize())))
+                i = symbolTable.getSize()
+                while (i > 0) {
+                    if (i > 1024) {
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", 1024)))
+                        i -= 1024
+                    } else {
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", i)))
+                        i = 0
+                    }
                 }
                 textMap(label).addOne(LDR(None, R(0), Immed("", 0)))
                 textMap(label).addOne(POP(List(PC())))
@@ -190,7 +203,7 @@ object codeGenerator {
     }
 
 
-    
+
     def generateStackStart(symbolTable: SymbolTable, label: String, dataMap: Map[String, String], textMap: Map[String, ListBuffer[Instruction]]): Unit = {
         textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", symbolTable.getSize())))
     }

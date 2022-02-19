@@ -12,7 +12,13 @@ object instructions {
             if (s) {
                 addString += "S"
             }
-            addString += s" ${rd.toString()}, ${rn.toString()}, ${operand2.toString()}\n"
+            addString += s" ${rd.toString()}, ${rn.toString()}, "
+            operand2 match {
+                case Immed(kind, value) => addString += "#"
+                case Character(value) => addString += "#"
+                case _ =>
+            }
+            addString += s"${operand2.toString()}\n"
             addString
         }
     }
@@ -22,7 +28,13 @@ object instructions {
             if (s) {
                 subString += "S"
             }
-            subString += s" ${rd.toString()}, ${rn.toString()}, ${operand2.toString()}\n"
+            subString += s" ${rd.toString()}, ${rn.toString()}, "
+            operand2 match {
+                case Immed(kind, value) => subString += "#"
+                case Character(value) => subString += "#"
+                case _ =>
+            }
+            subString += s"${operand2.toString()}\n"
             subString
         }
     }

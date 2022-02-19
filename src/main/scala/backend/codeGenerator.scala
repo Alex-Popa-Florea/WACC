@@ -63,11 +63,18 @@ object codeGenerator {
     }
 
     def generateNode(node: Node, symbolTable: SymbolTable, functionTable: FunctionTable, label: String, dataMap: Map[String, String], textMap: Map[String, ListBuffer[Instruction]]): Unit = {
-
+        
         node match {
             case Begin(func, stat) =>
+                // Generating the code for user defined functions
                 func.map(function => generateNode(function, symbolTable, functionTable, "f_" + function.id.variable, dataMap, textMap))
+
                 textMap(label) = ListBuffer(PUSH(List(LR())))
+
+                /*
+                    Decrementing the stack based on how many assignments are present in the program, making sure if more that 1024 bytes are needed
+                    it is done in multiple subtractions
+                */
                 var i = symbolTable.getSize()
                 while (i > 0) {
                     if (i > 1024) {
@@ -79,7 +86,13 @@ object codeGenerator {
                     }
                 }
                 
+                // Generating the code for the statements within main
                 stat.map(statement => generateNode(statement, symbolTable, functionTable, label, dataMap, textMap))
+
+                /*
+                    Incrementing the stack back to its original position, making sure if more that 1024 bytes are needed
+                    it is done in multiple subtractions
+                */
                 i = symbolTable.getSize()
                 while (i > 0) {
                     if (i > 1024) {
@@ -90,6 +103,7 @@ object codeGenerator {
                         i = 0
                     }
                 }
+
                 textMap(label).addOne(LDR(None, R(0), Immed("", 0)))
                 textMap(label).addOne(POP(List(PC())))
 
@@ -104,6 +118,19 @@ object codeGenerator {
                 }
             
             case Assign(lhs, rhs) => 
+                generateRHS(rhs, symbolTable, functionTable, label, 4, dataMap, textMap)
+                lhs match {
+                    case ident: Ident => 
+                        if (symbolTable.getSize() - symbolTable.findId(ident).get == 0) {
+                            textMap(label).addOne(STR(None, R(4), ZeroOffset(SP())))
+                        } else {
+                            textMap(label).addOne(STR(None, R(4), OImmediateOffset(SP(), Immed("", symbolTable.getSize() - symbolTable.findId(ident).get))))
+                        }
+                    case ArrayElem(id, exprs) =>
+                    case Fst(expr) =>
+                    case Snd(expr) =>
+                }
+                
 
             case Exit(expr) => 
                 generateExpr(expr, symbolTable, functionTable, label, 4, dataMap, textMap)

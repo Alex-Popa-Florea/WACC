@@ -68,7 +68,13 @@ object instructions {
             if (s) {
                 movString += "S"
             }
-            movString += s" ${rd.toString()}, #${operand2.toString()}\n"
+            movString += s" ${rd.toString()}, "
+            operand2 match {
+                case Immed(kind, value) => movString += "#"
+                case Character(value) => movString += "#"
+                case _ =>
+            }
+            movString += s"${operand2.toString()}\n"
             movString
         }
     }

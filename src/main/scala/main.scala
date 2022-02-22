@@ -1,6 +1,7 @@
 package wacc
 
 import backend.codeGenerator.generate
+import backend.codeGenerator.writeToFile
 import frontend.color._
 import frontend.edata._
 import frontend.error.StringErrorBuilder
@@ -75,7 +76,8 @@ object main {
                         functionTable.printFunctionTables()
                         println("")
                         symbolTable.printSymbolTables(symbolTable, 0)
-                        generate(x, symbolTable, functionTable, file.getName().replace(".wacc",".s"))
+                        val lines = generate(x, symbolTable, functionTable)
+                        writeToFile(lines, file.getName().replace(".wacc",".s"))
                     } else {
                         /*
                         Otherwise, print the errors produced using the error generator

@@ -64,14 +64,15 @@ object semanticAnalyser {
                 and checking that the last statement analysed for the function returns
                 true as its second parameter if a return statement is present
             */
-			case Function(t, id, vars, stats) => 
-                var nst = new SymbolTable(s"Function ${id.variable}", Some(st))
+			case functionStat: Function => 
+                var nst = new SymbolTable(s"Function ${functionStat.id.variable}", Some(st))
                 st.addChildSt(nst)
-				val checkedParams = vars.map(x => analyse(x, nst, ft, None)._1).reduceOption((x, y) => x && y)
-				val checkedStats = stats.map(x => (analyse(x, nst, ft, Some(extractType(t))), x.pos))
+                functionStat.semanticTable = Some(nst)
+				val checkedParams = functionStat.vars.map(x => analyse(x, nst, ft, None)._1).reduceOption((x, y) => x && y)
+				val checkedStats = functionStat.stat.map(x => (analyse(x, nst, ft, Some(extractType(functionStat.t))), x.pos))
                 if (!checkedStats.last._1._2) {
                     if (returnTypeError == None) {
-                        returnTypeError = Some(s"Function ${id.variable} missing return statement", checkedStats.last._2)
+                        returnTypeError = Some((s"Function ${functionStat.id.variable} missing return statement", checkedStats.last._2))
                     }
                 }
                 checkedParams match {
@@ -190,7 +191,7 @@ object semanticAnalyser {
             /*
                 For an Exit node we analyse the inner expression
                 and ensure it is of the correct types
-            */				
+            */
 			case Exit(expr) => 
                 val checkedExpr = analyseExpr(expr, st)
                 val correctType = checkedExpr._2 == Some(IntCheck(0))
@@ -217,14 +218,16 @@ object semanticAnalyser {
                 it is a bool, then recursively analyse the statements in the true 
                 and false branches, ensuring they are sematically valid
             */
-			case If(cond, trueStat, falseStat) =>
+			case ifStat: If =>
 				var trueNst = new SymbolTable("True branch of if statement", Some(st))
                 st.addChildSt(trueNst)
+                ifStat.trueSemanticTable = Some(trueNst)
 				var falseNst = new SymbolTable("False branch of if statement", Some(st))
                 st.addChildSt(falseNst)
-				val conditionCheck = analyseExpr(cond, st)
-				val trueStatCheck = trueStat.map(x => analyse(x, trueNst, ft, returnType))
-				val falseStatCheck = falseStat.map(x => analyse(x, falseNst, ft, returnType))
+                ifStat.falseSemanticTable = Some(falseNst)
+				val conditionCheck = analyseExpr(ifStat.cond, st)
+				val trueStatCheck = ifStat.trueStat.map(x => analyse(x, trueNst, ft, returnType))
+				val falseStatCheck = ifStat.falseStat.map(x => analyse(x, falseNst, ft, returnType))
                 val correctType = conditionCheck._2 == Some(BoolCheck(0))
                 if (!correctType && conditionCheck._2 != None) {
                     errors.addOne((s"Expression of type bool expected in if statement condition, " +
@@ -239,16 +242,17 @@ object semanticAnalyser {
                 it is a bool, then recursively analyse the statements
                 in its body, ensuring they are sematically valid
             */
-			case While(cond, stat) => 
+			case whileStat: While => 
                 var nst = new SymbolTable("Statements inside while loop", Some(st))
                 st.addChildSt(nst)
-				val conditionCheck = analyseExpr(cond, st)
+                whileStat.semanticTable = Some(nst)
+				val conditionCheck = analyseExpr(whileStat.cond, st)
                 val correctType = conditionCheck._2 == Some(BoolCheck(0))
                 if (!correctType && conditionCheck._2 != None) {
                     errors.addOne((s"Expression of type bool expected in while statement condition," +
                       s" but expression of type ${typeCheckToString(conditionCheck._2.get)} found!", node.pos))
                 }
-                val correctStats = stat.map(x => analyse(x, nst, ft, returnType)._1).reduce((x, y) => x && y)
+                val correctStats = whileStat.stat.map(x => analyse(x, nst, ft, returnType)._1).reduce((x, y) => x && y)
 				(conditionCheck._1 && correctType && 
                  correctStats, false)
             
@@ -256,10 +260,11 @@ object semanticAnalyser {
                 For a NestedBegin node we recursively analyse the statements
                 in its body, ensuring they are sematically valid
             */
-			case NestedBegin(stat) => 
+			case nestedBegin: NestedBegin => 
                 var nst = new SymbolTable("Statements inside nested begin", Some(st))
                 st.addChildSt(nst)
-                val correctStats = stat.map(x => analyse(x, nst, ft, returnType)._1).reduce((x, y) => x && y)
+                nestedBegin.semanticTable = Some(nst)
+                val correctStats = nestedBegin.stat.map(x => analyse(x, nst, ft, returnType)._1).reduce((x, y) => x && y)
 				(correctStats, false)
 			
 			case _ => (false, false)

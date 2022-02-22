@@ -122,11 +122,11 @@ object symbolTable {
             }
             if (st.variableMap.size > 0) {
                 println(s"(ii) Variables:")
-                st.variableMap.zip(0 until st.variableMap.size).foreach { case ((k, x), i) => 
+                st.variableMap.zip(0 until st.variableMap.size).foreach { case ((k, (x, _)), i) => 
                     for (i <- 0 to nest) {
                         print("  ")
                     }
-                    println(s" ${i + 1}. \"$k\": \"${typeCheckToString(x._1)}\"")
+                    println(s" ${i + 1}. \"$k\": \"${typeCheckToString(x)}\"")
                 }
             }
             st.children.map(x => {

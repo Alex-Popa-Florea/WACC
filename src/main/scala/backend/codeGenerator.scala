@@ -11,6 +11,8 @@ import wacc.symbolTable._
 import wacc.functionTable._
 import backend.instructions._
 import backend.operators._
+import backend.data._
+import backend.lines._
 import wacc.types.IntCheck
 import wacc.types.BoolCheck
 import wacc.types.CharCheck
@@ -27,53 +29,63 @@ object codeGenerator {
            |
            |""".stripMargin
     val text = 
-        """|.text
+        """|
+           |.text
            |
            |.global main
            |""".stripMargin
+    
     val runtimeError: ListBuffer[Instruction] = ListBuffer(
         BL(None, "p_print_string"), 
         MOV(None, false, R(0), 
         Immed("", -1)), 
         BL(None, "exit")
     )
-    val exit: ListBuffer[Instruction] = ListBuffer(
-        MOV(None, false, R(0), R(4)), 
-        BL(None, "exit")
-    )
 
-    def generate(program: Node, symbolTable: SymbolTable, functionTable: FunctionTable, fileName: String): Unit = {
+    def writeToFile(lines: List[Line], fileName: String): Unit = {
         val fileWriter = new FileWriter(new File(fileName))
-        val dataMap: Map[String, String] = Map.empty
-        val textMap: Map[String, ListBuffer[Instruction]] = Map.empty
         val bw = new BufferedWriter(fileWriter)
-        generateNode(program, symbolTable, functionTable, "main", dataMap, textMap)
-        if (!dataMap.isEmpty) {
-            bw.write(dataMap.values.foldLeft(data)((a, b) => a + b))
-            bw.write("\n")
-        }
-        bw.write(textMap.foldLeft(text)((label, element) => 
-            if (element._1.charAt(0) == 'f') {
-                label + element._1 + "\n" + element._2.foldLeft("")((a, b) => a + b.toString())
-            } else {
-                label
-            }))
-        bw.write(textMap("main").foldLeft("main:\n")((a, b) => a + b.toString()))
-        bw.write(textMap.foldLeft("    .ltorg\n")((label, element) => 
-            if (element._1.charAt(0) == 'p') {
-                label + element._1 + "\n" + element._2.foldLeft("")((a, b) => a + b.toString())
-            } else {
-                label
-            }))
+        lines.map(line => bw.write(line.toString()))
         bw.close()
     }
 
-    def generateNode(node: Node, symbolTable: SymbolTable, functionTable: FunctionTable, label: String, dataMap: Map[String, String], textMap: Map[String, ListBuffer[Instruction]]): Unit = {
+    def generate(program: Node, symbolTable: SymbolTable, functionTable: FunctionTable): List[Line] = {
+        val dataMap: Map[Scope, Msg] = Map.empty
+        val textMap: Map[Scope, ListBuffer[Instruction]] = Map.empty
+        generateNode(program, symbolTable, functionTable, Main(), dataMap, textMap)
+        val lines: ListBuffer[Line] = ListBuffer.empty
+        if (!dataMap.isEmpty) {
+            lines.addOne(Section(data))
+            lines.addAll(dataMap.values)
+        }
+        lines.addOne(Section(text))
+        textMap.keySet.map(key =>
+            key match {
+                case F(string) => 
+                    lines.addOne(key)
+                    lines.addAll(textMap(key))
+                case _ => 
+            }    
+        )
+        lines.addOne(Main())
+        lines.addAll(textMap(Main()))
+        textMap.keySet.map(key =>
+            key match {
+                case P(string) =>
+                    lines.addOne(key)
+                    lines.addAll(textMap(key))
+                case _ => 
+            }    
+        )
+        lines.toList
+    }
+
+    def generateNode(node: Node, symbolTable: SymbolTable, functionTable: FunctionTable, label: Scope, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
 
         node match {
             case Begin(func, stat) =>
                 // Generating the code for user defined functions
-                func.map(function => generateNode(function, symbolTable, functionTable, "f_" + function.id.variable, dataMap, textMap))
+                func.map(function => generateNode(function, symbolTable, functionTable, F(function.id.variable), dataMap, textMap))
 
                 textMap(label) = ListBuffer(PUSH(List(LR())))
 
@@ -112,6 +124,7 @@ object codeGenerator {
 
                 textMap(label).addOne(LDR(None, R(0), Immed("", 0)))
                 textMap(label).addOne(POP(List(PC())))
+                textMap(label).addOne(Ltorg())
 
             case Function(t, id, vars, stat) => 
 
@@ -134,6 +147,7 @@ object codeGenerator {
                     }
                     case None =>
                 }
+
             case Assign(lhs, rhs) => 
                 generateRHS(rhs, symbolTable, functionTable, label, 4, dataMap, textMap)
                 lhs match {
@@ -159,19 +173,69 @@ object codeGenerator {
                     case Fst(expr) =>
                     case Snd(expr) =>
                 }
-                
+
+            case print: PrintTrait =>
+                generateExpr(print.expr, symbolTable, functionTable, label, 4, dataMap, textMap)
+                textMap(label).addOne(MOV(None, false, R(0), R(4)))
+                textMap(label).addOne(print.expr match {
+                    case Ident(variable) => BL(None, "")
+                    case ArrayElem(id, exprs) => BL(None, "")
+                    case IntLiter(x) => 
+                        generateInt(dataMap, textMap)
+                        BL(None, "p_print_int")
+                    case BoolLiter(bool) => 
+                        generateBool(dataMap, textMap)
+                        BL(None, "p_print_bool")
+                    case CharLiter(char) =>
+                        BL(None, "putchar")
+                    case StrLiter(string) => 
+                        generateString(dataMap, textMap)
+                        BL(None, "p_print_string")
+                    case PairLiter() => BL(None, "")
+                    case Not(expr1) =>
+                        generateBool(dataMap, textMap)
+                        BL(None, "p_print_bool")
+                    case Neg(expr1) =>
+                        generateInt(dataMap, textMap)
+                        BL(None, "p_print_int")
+                    case Len(expr1) =>
+                        generateInt(dataMap, textMap)
+                        BL(None, "p_print_int")
+                    case Ord(expr1) => BL(None, "")
+                    case Chr(expr1) => BL(None, "")
+                    case _: BinOpInt => 
+                        generateInt(dataMap, textMap)
+                        BL(None, "p_print_int")
+                    case _: BinOpBool => 
+                        generateBool(dataMap, textMap)
+                        BL(None, "p_print_bool")
+                    case _: BinOpEqs => 
+                        generateBool(dataMap, textMap)
+                        BL(None, "p_print_bool")
+                    case _: BinOpComp => 
+                        generateBool(dataMap, textMap)
+                        BL(None, "p_print_bool")
+                })
+                print match {
+                    case Println(expr) => 
+                        generateLine(dataMap, textMap)
+                        textMap(label).addOne(BL(None, "p_print_ln"))
+                    case _ =>
+                }
 
             case Exit(expr) => 
                 generateExpr(expr, symbolTable, functionTable, label, 4, dataMap, textMap)
-                textMap(label).addAll(exit)
-
+                textMap(label).addAll(ListBuffer(
+                    MOV(None, false, R(0), R(4)), 
+                    BL(None, "exit")
+                ))
             case Skip() => 
 
             case _ => 
         }
     }
 
-    def generateRHS(assignRHS: AssignRHS, symbolTable: SymbolTable, functionTable: FunctionTable, label: String, register: Int, dataMap: Map[String, String], textMap: Map[String, ListBuffer[Instruction]]): Unit = {
+    def generateRHS(assignRHS: AssignRHS, symbolTable: SymbolTable, functionTable: FunctionTable, label: Scope, register: Int, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
         assignRHS match {
             case expr: Expr => generateExpr(expr, symbolTable, functionTable, label, 4, dataMap, textMap) 
             case ArrayLiter(array) => 
@@ -182,7 +246,7 @@ object codeGenerator {
         }
     }
 
-    def generateExpr(expr: Expr, symbolTable: SymbolTable, functionTable: FunctionTable, label: String, register: Int, dataMap: Map[String, String], textMap: Map[String, ListBuffer[Instruction]]): Unit = {
+    def generateExpr(expr: Expr, symbolTable: SymbolTable, functionTable: FunctionTable, label: Scope, register: Int, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
         expr match {
             case ident: Ident => 
                 if (symbolTable.getSize() - symbolTable.findId(ident).get == 0) {
@@ -202,6 +266,9 @@ object codeGenerator {
             case CharLiter(char) => 
                 textMap(label).addOne(MOV(None, false, R(register), Character(char)))
             case StrLiter(string) => 
+                dataMap(PrintString(string)) = Msg(msg, string.length(), string)
+                textMap(label).addOne(LDR(None, R(register), Label(s"msg_${msg}")))
+                msg += 1
             case PairLiter() =>
             case Not(expr1) =>
             case Neg(expr1) => 
@@ -240,7 +307,7 @@ object codeGenerator {
                         textMap(label).addOne(SUB(None, true, R(register), R(register), R(register + 1)))
                         textMap(label).addOne(BL(Some(VSCOND()), "p_throw_overflow_error"))
                 }
-                textMap("p_throw_runtime_error") = runtimeError
+                textMap(P("throw_runtime_error")) = runtimeError
                 generateString(dataMap, textMap)
             case GT(expr1, expr2) => 
             case GTE(expr1, expr2) => 
@@ -262,27 +329,24 @@ object codeGenerator {
 
 
 
-    def generateStackStart(symbolTable: SymbolTable, label: String, dataMap: Map[String, String], textMap: Map[String, ListBuffer[Instruction]]): Unit = {
+    def generateStackStart(symbolTable: SymbolTable, label: Scope, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
         textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", symbolTable.getSize())))
     }
 
-    def generateStackEnd(symbolTable: SymbolTable, label: String, dataMap: Map[String, String], textMap: Map[String, ListBuffer[Instruction]]): Unit = {
+    def generateStackEnd(symbolTable: SymbolTable, label: Scope, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
         textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", symbolTable.getSize())))
     }
 
-    def generateString(dataMap: Map[String, String], textMap: Map[String, ListBuffer[Instruction]]): Unit = {
-        if (!dataMap.contains("p_print_string")) {
-            dataMap("p_print_string") = 
-                s"""|msg_${msg}:
-                    |    .word 5
-                    |    .ascii	"%.*s\\0"
-                    |""".stripMargin
+    def generateRefrence(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
+        val func = P("print_reference")
+        if (!dataMap.contains(func)) {
+            val string = s"%p\\0"
+            dataMap(func) = Msg(msg, 3, string)
             msg += 1
-            textMap("p_print_string") = ListBuffer(
+            textMap(func) = ListBuffer(
                 PUSH(List(LR())), 
-                LDR(None, R(1), ZeroOffset(R(0))),
-                ADD(None, false, R(2), R(0), Immed("", 4)),
-                LDR(None, R(0), Label(s"msg_${dataMap("p_print_string").charAt(4)}")),
+                MOV(None, false, R(1), R(0)),
+                LDR(None, R(0), Label(s"msg_${dataMap(func).id}")),
                 ADD(None, false, R(0), R(0), Immed("", 4)),
                 BL(None, "printf"),
                 MOV(None, false, R(0), Immed("", 0)),
@@ -292,41 +356,114 @@ object codeGenerator {
         }
     }
 
-    def generateOverflow(dataMap: Map[String, String], textMap: Map[String, ListBuffer[Instruction]]): Unit = {
-        if (!dataMap.contains("p_throw_overflow_error")) {
-            dataMap("p_throw_overflow_error") = 
-                s"""|msg_${msg}:
-                    |    .word 83
-                    |    .ascii	"OverflowError: the result is too small/large to store in a 4-byte signed-integer.\\n\\0"
-                    |""".stripMargin
+    def generateLine(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
+        val func = P("print_ln")
+        if (!dataMap.contains(func)) {
+            val string = s"\\0"
+
+            dataMap(func) = Msg(msg, 1, string)
             msg += 1
-            textMap("p_throw_overflow_error") = ListBuffer(
-                LDR(None, R(0), Label(s"msg_${dataMap("p_throw_overflow_error").charAt(4)}")),
-                BL(None, "p_throw_runtime_error")
+            textMap(func) = ListBuffer(
+                PUSH(List(LR())), 
+                LDR(None, R(0), Label(s"msg_${dataMap(func).id}")),
+                ADD(None, false, R(0), R(0), Immed("", 4)),
+                BL(None, "puts"),
+                MOV(None, false, R(0), Immed("", 0)),
+                BL(None, "fflush"),
+                POP(List(PC()))
             )
-            // textMap("p_throw_overflow_error").addOne(BL(None, "p_throw_runtime_error"))
         }
     }
 
-    def generateCheckDivZero(dataMap: Map[String, String], textMap: Map[String, ListBuffer[Instruction]]): Unit = {
-        if (!dataMap.contains("p_check_divide_by_zero")) {
-            dataMap("p_check_divide_by_zero") = 
-                s"""|msg_${msg}:
-                    |    .word 45
-                    |    .ascii	"DivideByZeroError: divide or modulo by zero\\n\\0"
-                    |""".stripMargin
+    def generateString(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
+        val func = P("print_string")
+        if (!dataMap.contains(func)) {
+            val string = s"%.*s\\0"
+            dataMap(func) = Msg(msg, 5, string)
             msg += 1
-            textMap("p_check_divide_by_zero") = ListBuffer(
+            textMap(func) = ListBuffer(
+                PUSH(List(LR())), 
+                LDR(None, R(1), ZeroOffset(R(0))),
+                ADD(None, false, R(2), R(0), Immed("", 4)),
+                LDR(None, R(0), Label(s"msg_${dataMap(func).id}")),
+                ADD(None, false, R(0), R(0), Immed("", 4)),
+                BL(None, "printf"),
+                MOV(None, false, R(0), Immed("", 0)),
+                BL(None, "fflush"),
+                POP(List(PC()))
+            )
+        }
+    }
+
+    def generateInt(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
+        val func = P("print_int")
+        if (!dataMap.contains(func)) {
+            val string = s"%d\\0"
+            dataMap(func) = Msg(msg, 3, string)
+            msg += 1
+            textMap(func) = ListBuffer(
+                PUSH(List(LR())), 
+                MOV(None, false, R(1), R(0)),
+                LDR(None, R(0), Label(s"msg_${dataMap(func).id}")),
+                ADD(None, false, R(0), R(0), Immed("", 4)),
+                BL(None, "printf"),
+                MOV(None, false, R(0), Immed("", 0)),
+                BL(None, "fflush"),
+                POP(List(PC()))
+            )
+        }
+    }
+
+    def generateBool(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
+        val trueFunc = P("print_bool_true")
+        val falseFunc = P("print_bool_true")
+        if (!dataMap.contains(trueFunc)) {
+            val trueString = s"true\\0"
+            val falseString = s"false\\0"
+            dataMap(trueFunc) = Msg(msg, 5, trueString)
+            msg += 1
+            dataMap(falseFunc) = Msg(msg, 6, falseString)
+            msg += 1
+            textMap(trueFunc) = ListBuffer(
+                PUSH(List(LR())), 
+                CMP(None, R(0), Immed("", 0)),
+                LDR(Some(NECOND()), R(0), Label(s"msg_${dataMap(trueFunc).id}")),
+                LDR(Some(EQCOND()), R(0), Label(s"msg_${dataMap(falseFunc).id}")),
+                ADD(None, false, R(0), R(0), Immed("", 4)),
+                BL(None, "printf"),
+                MOV(None, false, R(0), Immed("", 0)),
+                BL(None, "fflush"),
+                POP(List(PC()))
+            )
+        }
+    }
+
+    def generateOverflow(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
+        val func = P("throw_overflow_error")
+        if (!dataMap.contains(func)) {
+            val string = s"OverflowError: the result is too small/large to store in a 4-byte signed-integer.\\n\\0"
+            dataMap(func) = Msg(msg, 83, string)
+            msg += 1
+            textMap(func) = ListBuffer(
+                LDR(None, R(0), Label(s"msg_${dataMap(func).id}")),
+                BL(None, "p_throw_runtime_error")
+            )
+        }
+    }
+
+    def generateCheckDivZero(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
+        val func = P("check_divide_by_zero")
+        if (!dataMap.contains(func)) {
+            val string = s"DivideByZeroError: divide or modulo by zero\\n\\0"
+            dataMap(func) = Msg(msg, 45, string)
+            msg += 1
+            textMap(func) = ListBuffer(
                 PUSH(List(LR())),
                 CMP(None, R(1), Immed("", 0)),
-                LDR(Some(EQCOND()), R(0), Label(s"msg_${dataMap("p_check_divide_by_zero").charAt(4)}")),
+                LDR(Some(EQCOND()), R(0), Label(s"msg_${dataMap(func).id}")),
                 BL(Some(EQCOND()), "p_throw_runtime_error"),
                 POP(List(PC()))
             )
-            // textMap("p_check_divide_by_zero").addOne(CMP(None, R(1), Immed("", 0)))
-            // textMap("p_check_divide_by_zero").addOne(LDR(Some(EQCOND()), R(0), Label(s"msg_${dataMap("p_check_divide_by_zero").charAt(4)}")))
-            // textMap("p_check_divide_by_zero").addOne(BL(Some(EQCOND()), "p_throw_runtime_error"))
-            // textMap("p_check_divide_by_zero").addOne(POP(List(PC())))
         }
     }
 }

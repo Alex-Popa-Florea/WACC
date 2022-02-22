@@ -1,10 +1,48 @@
 package backend
 
 import backend.operators._
+import lines._
 
 object instructions {
-    sealed trait Instruction
+    sealed trait Instruction extends Line
+    
+    sealed trait Scope extends Instruction
+    case class Main() extends Scope {
+        override def toString() : String = {
+            "main:\n"
+        }
+    }
+    
+    case class P(string: String) extends Scope {
+        override def toString() : String = {
+            "p_" + string + ":\n"
+        }
+    }
+    
+    case class F(string: String) extends Scope {
+        override def toString() : String = {
+            "f_" + string + ":\n"
+        }
+    }
+    
+    case class L(id: Int) extends Scope {
+        override def toString() : String = {
+            s"""L${id}:\n"""
+        }
+    }
 
+    case class PrintString(string: String) extends Scope {
+        override def toString() : String = {
+            string
+        }
+    }
+
+    case class Ltorg() extends Instruction {
+        override def toString() : String = {
+            "    .ltorg\n"
+        }
+    }
+    
     sealed trait Arithmetic extends Instruction
     case class ADD(cond: Option[Cond], s: Boolean, rd: Register, rn: Register, operand2: Operand2) extends Arithmetic {
         override def toString() : String = {

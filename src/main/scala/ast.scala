@@ -39,7 +39,9 @@ object ast {
 
     case class Begin(func: List[Function], stat: List[Statement])(val pos: (Int, Int)) extends Program 
 
-    case class Function(t: Type, id: Ident, vars: List[Parameter], stat: List[Statement])(val pos: (Int, Int)) extends Node
+    case class Function(t: Type, id: Ident, vars: List[Parameter], stat: List[Statement])(val pos: (Int, Int)) extends Node{
+        var semanticTable: Option[symbolTable.SymbolTable] = None
+    }
     case class Parameter(t: Type, id: Ident)(val pos: (Int, Int)) extends Node
 
     sealed trait Statement extends Node
@@ -50,11 +52,22 @@ object ast {
     case class Free(expr: Expr)(val pos: (Int, Int)) extends Statement
     case class Return(expr: Expr)(val pos: (Int, Int)) extends Statement
     case class Exit(expr: Expr)(val pos: (Int, Int)) extends Statement
-    case class Print(expr: Expr)(val pos: (Int, Int)) extends Statement
-    case class Println(expr: Expr)(val pos: (Int, Int)) extends Statement
-    case class If(cond: Expr, trueStat: List[Statement], falseStat: List[Statement])(val pos: (Int, Int)) extends Statement
-    case class While(cond: Expr, stat: List[Statement])(val pos: (Int, Int)) extends Statement
-    case class NestedBegin(stat: List[Statement])(val pos: (Int, Int)) extends Statement
+
+    sealed trait PrintTrait extends Statement {
+        val expr: Expr
+    }
+    case class Print(expr: Expr)(val pos: (Int, Int)) extends Statement with PrintTrait
+    case class Println(expr: Expr)(val pos: (Int, Int)) extends Statement with PrintTrait
+    case class If(cond: Expr, trueStat: List[Statement], falseStat: List[Statement])(val pos: (Int, Int)) extends Statement{
+        var trueSemanticTable: Option[symbolTable.SymbolTable] = None
+        var falseSemanticTable: Option[symbolTable.SymbolTable] = None
+    }
+    case class While(cond: Expr, stat: List[Statement])(val pos: (Int, Int)) extends Statement{
+        var semanticTable: Option[symbolTable.SymbolTable] = None
+    }
+    case class NestedBegin(stat: List[Statement])(val pos: (Int, Int)) extends Statement{
+        var semanticTable: Option[symbolTable.SymbolTable] = None
+    }
 
     sealed trait AssignLHS extends Node
     case class Ident(variable: String)(val pos: (Int, Int)) extends AssignLHS with Expr {

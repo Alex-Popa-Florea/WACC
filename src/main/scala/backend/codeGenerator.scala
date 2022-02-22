@@ -168,7 +168,48 @@ object codeGenerator {
                 textMap(label).addOne(MOV(None, false, R(0), R(4)))
                 textMap(label).addOne(print.expr match {
                     case Ident(variable) => BL(None, "")
-                    case ArrayElem(id, exprs) => BL(None, "")
+                    case ArrayElem(id, exprs) => 
+                        val size = exprs.size
+                        symbolTable.find(id) match {
+                            case Some(value) => value match {
+                                case IntCheck(nested) => 
+                                    if (nested == size) {
+                                        generateInt(dataMap, textMap)
+                                        BL(None, "p_print_int")
+                                    } else {
+                                        generateRefrence(dataMap, textMap)
+                                        BL(None, "p_print_reference")
+                                    }
+                                case BoolCheck(nested) =>
+                                    if (nested == size) {
+                                        generateBool(dataMap, textMap)
+                                        BL(None, "p_print_bool")
+                                    } else {
+                                        generateRefrence(dataMap, textMap)
+                                        BL(None, "p_print_reference")
+                                    }
+                                case CharCheck(nested) =>
+                                    if (nested == size) {
+                                        BL(None, "putchar")
+                                    } else {
+                                        generateRefrence(dataMap, textMap)
+                                        BL(None, "p_print_reference")
+                                    }
+                                case StrCheck(nested) =>
+                                    if (nested == size) {
+                                        generateString(dataMap, textMap)
+                                        BL(None, "p_print_string")
+                                    } else {
+                                        generateRefrence(dataMap, textMap)
+                                        BL(None, "p_print_reference")
+                                    }
+                                case PairCheck(type1, type2, nested) =>
+                                    generateRefrence(dataMap, textMap)
+                                    BL(None, "p_print_reference")
+                                case EmptyPairCheck() => BL(None, "p_print_reference")
+                            }
+                            case None => BL(None, "p_print_reference") // one day adhithi, she told me, its all wrong
+                        }
                     case IntLiter(x) => 
                         generateInt(dataMap, textMap)
                         BL(None, "p_print_int")
@@ -180,7 +221,9 @@ object codeGenerator {
                     case StrLiter(string) => 
                         generateString(dataMap, textMap)
                         BL(None, "p_print_string")
-                    case PairLiter() => BL(None, "")
+                    case PairLiter() => 
+                        generateRefrence(dataMap, textMap)
+                        BL(None, "p_print_reference")
                     case Not(expr1) =>
                         generateBool(dataMap, textMap)
                         BL(None, "p_print_bool")
@@ -298,6 +341,7 @@ object codeGenerator {
                     textMap(label).addOne(LDR(None, R(register), Label(s"msg_${dataMap(PrintString(string)).id}")))
                 }
             case PairLiter() =>
+                textMap(label).addOne(LDR(None, R(register), Immed("", 0)))
             case Not(expr1) =>
                 generateExpr(expr1, symbolTable, functionTable, label, register, dataMap, textMap)
                 textMap(label).addOne(EOR(None, false, R(register), R(register), Immed("", 1)))

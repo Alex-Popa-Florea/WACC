@@ -44,7 +44,6 @@ object codeGenerator {
         generateNode(program, symbolTable, functionTable, Main(), dataMap, textMap)
         val lines: ListBuffer[Line] = ListBuffer.empty
         if (!dataMap.isEmpty) {
-            //dataMap.toSeq.sortBy(x => x._2.id)
             lines.addOne(Data())
             lines.addAll(dataMap.values.toSeq.sortBy(x => x.id))
         }
@@ -245,6 +244,41 @@ object codeGenerator {
                     textMap(label).addOne(LDR(None, R(register), OImmediateOffset(SP(), Immed("", symbolTable.getSize() - symbolTable.findId(ident).get))))
                 }
             case ArrayElem(id, exprs) => 
+                textMap(label).addOne(ADD(None, false, R(register), SP(), Immed("", symbolTable.getSize() - symbolTable.findId(id).get)))
+                var i = 0
+                exprs.map(expr => {
+                    generateExpr(expr, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                    textMap(label).addAll(List(
+                        LDR(None, R(register), ZeroOffset(R(register))), 
+                        MOV(None, false, R(0), R(register + 1)),
+                        MOV(None, false, R(1), R(register)),
+                        BL(None, "p_check_array_bounds"),
+                        ADD(None, false, R(register), R(register), Immed("", 4)),
+                        symbolTable.find(id) match {
+                            case Some(value) => value match {
+                                case BoolCheck(nested) => 
+                                    if (nested - i == 1) {
+                                        ADD(None, false, R(register), R(register), R(register + 1))
+                                    } else {
+                                        ADD(None, false, R(register), R(register), LogicalShiftLeft(R(register + 1), Immed("", 2)))
+                                    }
+                                case CharCheck(nested) =>
+                                    if (nested - i == 1) {
+                                        ADD(None, false, R(register), R(register), R(register + 1))
+                                    } else {
+                                        ADD(None, false, R(register), R(register), LogicalShiftLeft(R(register + 1), Immed("", 2)))
+                                    }
+                                case _ =>
+                                    ADD(None, false, R(register), R(register), LogicalShiftLeft(R(register + 1), Immed("", 2)))
+                            }
+                            case None => 
+                                ADD(None, false, R(register), R(register), LogicalShiftLeft(R(register + 1), Immed("", 2))) //HEYYYY BROTHER MAYBE CHECK THAT THIS IS RIGHTTT OHHH 
+                        }
+                    ))
+                    generateCheckArrayBounds(dataMap, textMap)
+                    i += 1
+                })
+                textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
             case IntLiter(x) => 
                 textMap(label).addOne(LDR(None, R(register), Immed("", x)))
             case BoolLiter(bool) =>
@@ -256,11 +290,17 @@ object codeGenerator {
             case CharLiter(char) => 
                 textMap(label).addOne(MOV(None, false, R(register), Character(char)))
             case StrLiter(string) => 
-                dataMap(PrintString(string)) = Msg(msg, string.length(), string)
-                textMap(label).addOne(LDR(None, R(register), Label(s"msg_${msg}")))
-                msg += 1
+                if (!dataMap.contains(PrintString(string))) {
+                    dataMap(PrintString(string)) = Msg(msg, string.length(), string)
+                    textMap(label).addOne(LDR(None, R(register), Label(s"msg_${msg}")))
+                    msg += 1
+                } else {
+                    textMap(label).addOne(LDR(None, R(register), Label(s"msg_${dataMap(PrintString(string)).id}")))
+                }
             case PairLiter() =>
             case Not(expr1) =>
+                generateExpr(expr1, symbolTable, functionTable, label, register, dataMap, textMap)
+                textMap(label).addOne(EOR(None, false, R(register), R(register), Immed("", 1)))
             case Neg(expr1) => 
             case Len(expr1) => 
             case Ord(expr1) => 
@@ -440,6 +480,32 @@ object codeGenerator {
             )
         }
     }
+
+    def generateCheckArrayBounds(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
+        val negativeFunc = P("p_check_array_bounds_negative")
+        val largeFunc = P("p_check_array_bounds_large")
+        if (!dataMap.contains(negativeFunc)) {
+            val negativeString = s"ArrayIndexOutOfBoundsError: negative index\\n\\0"
+            val largeString = s"ArrayIndexOutOfBoundsError: index too large\\n\\0"
+            dataMap(negativeFunc) = Msg(msg, 44, negativeString)
+            msg += 1
+            dataMap(largeFunc) = Msg(msg, 45, largeString)
+            msg += 1
+            textMap(negativeFunc) = ListBuffer(
+                PUSH(List(LR())), 
+                CMP(None, R(0), Immed("", 0)),
+                LDR(Some(LTCOND()), R(0), Label(s"msg_${dataMap(negativeFunc).id}")),
+                BL(Some(LTCOND()), "p_throw_runtime_error"),
+                LDR(None, R(1), ZeroOffset(R(1))),
+                CMP(None, R(0), R(1)),
+                LDR(Some(CSCOND()), R(0), Label(s"msg_${dataMap(largeFunc).id}")),
+                BL(Some(CSCOND()), "p_throw_runtime_error"),
+                POP(List(PC()))
+            )
+            textMap(P("throw_runtime_error")) = runtimeError
+        }
+    }
+
 
     def generateCheckDivZero(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
         val func = P("check_divide_by_zero")

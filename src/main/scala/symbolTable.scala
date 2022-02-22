@@ -38,13 +38,21 @@ object symbolTable {
                         case IntCheck(nested) => 
                             size += 4
                         case BoolCheck(nested) => 
-                            size += 1
+                            if (nested != 0) {
+                                size += 4
+                            } else {
+                                size += 1
+                            }  
                         case CharCheck(nested) => 
-                            size += 1
+                            if (nested != 0) {
+                                size += 4
+                            } else {
+                                size += 1
+                            }
                         case StrCheck(nested) => 
                             size += 4
                         case PairCheck(type1, type2, nested) => 
-                            size += 8
+                            size += 4
                         case _ =>
                         }
                     variableMap(ident.variable) = (varType, size)

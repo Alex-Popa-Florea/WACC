@@ -122,7 +122,13 @@ object instructions {
             if (s) {
                 andString += "S"
             }
-            andString += s" ${rd.toString()}, ${rn.toString()}, ${operand2.toString()}\n"
+            andString += s" ${rd.toString()}, ${rn.toString()}, "
+            operand2 match {
+                case Immed(kind, value) => andString += "#"
+                case Character(value) => andString += "#"
+                case _ =>
+            }
+            andString += s"${operand2.toString()}\n"
             andString
         }
     }
@@ -132,7 +138,13 @@ object instructions {
             if (s) {
                 eorString += "S"
             }
-            eorString += s" ${rd.toString()}, ${rn.toString()}, ${operand2.toString()}\n"
+            eorString += s" ${rd.toString()}, ${rn.toString()}, "
+            operand2 match {
+                case Immed(kind, value) => eorString += "#"
+                case Character(value) => eorString += "#"
+                case _ =>
+            }
+            eorString += s"${operand2.toString()}\n"
             eorString
         }
     }
@@ -142,7 +154,13 @@ object instructions {
             if (s) {
                 orrString += "S"
             }
-            orrString += s" ${rd.toString()}, ${rn.toString()}, ${operand2.toString()}\n"
+            orrString += s" ${rd.toString()}, ${rn.toString()}, "
+            operand2 match {
+                case Immed(kind, value) => orrString += "#"
+                case Character(value) => orrString += "#"
+                case _ =>
+            }
+            orrString += s"${operand2.toString()}\n"
             orrString
         }
     }

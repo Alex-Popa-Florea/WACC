@@ -10,6 +10,12 @@ object operators {
     }
     case class Character(value: Char) extends Operand2
 
+    case class LogicalShiftLeft(rm: Register, immed: Immed) extends Operand2 {
+        override def toString() : String = {
+            rm.toString() + " LSL #" + immed.toString()
+        }
+    }
+
     sealed trait A_mode2
 
     sealed trait Offset extends A_mode2
@@ -46,14 +52,24 @@ object operators {
             s"NE"
         }
     }
-    case class HSCSCOND() extends Cond {
+    case class HSCOND() extends Cond {
         override def toString() : String = {
-            s"HSCS"
+            s"HS"
         }
     }
-    case class LOCCCOND() extends Cond {
+    case class CSCOND() extends Cond {
         override def toString() : String = {
-            s"LOCC"
+            s"CS"
+        }
+    }
+    case class LOCOND() extends Cond {
+        override def toString() : String = {
+            s"LO"
+        }
+    }
+    case class CCCOND() extends Cond {
+        override def toString() : String = {
+            s"CC"
         }
     }
     case class MICOND() extends Cond {

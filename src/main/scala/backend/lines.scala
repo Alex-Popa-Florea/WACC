@@ -3,9 +3,23 @@ package backend
 object lines {
     trait Line
 
-    case class Section(string: String) extends Line {
+    sealed trait Section extends Line
+
+    case class Data() extends Section {
         override def toString() : String = {
-            string
+            """|.data
+               |
+               |""".stripMargin
+        }
+    }
+
+    case class Text() extends Section {
+        override def toString() : String = {
+            """|
+               |.text
+               |
+               |.global main
+               |""".stripMargin
         }
     }
     

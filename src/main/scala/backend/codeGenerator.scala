@@ -23,17 +23,6 @@ import wacc.types.EmptyPairCheck
 object codeGenerator {
     
     var msg = 0
-
-    val data = 
-        """|.data
-           |
-           |""".stripMargin
-    val text = 
-        """|
-           |.text
-           |
-           |.global main
-           |""".stripMargin
     
     val runtimeError: ListBuffer[Instruction] = ListBuffer(
         BL(None, "p_print_string"), 
@@ -55,10 +44,11 @@ object codeGenerator {
         generateNode(program, symbolTable, functionTable, Main(), dataMap, textMap)
         val lines: ListBuffer[Line] = ListBuffer.empty
         if (!dataMap.isEmpty) {
-            lines.addOne(Section(data))
-            lines.addAll(dataMap.values)
+            //dataMap.toSeq.sortBy(x => x._2.id)
+            lines.addOne(Data())
+            lines.addAll(dataMap.values.toSeq.sortBy(x => x.id))
         }
-        lines.addOne(Section(text))
+        lines.addOne(Text())
         textMap.keySet.map(key =>
             key match {
                 case F(string) => 
@@ -416,7 +406,7 @@ object codeGenerator {
 
     def generateBool(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
         val trueFunc = P("print_bool_true")
-        val falseFunc = P("print_bool_true")
+        val falseFunc = P("print_bool_false")
         if (!dataMap.contains(trueFunc)) {
             val trueString = s"true\\0"
             val falseString = s"false\\0"

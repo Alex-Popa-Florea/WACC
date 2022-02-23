@@ -19,6 +19,7 @@ import wacc.types.CharCheck
 import wacc.types.StrCheck
 import wacc.types.PairCheck
 import wacc.types.EmptyPairCheck
+import parsley.registers
 
 object codeGenerator {
     
@@ -119,11 +120,10 @@ object codeGenerator {
 
             case AssignType(t, id, rhs) => 
                 generateRHS(rhs, symbolTable, functionTable, label, 4, dataMap, textMap)
-                var a_mode2: A_mode2 = null
-                if (symbolTable.getSize() - symbolTable.findId(id).get == 0) {
-                    a_mode2 = ZeroOffset(SP())       
+                val a_mode2 = if (symbolTable.getSize() - symbolTable.findId(id).get == 0) {
+                    ZeroOffset(SP())       
                 } else {
-                    a_mode2 = OImmediateOffset(SP(), Immed("", symbolTable.getSize() - symbolTable.findId(id).get))
+                    OImmediateOffset(SP(), Immed("", symbolTable.getSize() - symbolTable.findId(id).get))
                 }
                 symbolTable.find(id) match {
                     case Some(typeCheck) => typeCheck match {
@@ -141,11 +141,10 @@ object codeGenerator {
                 generateRHS(rhs, symbolTable, functionTable, label, 4, dataMap, textMap)
                 lhs match {
                     case ident: Ident => 
-                        var a_mode2: A_mode2 = null
-                        if (symbolTable.getSize() - symbolTable.findId(ident).get == 0) {
-                            a_mode2 = ZeroOffset(SP())       
+                        val a_mode2 = if (symbolTable.getSize() - symbolTable.findId(ident).get == 0) {
+                            ZeroOffset(SP())       
                         } else {
-                            a_mode2 = OImmediateOffset(SP(), Immed("", symbolTable.getSize() - symbolTable.findId(ident).get))
+                            OImmediateOffset(SP(), Immed("", symbolTable.getSize() - symbolTable.findId(ident).get))
                         }
                         symbolTable.find(ident) match {
                             case Some(typeCheck) => typeCheck match {
@@ -167,7 +166,47 @@ object codeGenerator {
                 generateExpr(print.expr, symbolTable, functionTable, label, 4, dataMap, textMap)
                 textMap(label).addOne(MOV(None, false, R(0), R(4)))
                 textMap(label).addOne(print.expr match {
-                    case Ident(variable) => BL(None, "")
+                    case ident: Ident => 
+                        symbolTable.find(ident) match {
+                            case Some(typeCheck) => typeCheck match {
+                                case IntCheck(nested) => 
+                                    if (nested == 0) {
+                                        generateInt(dataMap, textMap)
+                                        BL(None, "p_print_int")
+                                    } else {
+                                        generateReference(dataMap, textMap)
+                                        BL(None, "p_print_reference")
+                                    }
+                                case BoolCheck(nested) =>
+                                    if (nested == 0) {
+                                        generateBool(dataMap, textMap)
+                                        BL(None, "p_print_bool")
+                                    } else {
+                                        generateReference(dataMap, textMap)
+                                        BL(None, "p_print_reference")
+                                    }
+                                case CharCheck(nested) =>
+                                    if (nested == 0) {
+                                        BL(None, "putchar")
+                                    } else {
+                                        generateString(dataMap, textMap)
+                                        BL(None, "p_print_string")
+                                    }
+                                case StrCheck(nested) =>
+                                    if (nested == 0) {
+                                        generateString(dataMap, textMap)
+                                        BL(None, "p_print_string")
+                                    } else {
+                                        generateReference(dataMap, textMap)
+                                        BL(None, "p_print_reference")
+                                    }
+                                case PairCheck(type1, type2, nested) =>
+                                    generateReference(dataMap, textMap)
+                                    BL(None, "p_print_reference")
+                                case EmptyPairCheck() => BL(None, "p_print_reference")
+                            }
+                            case None => BL(None, "p_print_reference") // think 
+                        }
                     case ArrayElem(id, exprs) => 
                         val size = exprs.size
                         symbolTable.find(id) match {
@@ -177,7 +216,7 @@ object codeGenerator {
                                         generateInt(dataMap, textMap)
                                         BL(None, "p_print_int")
                                     } else {
-                                        generateRefrence(dataMap, textMap)
+                                        generateReference(dataMap, textMap)
                                         BL(None, "p_print_reference")
                                     }
                                 case BoolCheck(nested) =>
@@ -185,14 +224,14 @@ object codeGenerator {
                                         generateBool(dataMap, textMap)
                                         BL(None, "p_print_bool")
                                     } else {
-                                        generateRefrence(dataMap, textMap)
+                                        generateReference(dataMap, textMap)
                                         BL(None, "p_print_reference")
                                     }
                                 case CharCheck(nested) =>
                                     if (nested == size) {
                                         BL(None, "putchar")
                                     } else {
-                                        generateRefrence(dataMap, textMap)
+                                        generateReference(dataMap, textMap)
                                         BL(None, "p_print_reference")
                                     }
                                 case StrCheck(nested) =>
@@ -200,11 +239,11 @@ object codeGenerator {
                                         generateString(dataMap, textMap)
                                         BL(None, "p_print_string")
                                     } else {
-                                        generateRefrence(dataMap, textMap)
+                                        generateReference(dataMap, textMap)
                                         BL(None, "p_print_reference")
                                     }
                                 case PairCheck(type1, type2, nested) =>
-                                    generateRefrence(dataMap, textMap)
+                                    generateReference(dataMap, textMap)
                                     BL(None, "p_print_reference")
                                 case EmptyPairCheck() => BL(None, "p_print_reference")
                             }
@@ -222,7 +261,7 @@ object codeGenerator {
                         generateString(dataMap, textMap)
                         BL(None, "p_print_string")
                     case PairLiter() => 
-                        generateRefrence(dataMap, textMap)
+                        generateReference(dataMap, textMap)
                         BL(None, "p_print_reference")
                     case Not(expr1) =>
                         generateBool(dataMap, textMap)
@@ -233,8 +272,11 @@ object codeGenerator {
                     case Len(expr1) =>
                         generateInt(dataMap, textMap)
                         BL(None, "p_print_int")
-                    case Ord(expr1) => BL(None, "")
-                    case Chr(expr1) => BL(None, "")
+                    case Ord(expr1) => 
+                        generateInt(dataMap, textMap)
+                        BL(None, "p_print_int")
+                    case Chr(expr1) => 
+                        BL(None, "putchar")
                     case _: BinOpInt => 
                         generateInt(dataMap, textMap)
                         BL(None, "p_print_int")
@@ -281,10 +323,21 @@ object codeGenerator {
     def generateExpr(expr: Expr, symbolTable: SymbolTable, functionTable: FunctionTable, label: Scope, register: Int, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
         expr match {
             case ident: Ident => 
-                if (symbolTable.getSize() - symbolTable.findId(ident).get == 0) {
-                    textMap(label).addOne(LDR(None, R(register), ZeroOffset(SP())))
+                val a_mode2 = if (symbolTable.getSize() - symbolTable.findId(ident).get == 0) {
+                    ZeroOffset(SP())
                 } else {
-                    textMap(label).addOne(LDR(None, R(register), OImmediateOffset(SP(), Immed("", symbolTable.getSize() - symbolTable.findId(ident).get))))
+                    OImmediateOffset(SP(), Immed("", symbolTable.getSize() - symbolTable.findId(ident).get))
+                }
+                symbolTable.find(ident) match {
+                    case Some(typeCheck) => typeCheck match {
+                        case IntCheck(nested) => textMap(label).addOne(LDR(None, R(register), a_mode2))
+                        case BoolCheck(nested) => textMap(label).addOne(LDRSB(None, R(register), a_mode2))
+                        case CharCheck(nested) => textMap(label).addOne(LDRSB(None, R(register), a_mode2))
+                        case StrCheck(nested) => textMap(label).addOne(LDR(None, R(register), a_mode2))
+                        case PairCheck(type1, type2, nested) => textMap(label).addOne(LDR(None, R(register), a_mode2))
+                        case _ =>
+                    }
+                    case None =>
                 }
             case ArrayElem(id, exprs) => 
                 textMap(label).addOne(ADD(None, false, R(register), SP(), Immed("", symbolTable.getSize() - symbolTable.findId(id).get)))
@@ -346,9 +399,17 @@ object codeGenerator {
                 generateExpr(expr1, symbolTable, functionTable, label, register, dataMap, textMap)
                 textMap(label).addOne(EOR(None, false, R(register), R(register), Immed("", 1)))
             case Neg(expr1) => 
+                generateOverflow(dataMap, textMap)
+                generateExpr(expr1, symbolTable, functionTable, label, register, dataMap, textMap)
+                textMap(label).addOne(RSB(None, false, R(register), R(register), Immed("", 0)))
+                textMap(label).addOne(BL(Some(VSCOND()), "p_throw_overflow_error"))
             case Len(expr1) => 
+                generateExpr(expr1, symbolTable, functionTable, label, register, dataMap, textMap)
+                textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
             case Ord(expr1) => 
+                generateExpr(expr1, symbolTable, functionTable, label, register, dataMap, textMap)
             case Chr(expr1) => 
+                generateExpr(expr1, symbolTable, functionTable, label, register, dataMap, textMap)
             case binOpInt: BinOpInt => 
                 generateExpr(binOpInt.expr1, symbolTable, functionTable, label, register, dataMap, textMap) 
                 generateExpr(binOpInt.expr2, symbolTable, functionTable, label , register + 1, dataMap, textMap)
@@ -381,14 +442,48 @@ object codeGenerator {
                         textMap(label).addOne(SUB(None, true, R(register), R(register), R(register + 1)))
                         textMap(label).addOne(BL(Some(VSCOND()), "p_throw_overflow_error"))
                 }
-                textMap(P("throw_runtime_error")) = runtimeError
-                generateString(dataMap, textMap)
-            case GT(expr1, expr2) => 
-            case GTE(expr1, expr2) => 
-            case LT(expr1, expr2) => 
-            case LTE(expr1, expr2) => 
-            case EQ(expr1, expr2) => 
-            case NEQ(expr1, expr2) => 
+            case binOpComp: BinOpComp => 
+                generateExpr(binOpComp.expr1, symbolTable, functionTable, label, register, dataMap, textMap) 
+                generateExpr(binOpComp.expr2, symbolTable, functionTable, label , register + 1, dataMap, textMap)
+                textMap(label).addOne(CMP(None, R(register), R(register + 1)))
+                binOpComp match {
+                    case GT(expr1, expr2) => 
+                        textMap(label).addAll(List(
+                            MOV(Some(GTCOND()), false, R(register), Immed("", 1)),
+                            MOV(Some(LECOND()), false, R(register), Immed("", 0))
+                        ))
+                    case GTE(expr1, expr2) =>
+                        textMap(label).addAll(List(
+                            MOV(Some(GECOND()), false, R(register), Immed("", 1)),
+                            MOV(Some(LTCOND()), false, R(register), Immed("", 0))
+                        ))
+                    case LT(expr1, expr2) =>
+                        textMap(label).addAll(List(
+                            MOV(Some(LTCOND()), false, R(register), Immed("", 1)),
+                            MOV(Some(GECOND()), false, R(register), Immed("", 0))
+                        ))
+                    case LTE(expr1, expr2) =>
+                        textMap(label).addAll(List(
+                            MOV(Some(LECOND()), false, R(register), Immed("", 1)),
+                            MOV(Some(GTCOND()), false, R(register), Immed("", 0))
+                        ))
+                }
+            case binOpEqs: BinOpEqs => 
+                generateExpr(binOpEqs.expr1, symbolTable, functionTable, label, register, dataMap, textMap) 
+                generateExpr(binOpEqs.expr2, symbolTable, functionTable, label , register + 1, dataMap, textMap)
+                textMap(label).addOne(CMP(None, R(register), R(register + 1)))
+                binOpEqs match {
+                    case EQ(expr1, expr2) => 
+                        textMap(label).addAll(List(
+                            MOV(Some(EQCOND()), false, R(register), Immed("", 1)),
+                            MOV(Some(NECOND()), false, R(register), Immed("", 0))
+                        ))
+                    case NEQ(expr1, expr2) =>
+                        textMap(label).addAll(List(
+                            MOV(Some(NECOND()), false, R(register), Immed("", 1)),
+                            MOV(Some(EQCOND()), false, R(register), Immed("", 0))
+                        ))
+                }
             case binOpBool: BinOpBool => 
                 generateExpr(binOpBool.expr1, symbolTable, functionTable, label, register, dataMap, textMap) 
                 generateExpr(binOpBool.expr2, symbolTable, functionTable, label , register + 1, dataMap, textMap)
@@ -411,7 +506,7 @@ object codeGenerator {
         textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", symbolTable.getSize())))
     }
 
-    def generateRefrence(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
+    def generateReference(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
         val func = P("print_reference")
         if (!dataMap.contains(func)) {
             val string = s"%p\\0"
@@ -522,6 +617,8 @@ object codeGenerator {
                 LDR(None, R(0), Label(s"msg_${dataMap(func).id}")),
                 BL(None, "p_throw_runtime_error")
             )
+            generateString(dataMap, textMap)
+            textMap(P("throw_runtime_error")) = runtimeError
         }
     }
 
@@ -546,6 +643,7 @@ object codeGenerator {
                 BL(Some(CSCOND()), "p_throw_runtime_error"),
                 POP(List(PC()))
             )
+            generateString(dataMap, textMap)
             textMap(P("throw_runtime_error")) = runtimeError
         }
     }
@@ -564,6 +662,8 @@ object codeGenerator {
                 BL(Some(EQCOND()), "p_throw_runtime_error"),
                 POP(List(PC()))
             )
+            generateString(dataMap, textMap)
+            textMap(P("throw_runtime_error")) = runtimeError
         }
     }
 }

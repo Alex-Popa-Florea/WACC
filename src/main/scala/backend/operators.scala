@@ -8,7 +8,11 @@ object operators {
             value.toString()
         }
     }
-    case class Character(value: Char) extends Operand2
+    case class Character(value: Char) extends Operand2 {
+        override def toString() : String = {
+            "'" + value.toString() + "'"
+        }
+    }
 
     case class LogicalShiftLeft(rm: Register, immed: Immed) extends Operand2 {
         override def toString() : String = {

@@ -76,6 +76,22 @@ object instructions {
             subString
         }
     }
+    case class RSB(cond: Option[Cond], s: Boolean, rd: Register, rn: Register, operand2: Operand2) extends Arithmetic {
+        override def toString() : String = {
+            var subString = s"    RSB${cond.getOrElse("").toString()}"
+            if (s) {
+                subString += "S"
+            }
+            subString += s" ${rd.toString()}, ${rn.toString()}, "
+            operand2 match {
+                case Immed(kind, value) => subString += "#"
+                case Character(value) => subString += "#"
+                case _ =>
+            }
+            subString += s"${operand2.toString()}\n"
+            subString
+        }
+    }
     case class SMULL(cond: Option[Cond], s: Boolean, rdlo: Register, rdhi: Register, rm: Register, rs: Register) extends Arithmetic {
         override def toString() : String = {
             var smullString = s"    SMULL${cond.getOrElse("").toString()}"
@@ -194,6 +210,19 @@ object instructions {
     case class LDRB(cond: Option[Cond], rd: Register, a_mode2: A_mode2) extends Load {
         override def toString() : String = {
             var ldrString = s"    LDR${cond.getOrElse("").toString()}B ${rd.toString()}, "
+            a_mode2 match {
+                case OImmediateOffset(rn, immed) => ldrString += s"${a_mode2.toString()}\n"
+                case ZeroOffset(rn) => ldrString += s"${a_mode2.toString()}\n"
+                case Immed(kind, value) => ldrString += s"=${a_mode2.toString()}\n"
+                case Label(value) => ldrString += s"=${a_mode2.toString()}\n"
+                case _ => ldrString += s"#${a_mode2.toString()}\n"
+            }
+            ldrString
+        }
+    }
+    case class LDRSB(cond: Option[Cond], rd: Register, a_mode2: A_mode2) extends Load {
+        override def toString() : String = {
+            var ldrString = s"    LDR${cond.getOrElse("").toString()}SB ${rd.toString()}, "
             a_mode2 match {
                 case OImmediateOffset(rn, immed) => ldrString += s"${a_mode2.toString()}\n"
                 case ZeroOffset(rn) => ldrString += s"${a_mode2.toString()}\n"

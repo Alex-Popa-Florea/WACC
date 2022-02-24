@@ -23,7 +23,10 @@ object symbolTable {
     class SymbolTable(private var scope: String, private var parent: Option[SymbolTable]) {
         private var variableMap: Map[String, (TypeCheck, Int)] = Map.empty
         private var children: ListBuffer[SymbolTable] = ListBuffer.empty
-        private var size: Int = 0
+        private var size: Int = parent match {
+            case Some(value) => value.getSize()
+            case None => 0
+        }
 
         /*
             The add method adds a variable to the symbol table, returning true
@@ -36,23 +39,23 @@ object symbolTable {
                 case None => 
                     varType match {
                         case IntCheck(nested) => 
-                            size += 4
+                            updateSize(this, 4)
                         case BoolCheck(nested) => 
                             if (nested != 0) {
-                                size += 4
+                                updateSize(this, 4)
                             } else {
-                                size += 1
+                                updateSize(this, 1)
                             }  
                         case CharCheck(nested) => 
                             if (nested != 0) {
-                                size += 4
+                                updateSize(this, 4)
                             } else {
-                                size += 1
+                                updateSize(this, 1)
                             }
                         case StrCheck(nested) => 
-                            size += 4
+                            updateSize(this, 4)
                         case PairCheck(type1, type2, nested) => 
-                            size += 4
+                            updateSize(this, 4)
                         case _ =>
                         }
                     variableMap(ident.variable) = (varType, size)
@@ -107,6 +110,14 @@ object symbolTable {
 
         def getSize(): Int = {
             size
+        }
+
+        def updateSize(symbolTable: SymbolTable, incr: Int): Unit = {
+            symbolTable.size += incr
+            symbolTable.parent match {
+                case Some(parent) => updateSize(parent, incr)
+                case None => 
+            }
         }
 
         /*

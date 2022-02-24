@@ -188,9 +188,12 @@ object codeGenerator {
                                 case CharCheck(nested) =>
                                     if (nested == 0) {
                                         BL(None, "putchar")
-                                    } else {
+                                    } else if (nested == 1){
                                         generateString(dataMap, textMap)
                                         BL(None, "p_print_string")
+                                    } else {
+                                        generateReference(dataMap, textMap)
+                                        BL(None, "p_print_reference")
                                     }
                                 case StrCheck(nested) =>
                                     if (nested == 0) {
@@ -230,6 +233,9 @@ object codeGenerator {
                                 case CharCheck(nested) =>
                                     if (nested == size) {
                                         BL(None, "putchar")
+                                    } else if (nested == size - 1){
+                                        generateString(dataMap, textMap)
+                                        BL(None, "p_print_string")
                                     } else {
                                         generateReference(dataMap, textMap)
                                         BL(None, "p_print_reference")
@@ -313,10 +319,160 @@ object codeGenerator {
         assignRHS match {
             case expr: Expr => generateExpr(expr, symbolTable, functionTable, label, 4, dataMap, textMap) 
             case ArrayLiter(array) => 
+                val elemtSize = getBytes(array.head, symbolTable)
+                textMap(label).addOne(LDR(None, R(0), Immed("", array.size * elemtSize + 4)))
+                textMap(label).addOne(BL(None, "malloc"))
+                textMap(label).addOne(MOV(None, false, R(register), R(0)))
+                var i = 4;
+                array.map(expr => {
+                    generateExpr(expr, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                    textMap(label).addOne(
+                        if (elemtSize == 4) {
+                            STR(None, R(register + 1), OImmediateOffset(R(register), Immed("", i)))
+                        } else {
+                            STRB(None, R(register + 1), OImmediateOffset(R(register), Immed("", i)))
+                        })
+                    i += elemtSize
+                })
+                textMap(label).addOne(LDR(None, R(register + 1), Immed("", array.size)))
+                textMap(label).addOne(STR(None, R(register + 1), ZeroOffset(R(register))))
             case NewPair(expr1, expr2) => 
+                textMap(label).addOne(LDR(None, R(0), Immed("", 8)))
+                textMap(label).addOne(BL(None, "malloc"))
+                textMap(label).addOne(MOV(None, false, R(register), R(0)))
+                generateExpr(expr1, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                textMap(label).addOne(LDR(None, R(0), Immed("", getBytes(expr1, symbolTable))))
+                textMap(label).addOne(BL(None, "malloc"))
+                textMap(label).addOne(STR(None, R(register + 1), ZeroOffset(R(0))))
+                textMap(label).addOne(STR(None, R(0), ZeroOffset(R(register))))
+                generateExpr(expr2, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                textMap(label).addOne(LDR(None, R(0), Immed("", getBytes(expr2, symbolTable))))
+                textMap(label).addOne(BL(None, "malloc"))
+                textMap(label).addOne(STR(None, R(register + 1), ZeroOffset(R(0))))
+                                textMap(label).addOne(STR(None, R(0), OImmediateOffset(R(register), Immed("", 4))))
+                
             case Fst(expr) => 
-            case Snd(expr) => 
-            case Call(id, args) => 
+                textMap(label).addOne(LDR(None, R(register), OImmediateOffset(SP(), Immed("", symbolTable.getSize() - symbolTable.findId(expr match {
+                    case ident: Ident => ident // im gonna die if i leave this like this, if i this like thiiii-is 
+                }).get))))
+                textMap(label).addOne(MOV(None, false, R(0), R(register)))
+                textMap(label).addOne(BL(None, "p_check_null_pointer"))
+                textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
+                symbolTable.find(expr match {
+                    case ident: Ident => ident
+                }) match {
+                    case Some(typeCheck) => typeCheck match {
+                        case PairCheck(_, type2, _) => type2 match {
+                            case IntCheck(_) => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register)))) 
+                            case BoolCheck(_) => textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
+                            case CharCheck(_) => textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
+                            case StrCheck(_) => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
+                            case PairCheck(_, _, _) => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
+                            case EmptyPairCheck() =>
+                        }
+                        case _ =>
+                    }
+                    case None =>
+                }
+                generateCheckNullPointer(dataMap, textMap)
+            case Snd(expr) =>
+                textMap(label).addOne(LDR(None, R(register), OImmediateOffset(SP(), Immed("", symbolTable.getSize() - symbolTable.findId(expr match {
+                    case ident: Ident => ident // im gonna die if i leave this like this, if i this like thiiii-is 
+                }).get))))
+                textMap(label).addOne(MOV(None, false, R(0), R(register)))
+                textMap(label).addOne(BL(None, "p_check_null_pointer"))
+                textMap(label).addOne(LDR(None, R(register), OImmediateOffset(R(register), Immed("", 4))))
+                symbolTable.find(expr match {
+                    case ident: Ident => ident
+                }) match {
+                    case Some(typeCheck) => typeCheck match {
+                        case PairCheck(_, type2, _) => type2 match {
+                            case IntCheck(_) => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register)))) 
+                            case BoolCheck(_) => textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
+                            case CharCheck(_) => textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
+                            case StrCheck(_) => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
+                            case PairCheck(_, _, _) => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
+                            case EmptyPairCheck() => 
+                        }
+                        case _ =>
+                    }
+                    case None =>
+                }
+                generateCheckNullPointer(dataMap, textMap)
+            case Call(id, args) =>
+                 
+        }
+    }
+
+    def getBytes(expr: Expr, symbolTable: SymbolTable): Int = {
+        expr match {
+            case ident: Ident => 
+                symbolTable.find(ident) match {
+                    case Some(typeCheck) => typeCheck match {
+                        case BoolCheck(nested) =>
+                            if (nested == 0) {
+                                1
+                            } else {
+                                4
+                            }
+                        case CharCheck(nested) =>
+                            if (nested == 0) {
+                                1
+                            } else {
+                                4
+                            }
+                        case _ => 4 // only comedy, no work: so wake me up when you think of a solution to this
+                    }
+                    case None => 0 // somebody once told me this line is kinda shitty, i aint the sharpst wacc in the computingg, she was looking kinda parsley with her combinators and
+                }
+            case ArrayElem(id, exprs) => 
+                val size = exprs.size
+                symbolTable.find(id) match {
+                    case Some(value) => value match {
+                        case BoolCheck(nested) =>
+                            if (nested == size) {
+                                1
+                            } else {
+                                4
+                            }
+                        case CharCheck(nested) =>
+                            if (nested == size) {
+                                1
+                            } else {
+                                4
+                            }
+                        case _ => 4
+                    }
+                    case None => 0 // one day adhithi, she told me, its all wrong
+                }
+            case IntLiter(x) => 
+                4
+            case BoolLiter(bool) => 
+                1
+            case CharLiter(char) =>
+                1
+            case StrLiter(string) => 
+                4
+            case PairLiter() => 
+                4
+            case Not(expr1) =>
+                1
+            case Neg(expr1) =>
+                4
+            case Len(expr1) =>
+                4
+            case Ord(expr1) => 
+                4
+            case Chr(expr1) => 
+                1
+            case _: BinOpInt => 
+                4
+            case _: BinOpBool => 
+                1
+            case _: BinOpEqs => 
+                1
+            case _: BinOpComp => 
+                1
         }
     }
 
@@ -648,6 +804,23 @@ object codeGenerator {
         }
     }
 
+    def generateCheckNullPointer(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
+        val func = P("check_null_pointer")
+        if (!dataMap.contains(func)) {
+            val string = s"NullReferenceError: dereference a null reference\\n\\0"
+            dataMap(func) = Msg(msg, 45, string)
+            msg += 1
+            textMap(func) = ListBuffer(
+                PUSH(List(LR())),
+                CMP(None, R(1), Immed("", 0)),
+                LDR(Some(EQCOND()), R(0), Label(s"msg_${dataMap(func).id}")),
+                BL(Some(EQCOND()), "p_throw_runtime_error"),
+                POP(List(PC()))
+            )
+            generateString(dataMap, textMap)
+            textMap(P("throw_runtime_error")) = runtimeError
+        }
+    }
 
     def generateCheckDivZero(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
         val func = P("check_divide_by_zero")

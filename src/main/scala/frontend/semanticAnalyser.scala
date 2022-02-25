@@ -5,6 +5,7 @@ import wacc.ast._
 import wacc.functionTable._
 import wacc.symbolTable._
 import wacc.types._
+import wacc.section._
 
 import scala.collection.mutable.ListBuffer
 
@@ -65,7 +66,7 @@ object semanticAnalyser {
                 true as its second parameter if a return statement is present
             */
 			case functionStat: Function => 
-                var nst = new SymbolTable(s"Function ${functionStat.id.variable}", Some(st))
+                var nst = new SymbolTable(FunctionSection(functionStat.id.variable), Some(st))
                 st.addChildSt(nst)
                 functionStat.semanticTable = Some(nst)
 				val checkedParams = functionStat.vars.map(x => analyse(x, nst, ft, None)._1).reduceOption((x, y) => x && y)
@@ -219,10 +220,10 @@ object semanticAnalyser {
                 and false branches, ensuring they are sematically valid
             */
 			case ifStat: If =>
-				var trueNst = new SymbolTable("True branch of if statement", Some(st))
+				var trueNst = new SymbolTable(TrueIfSection(), Some(st))
                 st.addChildSt(trueNst)
                 ifStat.trueSemanticTable = Some(trueNst)
-				var falseNst = new SymbolTable("False branch of if statement", Some(st))
+				var falseNst = new SymbolTable(FalseIfSection(), Some(st))
                 st.addChildSt(falseNst)
                 ifStat.falseSemanticTable = Some(falseNst)
 				val conditionCheck = analyseExpr(ifStat.cond, st)
@@ -243,7 +244,7 @@ object semanticAnalyser {
                 in its body, ensuring they are sematically valid
             */
 			case whileStat: While => 
-                var nst = new SymbolTable("Statements inside while loop", Some(st))
+                var nst = new SymbolTable(WhileSection(), Some(st))
                 st.addChildSt(nst)
                 whileStat.semanticTable = Some(nst)
 				val conditionCheck = analyseExpr(whileStat.cond, st)
@@ -261,7 +262,7 @@ object semanticAnalyser {
                 in its body, ensuring they are sematically valid
             */
 			case nestedBegin: NestedBegin => 
-                var nst = new SymbolTable("Statements inside nested begin", Some(st))
+                var nst = new SymbolTable(NestedProgramSection(), Some(st))
                 st.addChildSt(nst)
                 nestedBegin.semanticTable = Some(nst)
                 val correctStats = nestedBegin.stat.map(x => analyse(x, nst, ft, returnType)._1).reduce((x, y) => x && y)

@@ -9,6 +9,7 @@ import scala.collection.mutable.Map
 import Parsley._
 import ast._
 import types._
+import section._
 
 object symbolTable {
     /*
@@ -20,12 +21,15 @@ object symbolTable {
         We only store variables within the symbol tables, functions are stored
         in the function table
     */
-    class SymbolTable(private var scope: String, private var parent: Option[SymbolTable]) {
+    class SymbolTable(private var section: Section, private var parent: Option[SymbolTable]) {
         private var variableMap: Map[String, (TypeCheck, Int)] = Map.empty
         private var children: ListBuffer[SymbolTable] = ListBuffer.empty
-        private var size: Int = parent match {
-            case Some(value) => value.getSize()
-            case None => 0
+        private var size: Int = section match {
+            case FunctionSection(name) => 0
+            case _ => parent match {
+                case Some(value) => value.getSize()
+                case None => 0
+            }
         }
 
         /*
@@ -100,6 +104,10 @@ object symbolTable {
             }
         }
 
+        def getSection(): Section = {
+            section
+        }
+
         def getVariableMap(): collection.immutable.Map[String, (TypeCheck, Int)] = {
             variableMap.toMap
         }
@@ -114,9 +122,14 @@ object symbolTable {
 
         def updateSize(symbolTable: SymbolTable, incr: Int): Unit = {
             symbolTable.size += incr
-            symbolTable.parent match {
-                case Some(parent) => updateSize(parent, incr)
-                case None => 
+            symbolTable.getSection() match {
+                case FunctionSection(name) =>
+                case _ => 
+                    symbolTable.parent match {
+                        case Some(parent) => 
+                            updateSize(parent, incr)
+                        case None => 
+                    }
             }
         }
 
@@ -127,12 +140,12 @@ object symbolTable {
             for (i <- 0 to nest) {
                 print("  ")
             }
-            println(s"- Symbol Table ${st.scope} - ${st}")
+            println(s"- Symbol Table ${st.section.toString()} - ${st}")
             for (i <- 0 to nest) {
                 print("  ")
             }
             if (st.parent != None) {
-                println(s" (i) Symbol Table Parent: ${st.parent.get.scope} - ${st.parent.get}")
+                println(s" (i) Symbol Table Parent: ${st.parent.get.section.toString()} - ${st.parent.get}")
             } else {
                 println(s" (i) Symbol Table Parent: ${st.parent}")
             }

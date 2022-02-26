@@ -1,5 +1,5 @@
-./wacc_example/basic/skip/commentInLine.wacc
-calling the reference compiler on ./wacc_example/basic/skip/commentInLine.wacc
+./wacc_examples/basic/skip/commentInLine.wacc
+calling the reference compiler on ./wacc_examples/basic/skip/commentInLine.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: commentInLine.wacc
 

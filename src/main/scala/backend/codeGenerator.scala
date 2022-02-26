@@ -47,10 +47,26 @@ object codeGenerator {
         file name.
     */
     def writeToFile(lines: List[Line], fileName: String): Unit = {
-        val fileWriter = new FileWriter(new File(fileName))
+        val file = new File(fileName)
+        val fileWriter = new FileWriter(file)
         val bw = new BufferedWriter(fileWriter)
         lines.map(line => bw.write(line.toString()))
         bw.close()
+    }
+    /*
+        Method that writes the given lines to a file with given
+        file name.
+    */
+    def writeToFileWithDir(lines: List[Line], fileName: String) ={
+        val file = new File(fileName)
+        if(!file.getParentFile.exists()){
+            file.getParentFile.mkdirs()
+        }
+        val fileWriter = new FileWriter(file)
+        val bw = new BufferedWriter(fileWriter)
+        lines.map(line => bw.write(line.toString()))
+        bw.close()
+
     }
 
     /*
@@ -159,10 +175,10 @@ object codeGenerator {
 
             case AssignType(t, id, rhs) => 
                 generateRHS(rhs, symbolTable, functionTable, label, REGISTER4, dataMap, textMap)
-                val a_mode2 = if (symbolTable.getSizeWithIdent(id).get - symbolTable.findId(id).get + stackOffset == 0) {
+                val a_mode2 = if (symbolTable.getSizeWithIdent(id).get - id.symbolTable.get.findId(id).get + stackOffset == 0) {
                     ZeroOffset(SP())       
                 } else {
-                    OImmediateOffset(SP(), Immed("", symbolTable.getSizeWithIdent(id).get - symbolTable.findId(id).get + stackOffset))
+                    OImmediateOffset(SP(), Immed("", symbolTable.getSizeWithIdent(id).get - id.symbolTable.get.findId(id).get + stackOffset))
                 }
                 val lhsSize = getBytes(id, symbolTable)
                 if (lhsSize == 4) {
@@ -180,7 +196,7 @@ object codeGenerator {
                 textMap(label).addOne(MOV(None, false, R(REGISTER0), R(REGISTER4)))
                 lhs match {
                     case ident: Ident => 
-                        symbolTable.find(ident) match {
+                        ident.symbolTable.get.find(ident) match {
                             case Some(typeCheck) => typeCheck match {
                                 case IntCheck(_) => 
                                     generateReadInt(dataMap, textMap)
@@ -194,7 +210,7 @@ object codeGenerator {
                             case None =>
                         }
                     case ArrayElem(id, exprs) =>
-                        symbolTable.find(id) match {
+                        id.symbolTable.get.find(id) match {
                             case Some(typeCheck) => typeCheck match {
                                 case IntCheck(_) => 
                                     generateReadInt(dataMap, textMap)
@@ -211,7 +227,7 @@ object codeGenerator {
                     case Fst(expr) =>
                         expr match {
                             case ident: Ident => 
-                                symbolTable.find(ident) match {
+                                ident.symbolTable.get.find(ident) match {
                                     case Some(typeCheck) => typeCheck match {
                                         case PairCheck(type1, _, _) => type1 match {
                                             case IntCheck(_) => 
@@ -233,7 +249,7 @@ object codeGenerator {
                     case Snd(expr) =>
                         expr match {
                             case ident: Ident => 
-                                symbolTable.find(ident) match {
+                                ident.symbolTable.get.find(ident) match {
                                     case Some(typeCheck) => typeCheck match {
                                         case PairCheck(_, type2, _) => type2 match {
                                             case IntCheck(nested) => 
@@ -257,7 +273,7 @@ object codeGenerator {
                 generateExpr(expr, symbolTable, functionTable, label, REGISTER4, dataMap, textMap)
                 textMap(label).addOne(MOV(None, false, R(0), R(REGISTER4)))
                 expr match {
-                    case ident: Ident => symbolTable.find(ident) match {
+                    case ident: Ident => ident.symbolTable.get.find(ident) match {
                         case Some(value) => value match {
                             case baseTypeCheck: BaseTypeCheck => 
                                 if (baseTypeCheck.nested != 0) {
@@ -278,7 +294,7 @@ object codeGenerator {
                         }
                         case None =>
                     }
-                    case ArrayElem(id, exprs) => symbolTable.find(id) match {
+                    case ArrayElem(id, exprs) => id.symbolTable.get.find(id) match {
                         case Some(value) => value match {
                             case baseTypeCheck: BaseTypeCheck => 
                                 if (baseTypeCheck.nested != exprs.size) {
@@ -330,7 +346,7 @@ object codeGenerator {
                 textMap(label).addOne(MOV(None, false, R(0), R(4)))
                 textMap(label).addOne(print.expr match {
                     case ident: Ident => 
-                        symbolTable.find(ident) match {
+                        ident.symbolTable.get.find(ident) match {
                             case Some(typeCheck) => typeCheck match {
                                 case IntCheck(nested) => 
                                     if (nested == 0) {
@@ -375,7 +391,7 @@ object codeGenerator {
                         }
                     case ArrayElem(id, exprs) => 
                         val size = exprs.size
-                        symbolTable.find(id) match {
+                        id.symbolTable.get.find(id) match {
                             case Some(value) => value match {
                                 case IntCheck(nested) => 
                                     if (nested == size) {
@@ -588,21 +604,16 @@ object codeGenerator {
         }
     }
 
-    // def generateFunction(vars: List[Parameter], stat: List[Statement], symbolTable: SymbolTable, functionTable: FunctionTable, label: Scope, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
-
-    // }
-
-
     def generateLHS(lhs: AssignLHS, symbolTable: SymbolTable, functionTable: FunctionTable, label: Scope, register: Int, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]], read: Boolean): Unit = {
         lhs match {
             case ident: Ident => 
                 if (read) {
-                    textMap(label).addOne(ADD(None, false, R(register), SP(), Immed("", symbolTable.getSizeWithIdent(ident).get - symbolTable.findId(ident).get + stackOffset)))
+                    textMap(label).addOne(ADD(None, false, R(register), SP(), Immed("", symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset)))
                 } else {
-                    val a_mode2 = if (symbolTable.getSizeWithIdent(ident).get - symbolTable.findId(ident).get + stackOffset == 0) {
+                    val a_mode2 = if (symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset == 0) {
                         ZeroOffset(SP())       
                     } else {
-                        OImmediateOffset(SP(), Immed("", symbolTable.getSizeWithIdent(ident).get - symbolTable.findId(ident).get + stackOffset))
+                        OImmediateOffset(SP(), Immed("", symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset))
                     }
                     val lhsSize = getBytes(ident, symbolTable)
                     if (lhsSize == 4) {
@@ -612,7 +623,7 @@ object codeGenerator {
                     }
                 }
             case arrayElem: ArrayElem =>
-                textMap(label).addOne(ADD(None, false, R(register), SP(), Immed("", symbolTable.getSizeWithIdent(arrayElem.id).get - symbolTable.findId(arrayElem.id).get + stackOffset)))
+                textMap(label).addOne(ADD(None, false, R(register), SP(), Immed("", symbolTable.getSizeWithIdent(arrayElem.id).get - arrayElem.id.symbolTable.get.findId(arrayElem.id).get + stackOffset)))
                 var i = 0
                 arrayElem.exprs.map(expr => {
                     generateExpr(expr, symbolTable, functionTable, label, register + 1, dataMap, textMap)
@@ -622,7 +633,7 @@ object codeGenerator {
                         MOV(None, false, R(1), R(register)),
                         BL(None, "p_check_array_bounds"),
                         ADD(None, false, R(register), R(register), Immed("", 4)),
-                        symbolTable.find(arrayElem.id) match {
+                        arrayElem.id.symbolTable.get.find(arrayElem.id) match {
                             case Some(value) => value match {
                                 case BoolCheck(nested) => 
                                     if (nested - i == 1) {
@@ -662,45 +673,46 @@ object codeGenerator {
                 textMap(label).addOne(BL(None, "p_check_null_pointer"))
                 textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
                 if (!read) {
-                    symbolTable.find(expr match {
-                        case ident: Ident => ident
-                    }) match {
-                        case Some(typeCheck) => typeCheck match {
-                            case PairCheck(type1, _, _) => type1 match {
-                                case IntCheck(_) => textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register)))) 
-                                case BoolCheck(_) => textMap(label).addOne(STRB(None, R(register - 1), ZeroOffset(R(register))))
-                                case CharCheck(_) => textMap(label).addOne(STRB(None, R(register - 1), ZeroOffset(R(register))))
-                                case StrCheck(_) => textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
-                                case PairCheck(_, _, _) => textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
-                                case EmptyPairCheck() =>
+                    expr match {
+                        case ident: Ident => 
+                            ident.symbolTable.get.find(ident) match {
+                                case Some(typeCheck) => typeCheck match {
+                                    case PairCheck(type1, _, _) => 
+                                        if (getBytesFromType(type1) == 4) {
+                                            textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
+                                        } else {
+                                            textMap(label).addOne(STRB(None, R(register - 1), ZeroOffset(R(register))))
+                                        }
+                                    case _ =>
+                                }
+                                case None =>
                             }
-                            case _ =>
-                        }
-                        case None =>
+                        case _ =>
                     }
                 }
                 generateCheckNullPointer(dataMap, textMap)
+
             case Snd(expr) =>
                 generateExpr(expr, symbolTable, functionTable, label, register, dataMap, textMap)
                 textMap(label).addOne(MOV(None, false, R(0), R(register)))
                 textMap(label).addOne(BL(None, "p_check_null_pointer"))
                 textMap(label).addOne(LDR(None, R(register), OImmediateOffset(R(register), Immed("", 4))))
                 if (!read) {
-                    symbolTable.find(expr match {
-                        case ident: Ident => ident
-                    }) match {
-                        case Some(typeCheck) => typeCheck match {
-                            case PairCheck(_, type2, _) => type2 match {
-                                case IntCheck(_) => textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register)))) 
-                                case BoolCheck(_) => textMap(label).addOne(STRB(None, R(register - 1), ZeroOffset(R(register))))
-                                case CharCheck(_) => textMap(label).addOne(STRB(None, R(register - 1), ZeroOffset(R(register))))
-                                case StrCheck(_) => textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
-                                case PairCheck(_, _, _) => textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
-                                case EmptyPairCheck() =>
+                    expr match {
+                        case ident: Ident => 
+                            ident.symbolTable.get.find(ident) match {
+                                case Some(typeCheck) => typeCheck match {
+                                    case PairCheck(_, type2, _) =>
+                                        if (getBytesFromType(type2) == 4) {
+                                            textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
+                                        } else {
+                                            textMap(label).addOne(STRB(None, R(register - 1), ZeroOffset(R(register))))
+                                        }
+                                    case _ =>
+                                }
+                                case None =>
                             }
-                            case _ =>
-                        }
-                        case None =>
+                        case _ =>
                     }
                 }
                 generateCheckNullPointer(dataMap, textMap)
@@ -765,21 +777,21 @@ object codeGenerator {
                 textMap(label).addOne(MOV(None, false, R(0), R(register)))
                 textMap(label).addOne(BL(None, "p_check_null_pointer"))
                 textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
-                symbolTable.find(expr match {
-                    case ident: Ident => ident
-                }) match {
-                    case Some(typeCheck) => typeCheck match {
-                        case PairCheck(type1, _, _) => type1 match {
-                            case IntCheck(_) => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register)))) 
-                            case BoolCheck(_) => textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
-                            case CharCheck(_) => textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
-                            case StrCheck(_) => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
-                            case PairCheck(_, _, _) => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
-                            case EmptyPairCheck() =>
+                expr match {
+                    case ident: Ident => 
+                        ident.symbolTable.get.find(ident) match {
+                            case Some(typeCheck) => typeCheck match {
+                                case PairCheck(type1, _, _) => 
+                                    if (getBytesFromType(type1) == 4) {
+                                        textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
+                                    } else {
+                                        textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
+                                    }
+                                case _ =>
+                            }
+                            case None =>
                         }
-                        case _ =>
-                    }
-                    case None =>
+                    case _ =>
                 }
                 generateCheckNullPointer(dataMap, textMap)
             case Snd(expr) =>
@@ -787,21 +799,21 @@ object codeGenerator {
                 textMap(label).addOne(MOV(None, false, R(0), R(register)))
                 textMap(label).addOne(BL(None, "p_check_null_pointer"))
                 textMap(label).addOne(LDR(None, R(register), OImmediateOffset(R(register), Immed("", 4))))
-                symbolTable.find(expr match {
-                    case ident: Ident => ident
-                }) match {
-                    case Some(typeCheck) => typeCheck match {
-                        case PairCheck(_, type2, _) => type2 match {
-                            case IntCheck(_) => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register)))) 
-                            case BoolCheck(_) => textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
-                            case CharCheck(_) => textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
-                            case StrCheck(_) => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
-                            case PairCheck(_, _, _) => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
-                            case EmptyPairCheck() => 
+                expr match {
+                    case ident: Ident => 
+                        ident.symbolTable.get.find(ident) match {
+                            case Some(typeCheck) => typeCheck match {
+                                case PairCheck(_, type2, _) => 
+                                if (getBytesFromType(type2) == 4) {
+                                        textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
+                                    } else {
+                                        textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
+                                    }
+                                case _ =>
+                            }
+                            case None =>
                         }
-                        case _ =>
-                    }
-                    case None =>
+                    case _ =>
                 }
                 generateCheckNullPointer(dataMap, textMap)
             case Call(id, args) => 
@@ -825,7 +837,7 @@ object codeGenerator {
     def getBytes(expr: Expr, symbolTable: SymbolTable): Int = {
         expr match {
             case ident: Ident => 
-                symbolTable.find(ident) match {
+                ident.symbolTable.get.find(ident) match {
                     case Some(typeCheck) => typeCheck match {
                         case BoolCheck(nested) =>
                             if (nested == 0) {
@@ -845,7 +857,7 @@ object codeGenerator {
                 }
             case ArrayElem(id, exprs) => 
                 val size = exprs.size
-                symbolTable.find(id) match {
+                id.symbolTable.get.find(id) match {
                     case Some(value) => value match {
                         case BoolCheck(nested) =>
                             if (nested == size) {
@@ -911,17 +923,29 @@ object codeGenerator {
                 }
             case StrCheck(nested) => 4
             case PairCheck(type1, type2, nested) => 4
-            case EmptyPairCheck() => 0
+            case EmptyPairCheck() => 4
         }
     }
 
     def generateExpr(expr: Expr, symbolTable: SymbolTable, functionTable: FunctionTable, label: Scope, register: Int, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
+        
+        val reg1 = if (register < 10) {
+            register
+        } else {
+            register + 1
+        }
+        val reg2 = if (register < 10) {
+            register + 1
+        } else {
+            register
+        }
+
         expr match {
             case ident: Ident => 
-                val a_mode2 = if (symbolTable.getSizeWithIdent(ident).get - symbolTable.findId(ident).get + stackOffset == 0) {
+                val a_mode2 = if (symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset == 0) {
                     ZeroOffset(SP())
                 } else {
-                    OImmediateOffset(SP(), Immed("", symbolTable.getSizeWithIdent(ident).get - symbolTable.findId(ident).get + stackOffset))
+                    OImmediateOffset(SP(), Immed("", symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset))
                 }
                 val exprSize = getBytes(expr, symbolTable)
                 if (exprSize == 4) {
@@ -930,35 +954,45 @@ object codeGenerator {
                     textMap(label).addOne(LDRSB(None, R(register), a_mode2))
                 }
             case arrayElem: ArrayElem => 
-                textMap(label).addOne(ADD(None, false, R(register), SP(), Immed("", symbolTable.getSizeWithIdent(arrayElem.id).get - symbolTable.findId(arrayElem.id).get + stackOffset)))
+                textMap(label).addOne(ADD(None, false, R(register), SP(), Immed("", symbolTable.getSizeWithIdent(arrayElem.id).get - arrayElem.id.symbolTable.get.findId(arrayElem.id).get + stackOffset)))
                 var i = 0
                 arrayElem.exprs.map(expr => {
-                    generateExpr(expr, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                    if (register + 1 > 10) {
+                        textMap(label).addOne(PUSH(List(R(10))))
+                        stackOffset += 4
+                        generateExpr(expr, symbolTable, functionTable, label, register, dataMap, textMap)
+                    } else {
+                        generateExpr(expr, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                    }
+                    if (register + 1 > 10) {
+                        stackOffset -= 4
+                        textMap(label).addOne(POP(List(R(11))))
+                    }
                     textMap(label).addAll(List(
-                        LDR(None, R(register), ZeroOffset(R(register))), 
-                        MOV(None, false, R(0), R(register + 1)),
-                        MOV(None, false, R(1), R(register)),
+                        LDR(None, R(reg1), ZeroOffset(R(reg1))),
+                        MOV(None, false, R(0), R(reg2)),
+                        MOV(None, false, R(1), R(reg1)),
                         BL(None, "p_check_array_bounds"),
-                        ADD(None, false, R(register), R(register), Immed("", 4)),
-                        symbolTable.find(arrayElem.id) match {
+                        ADD(None, false, R(reg1), R(reg1), Immed("", 4)),
+                        arrayElem.id.symbolTable.get.find(arrayElem.id) match {
                             case Some(value) => value match {
                                 case BoolCheck(nested) => 
                                     if (nested - i == 1) {
-                                        ADD(None, false, R(register), R(register), R(register + 1))
+                                        ADD(None, false, R(register), R(reg1), R(reg2))
                                     } else {
-                                        ADD(None, false, R(register), R(register), LogicalShiftLeft(R(register + 1), Immed("", 2)))
+                                        ADD(None, false, R(register), R(reg1), LogicalShiftLeft(R(reg2), Immed("", 2)))
                                     }
                                 case CharCheck(nested) =>
                                     if (nested - i == 1) {
-                                        ADD(None, false, R(register), R(register), R(register + 1))
+                                        ADD(None, false, R(register), R(reg1), R(reg2))
                                     } else {
-                                        ADD(None, false, R(register), R(register), LogicalShiftLeft(R(register + 1), Immed("", 2)))
+                                        ADD(None, false, R(register), R(reg1), LogicalShiftLeft(R(reg2), Immed("", 2)))
                                     }
                                 case _ =>
-                                    ADD(None, false, R(register), R(register), LogicalShiftLeft(R(register + 1), Immed("", 2)))
+                                    ADD(None, false, R(register), R(reg1), LogicalShiftLeft(R(reg2), Immed("", 2)))
                             }
                             case None => 
-                                ADD(None, false, R(register), R(register), LogicalShiftLeft(R(register + 1), Immed("", 2))) //HEYYYY BROTHER MAYBE CHECK THAT THIS IS RIGHTTT OHHH 
+                                ADD(None, false, R(register), R(reg1), LogicalShiftLeft(R(reg2), Immed("", 2))) //HEYYYY BROTHER MAYBE CHECK THAT THIS IS RIGHTTT OHHH 
                         }
                     ))
                     generateCheckArrayBounds(dataMap, textMap)
@@ -996,7 +1030,7 @@ object codeGenerator {
             case Neg(expr1) => 
                 generateOverflow(dataMap, textMap)
                 generateExpr(expr1, symbolTable, functionTable, label, register, dataMap, textMap)
-                textMap(label).addOne(RSB(None, false, R(register), R(register), Immed("", 0)))
+                textMap(label).addOne(RSB(None, true, R(register), R(register), Immed("", 0)))
                 textMap(label).addOne(BL(Some(VSCOND()), "p_throw_overflow_error"))
             case Len(expr1) => 
                 generateExpr(expr1, symbolTable, functionTable, label, register, dataMap, textMap)
@@ -1007,40 +1041,60 @@ object codeGenerator {
                 generateExpr(expr1, symbolTable, functionTable, label, register, dataMap, textMap)
             case binOpInt: BinOpInt => 
                 generateExpr(binOpInt.expr1, symbolTable, functionTable, label, register, dataMap, textMap) 
-                generateExpr(binOpInt.expr2, symbolTable, functionTable, label , register + 1, dataMap, textMap)
+                if (register + 1 > 10) {
+                    textMap(label).addOne(PUSH(List(R(10))))
+                    stackOffset += 4
+                    generateExpr(binOpInt.expr2, symbolTable, functionTable, label, register, dataMap, textMap)
+                } else {
+                    generateExpr(binOpInt.expr2, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                }
+                if (register + 1 > 10) {
+                    stackOffset -= 4
+                    textMap(label).addOne(POP(List(R(11))))
+                }
                 binOpInt match {
                     case Mul(expr1, expr2) => 
                         generateOverflow(dataMap, textMap)
-                        textMap(label).addOne(SMULL(None, false, R(register), R(register + 1), R(register), R(register + 1)))
-                        textMap(label).addOne(CMP(None, R(register + 1), R(register)))
+                        textMap(label).addOne(SMULL(None, false, R(register), R(register + 1), R(reg1), R(reg2)))
+                        textMap(label).addOne(CMP(None, R(register + 1), ArithmeticShiftRight(R(register), Immed("", 31))))
                         textMap(label).addOne(BL(Some(NECOND()), "p_throw_overflow_error"))
                     case Div(expr1, expr2) =>
                         generateCheckDivZero(dataMap, textMap)
-                        textMap(label).addOne(MOV(None, false, R(0), R(register)))
-                        textMap(label).addOne(MOV(None, false, R(1), R(register + 1)))
+                        textMap(label).addOne(MOV(None, false, R(0), R(reg1)))
+                        textMap(label).addOne(MOV(None, false, R(1), R(reg2)))
                         textMap(label).addOne(BL(None, "p_check_divide_by_zero"))
                         textMap(label).addOne(BL(None, "__aeabi_idiv"))
-                        textMap(label).addOne(MOV(None, false, R(4), R(0)))
+                        textMap(label).addOne(MOV(None, false, R(register), R(0)))
                     case Mod(expr1, expr2) =>
                         generateCheckDivZero(dataMap, textMap)
-                        textMap(label).addOne(MOV(None, false, R(0), R(register)))
-                        textMap(label).addOne(MOV(None, false, R(1), R(register + 1)))
+                        textMap(label).addOne(MOV(None, false, R(0), R(reg1)))
+                        textMap(label).addOne(MOV(None, false, R(1), R(reg2)))
                         textMap(label).addOne(BL(None, "p_check_divide_by_zero"))
                         textMap(label).addOne(BL(None, "__aeabi_idivmod"))
-                        textMap(label).addOne(MOV(None, false, R(4), R(1)))
+                        textMap(label).addOne(MOV(None, false, R(register), R(1)))
                     case Add(expr1, expr2) =>
                         generateOverflow(dataMap, textMap)
-                        textMap(label).addOne(ADD(None, true, R(register), R(register), R(register + 1)))
+                        textMap(label).addOne(ADD(None, true, R(register), R(reg1), R(reg2)))
                         textMap(label).addOne(BL(Some(VSCOND()), "p_throw_overflow_error"))
                     case Sub(expr1, expr2) =>
                         generateOverflow(dataMap, textMap)
-                        textMap(label).addOne(SUB(None, true, R(register), R(register), R(register + 1)))
+                        textMap(label).addOne(SUB(None, true, R(register), R(reg1), R(reg2)))
                         textMap(label).addOne(BL(Some(VSCOND()), "p_throw_overflow_error"))
                 }
             case binOpComp: BinOpComp => 
                 generateExpr(binOpComp.expr1, symbolTable, functionTable, label, register, dataMap, textMap) 
-                generateExpr(binOpComp.expr2, symbolTable, functionTable, label , register + 1, dataMap, textMap)
-                textMap(label).addOne(CMP(None, R(register), R(register + 1)))
+                if (register + 1 > 10) {
+                    textMap(label).addOne(PUSH(List(R(10))))
+                    stackOffset += 4
+                    generateExpr(binOpComp.expr2, symbolTable, functionTable, label, register, dataMap, textMap)
+                } else {
+                    generateExpr(binOpComp.expr2, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                }
+                if (register + 1 > 10) {
+                    stackOffset -= 4
+                    textMap(label).addOne(POP(List(R(11))))
+                }
+                textMap(label).addOne(CMP(None, R(reg1), R(reg2)))
                 binOpComp match {
                     case GT(expr1, expr2) => 
                         textMap(label).addAll(List(
@@ -1065,8 +1119,18 @@ object codeGenerator {
                 }
             case binOpEqs: BinOpEqs => 
                 generateExpr(binOpEqs.expr1, symbolTable, functionTable, label, register, dataMap, textMap) 
-                generateExpr(binOpEqs.expr2, symbolTable, functionTable, label , register + 1, dataMap, textMap)
-                textMap(label).addOne(CMP(None, R(register), R(register + 1)))
+                if (register + 1 > 10) {
+                    textMap(label).addOne(PUSH(List(R(10))))
+                    stackOffset += 4
+                    generateExpr(binOpEqs.expr2, symbolTable, functionTable, label, register, dataMap, textMap)
+                } else {
+                    generateExpr(binOpEqs.expr2, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                }
+                if (register + 1 > 10) {
+                    stackOffset -= 4
+                    textMap(label).addOne(POP(List(R(11))))
+                }
+                textMap(label).addOne(CMP(None, R(reg1), R(reg2)))
                 binOpEqs match {
                     case EQ(expr1, expr2) => 
                         textMap(label).addAll(List(
@@ -1081,12 +1145,22 @@ object codeGenerator {
                 }
             case binOpBool: BinOpBool => 
                 generateExpr(binOpBool.expr1, symbolTable, functionTable, label, register, dataMap, textMap) 
-                generateExpr(binOpBool.expr2, symbolTable, functionTable, label , register + 1, dataMap, textMap)
+                if (register + 1 > 10) {
+                    textMap(label).addOne(PUSH(List(R(10))))
+                    stackOffset += 4
+                    generateExpr(binOpBool.expr2, symbolTable, functionTable, label, register, dataMap, textMap)
+                } else {
+                    generateExpr(binOpBool.expr2, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                }
+                if (register + 1 > 10) {
+                    stackOffset -= 4
+                    textMap(label).addOne(POP(List(R(11))))
+                }
                 binOpBool match {
                     case And(expr1, expr2) => 
-                        textMap(label).addOne(AND(None, false, R(register), R(register), R(register + 1)))
+                        textMap(label).addOne(AND(None, false, R(register), R(reg1), R(reg2)))
                     case Or(expr1, expr2) =>
-                        textMap(label).addOne(ORR(None, false, R(register), R(register), R(register + 1)))
+                        textMap(label).addOne(ORR(None, false, R(register), R(reg1), R(reg2)))
                 }
         }
     }

@@ -1,5 +1,5 @@
-./wacc_example/variables/longVarNames.wacc
-calling the reference compiler on ./wacc_example/variables/longVarNames.wacc
+./wacc_examples/variables/longVarNames.wacc
+calling the reference compiler on ./wacc_examples/variables/longVarNames.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: longVarNames.wacc
 

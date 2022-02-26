@@ -1,5 +1,5 @@
-./wacc_example/pairs/checkRefPair.wacc
-calling the reference compiler on ./wacc_example/pairs/checkRefPair.wacc
+./wacc_examples/pairs/checkRefPair.wacc
+calling the reference compiler on ./wacc_examples/pairs/checkRefPair.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: checkRefPair.wacc
 

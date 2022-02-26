@@ -1,5 +1,5 @@
-./wacc_example/if/ifTrue.wacc
-calling the reference compiler on ./wacc_example/if/ifTrue.wacc
+./wacc_examples/if/ifTrue.wacc
+calling the reference compiler on ./wacc_examples/if/ifTrue.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: ifTrue.wacc
 

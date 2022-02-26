@@ -1,5 +1,5 @@
-./wacc_example/sequence/intLeadingZeros.wacc
-calling the reference compiler on ./wacc_example/sequence/intLeadingZeros.wacc
+./wacc_examples/sequence/intLeadingZeros.wacc
+calling the reference compiler on ./wacc_examples/sequence/intLeadingZeros.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: intLeadingZeros.wacc
 

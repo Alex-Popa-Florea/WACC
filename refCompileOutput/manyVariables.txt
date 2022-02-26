@@ -1,5 +1,5 @@
-./wacc_example/variables/manyVariables.wacc
-calling the reference compiler on ./wacc_example/variables/manyVariables.wacc
+./wacc_examples/variables/manyVariables.wacc
+calling the reference compiler on ./wacc_examples/variables/manyVariables.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: manyVariables.wacc
 

@@ -1,5 +1,5 @@
-./wacc_example/IO/print/print-backspace.wacc
-calling the reference compiler on ./wacc_example/IO/print/print-backspace.wacc
+./wacc_examples/IO/print/print-backspace.wacc
+calling the reference compiler on ./wacc_examples/IO/print/print-backspace.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: print-backspace.wacc
 

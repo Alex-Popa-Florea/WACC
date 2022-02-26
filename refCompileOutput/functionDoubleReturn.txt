@@ -1,5 +1,5 @@
-./wacc_example/function/simple_functions/functionDoubleReturn.wacc
-calling the reference compiler on ./wacc_example/function/simple_functions/functionDoubleReturn.wacc
+./wacc_examples/function/simple_functions/functionDoubleReturn.wacc
+calling the reference compiler on ./wacc_examples/function/simple_functions/functionDoubleReturn.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: functionDoubleReturn.wacc
 

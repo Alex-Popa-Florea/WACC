@@ -1,5 +1,5 @@
-./wacc_example/expressions/plusExpr.wacc
-calling the reference compiler on ./wacc_example/expressions/plusExpr.wacc
+./wacc_examples/expressions/plusExpr.wacc
+calling the reference compiler on ./wacc_examples/expressions/plusExpr.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: plusExpr.wacc
 

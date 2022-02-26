@@ -1,5 +1,5 @@
-./wacc_example/if/whitespace.wacc
-calling the reference compiler on ./wacc_example/if/whitespace.wacc
+./wacc_examples/if/whitespace.wacc
+calling the reference compiler on ./wacc_examples/if/whitespace.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: whitespace.wacc
 

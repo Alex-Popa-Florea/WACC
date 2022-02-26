@@ -1,5 +1,5 @@
-./wacc_example/if/if3.wacc
-calling the reference compiler on ./wacc_example/if/if3.wacc
+./wacc_examples/if/if3.wacc
+calling the reference compiler on ./wacc_examples/if/if3.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: if3.wacc
 

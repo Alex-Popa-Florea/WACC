@@ -1,5 +1,5 @@
-./wacc_example/expressions/longExpr2.wacc
-calling the reference compiler on ./wacc_example/expressions/longExpr2.wacc
+./wacc_examples/expressions/longExpr2.wacc
+calling the reference compiler on ./wacc_examples/expressions/longExpr2.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: longExpr2.wacc
 

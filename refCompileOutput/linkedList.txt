@@ -1,5 +1,5 @@
-./wacc_example/pairs/linkedList.wacc
-calling the reference compiler on ./wacc_example/pairs/linkedList.wacc
+./wacc_examples/pairs/linkedList.wacc
+calling the reference compiler on ./wacc_examples/pairs/linkedList.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: linkedList.wacc
 

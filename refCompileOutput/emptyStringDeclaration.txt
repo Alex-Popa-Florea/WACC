@@ -1,5 +1,5 @@
-./wacc_example/variables/emptyStringDeclaration.wacc
-calling the reference compiler on ./wacc_example/variables/emptyStringDeclaration.wacc
+./wacc_examples/variables/emptyStringDeclaration.wacc
+calling the reference compiler on ./wacc_examples/variables/emptyStringDeclaration.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: emptyStringDeclaration.wacc
 

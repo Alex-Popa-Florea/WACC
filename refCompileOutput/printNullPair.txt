@@ -1,5 +1,5 @@
-./wacc_example/pairs/printNullPair.wacc
-calling the reference compiler on ./wacc_example/pairs/printNullPair.wacc
+./wacc_examples/pairs/printNullPair.wacc
+calling the reference compiler on ./wacc_examples/pairs/printNullPair.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: printNullPair.wacc
 

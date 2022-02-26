@@ -1,5 +1,5 @@
-./wacc_example/expressions/longSplitExpr.wacc
-calling the reference compiler on ./wacc_example/expressions/longSplitExpr.wacc
+./wacc_examples/expressions/longSplitExpr.wacc
+calling the reference compiler on ./wacc_examples/expressions/longSplitExpr.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: longSplitExpr.wacc
 

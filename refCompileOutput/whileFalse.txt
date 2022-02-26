@@ -1,5 +1,5 @@
-./wacc_example/while/whileFalse.wacc
-calling the reference compiler on ./wacc_example/while/whileFalse.wacc
+./wacc_examples/while/whileFalse.wacc
+calling the reference compiler on ./wacc_examples/while/whileFalse.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: whileFalse.wacc
 
@@ -13,8 +13,7 @@ please provide a stdin stream to use when executing the program:
 # Program:
 
 begin
-  string a = "ahhh";
-  while a== "ahhh" do
+  while false do
     println "looping..."
   done ;
   println "end of loop"

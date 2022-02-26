@@ -1,5 +1,5 @@
-./wacc_example/basic/exit/exit-1.wacc
-calling the reference compiler on ./wacc_example/basic/exit/exit-1.wacc
+./wacc_examples/basic/exit/exit-1.wacc
+calling the reference compiler on ./wacc_examples/basic/exit/exit-1.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: exit-1.wacc
 

@@ -1,5 +1,5 @@
-wacc_example/IO/IOLoop.wacc
-calling the reference compiler on wacc_example/IO/IOLoop.wacc
+wacc_examples/IO/IOLoop.wacc
+calling the reference compiler on wacc_examples/IO/IOLoop.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: IOLoop.wacc
 

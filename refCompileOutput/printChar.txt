@@ -1,5 +1,5 @@
-./wacc_example/IO/print/printChar.wacc
-calling the reference compiler on ./wacc_example/IO/print/printChar.wacc
+./wacc_examples/IO/print/printChar.wacc
+calling the reference compiler on ./wacc_examples/IO/print/printChar.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: printChar.wacc
 

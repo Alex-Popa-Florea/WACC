@@ -1,5 +1,5 @@
-./wacc_example/array/arrayEmpty.wacc
-calling the reference compiler on ./wacc_example/array/arrayEmpty.wacc
+./wacc_examples/array/arrayEmpty.wacc
+calling the reference compiler on ./wacc_examples/array/arrayEmpty.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: arrayEmpty.wacc
 

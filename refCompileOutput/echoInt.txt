@@ -1,5 +1,5 @@
-./wacc_example/IO/read/echoInt.wacc
-calling the reference compiler on ./wacc_example/IO/read/echoInt.wacc
+./wacc_examples/IO/read/echoInt.wacc
+calling the reference compiler on ./wacc_examples/IO/read/echoInt.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: echoInt.wacc
 

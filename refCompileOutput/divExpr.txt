@@ -1,5 +1,5 @@
-./wacc_example/expressions/divExpr.wacc
-calling the reference compiler on ./wacc_example/expressions/divExpr.wacc
+./wacc_examples/expressions/divExpr.wacc
+calling the reference compiler on ./wacc_examples/expressions/divExpr.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: divExpr.wacc
 

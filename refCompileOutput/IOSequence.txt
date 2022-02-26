@@ -1,5 +1,5 @@
-./wacc_example/IO/IOSequence.wacc
-calling the reference compiler on ./wacc_example/IO/IOSequence.wacc
+./wacc_examples/IO/IOSequence.wacc
+calling the reference compiler on ./wacc_examples/IO/IOSequence.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: IOSequence.wacc
 

@@ -1,5 +1,5 @@
-./wacc_example/runtimeErr/nullDereference/setNull2.wacc
-calling the reference compiler on ./wacc_example/runtimeErr/nullDereference/setNull2.wacc
+./wacc_examples/runtimeErr/nullDereference/setNull2.wacc
+calling the reference compiler on ./wacc_examples/runtimeErr/nullDereference/setNull2.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: setNull2.wacc
 

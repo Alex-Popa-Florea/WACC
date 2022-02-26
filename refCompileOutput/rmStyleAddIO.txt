@@ -1,5 +1,5 @@
-wacc_example/while/rmStyleAddIO.wacc
-calling the reference compiler on wacc_example/while/rmStyleAddIO.wacc
+./wacc_examples/while/rmStyleAddIO.wacc
+calling the reference compiler on ./wacc_examples/while/rmStyleAddIO.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: rmStyleAddIO.wacc
 
@@ -40,8 +40,8 @@ end
 -- Executing...
 ===========================================================
 Enter the first number: Enter the second number: Initial value of x: 1
-(+)(+)
-final value of x: 3
+
+final value of x: 1
 ===========================================================
 The exit code is 0.
 -- Finished

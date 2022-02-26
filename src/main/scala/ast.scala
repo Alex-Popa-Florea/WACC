@@ -7,6 +7,7 @@ import parsley.implicits.zipped.Zipped2
 import parsley.implicits.zipped.Zipped3
 import parsley.implicits.zipped.Zipped4
 import parsley.lift.lift1
+import wacc.symbolTable._
 
 import Parsley._
 
@@ -40,7 +41,7 @@ object ast {
     case class Begin(func: List[Function], stat: List[Statement])(val pos: (Int, Int)) extends Program 
 
     case class Function(t: Type, id: Ident, vars: List[Parameter], stat: List[Statement])(val pos: (Int, Int)) extends Node{
-        var semanticTable: Option[symbolTable.SymbolTable] = None
+        var semanticTable: Option[SymbolTable] = None
     }
     case class Parameter(t: Type, id: Ident)(val pos: (Int, Int)) extends Node
 
@@ -59,19 +60,19 @@ object ast {
     case class Print(expr: Expr)(val pos: (Int, Int)) extends Statement with PrintTrait
     case class Println(expr: Expr)(val pos: (Int, Int)) extends Statement with PrintTrait
     case class If(cond: Expr, trueStat: List[Statement], falseStat: List[Statement])(val pos: (Int, Int)) extends Statement{
-        var trueSemanticTable: Option[symbolTable.SymbolTable] = None
-        var falseSemanticTable: Option[symbolTable.SymbolTable] = None
+        var trueSemanticTable: Option[SymbolTable] = None
+        var falseSemanticTable: Option[SymbolTable] = None
     }
     case class While(cond: Expr, stat: List[Statement])(val pos: (Int, Int)) extends Statement{
-        var semanticTable: Option[symbolTable.SymbolTable] = None
+        var semanticTable: Option[SymbolTable] = None
     }
     case class NestedBegin(stat: List[Statement])(val pos: (Int, Int)) extends Statement{
-        var semanticTable: Option[symbolTable.SymbolTable] = None
+        var semanticTable: Option[SymbolTable] = None
     }
 
     sealed trait AssignLHS extends Node
     case class Ident(variable: String)(val pos: (Int, Int)) extends AssignLHS with Expr {
-        var semanticTable: Option[symbolTable.SymbolTable] = None
+        var symbolTable: Option[SymbolTable] = None
     }
     case class ArrayElem(id: Ident, exprs: List[Expr])(val pos: (Int, Int)) extends AssignLHS with Expr
 

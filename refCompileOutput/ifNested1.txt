@@ -1,5 +1,5 @@
-./wacc_example/scope/ifNested1.wacc
-calling the reference compiler on ./wacc_example/scope/ifNested1.wacc
+./wacc_examples/scope/ifNested1.wacc
+calling the reference compiler on ./wacc_examples/scope/ifNested1.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: ifNested1.wacc
 

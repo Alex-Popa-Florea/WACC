@@ -2,6 +2,7 @@ package wacc
 
 import backend.codeGenerator.generate
 import backend.codeGenerator.writeToFile
+import backend.codeGenerator.writeToFileWithDir
 import frontend.color._
 import frontend.edata._
 import frontend.error.StringErrorBuilder
@@ -31,7 +32,14 @@ object main {
             Assert that an input file has been provided for compilation
         */
         assert(args.head != "")
-        var output = args(1)
+        val output=
+            if (args.size == 2){
+                args(1)
+            }
+            else{
+                ""
+            }
+        
 
         /*
             Create a new symbol table and function table
@@ -60,7 +68,6 @@ object main {
         */
         answer.get match {
             case Success(x) => {
-                println(s"${args.head} = $x")
                 val (semanticallyValid, hasReturnStatements) = analyse(x, symbolTable, functionTable, None)
                 if (!hasReturnStatements) {
                     /*
@@ -74,16 +81,12 @@ object main {
                         If semantic analysis passes, print the AST, symbol table and function table
                     */
                     if (semanticallyValid) {
-                        println("")
-                        functionTable.printFunctionTables()
-                        println("")
-                        symbolTable.printSymbolTables(symbolTable, 0)
                         val lines = generate(x, symbolTable, functionTable)
                         if(output == ""){
                             writeToFile(lines, file.getName().replace(".wacc",".s"))
                         }
                         else{
-                            writeToFile(lines, output++"/"++file.getName().replace(".wacc",".s"))
+                            writeToFileWithDir(lines, output+"/"+file.getName().replace(".wacc",".s"))
                         }
                         
                     } else {

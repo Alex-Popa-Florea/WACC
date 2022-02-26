@@ -1,5 +1,5 @@
-./wacc_example/while/fibonacciFullIt.wacc
-calling the reference compiler on ./wacc_example/while/fibonacciFullIt.wacc
+./wacc_examples/while/fibonacciFullIt.wacc
+calling the reference compiler on ./wacc_examples/while/fibonacciFullIt.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: fibonacciFullIt.wacc
 

@@ -1,5 +1,5 @@
-./wacc_example/scope/scopeBasic.wacc
-calling the reference compiler on ./wacc_example/scope/scopeBasic.wacc
+./wacc_examples/scope/scopeBasic.wacc
+calling the reference compiler on ./wacc_examples/scope/scopeBasic.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: scopeBasic.wacc
 

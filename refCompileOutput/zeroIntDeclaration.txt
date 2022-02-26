@@ -1,5 +1,5 @@
-./wacc_example/variables/zeroIntDeclaration.wacc
-calling the reference compiler on ./wacc_example/variables/zeroIntDeclaration.wacc
+./wacc_examples/variables/zeroIntDeclaration.wacc
+calling the reference compiler on ./wacc_examples/variables/zeroIntDeclaration.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: zeroIntDeclaration.wacc
 

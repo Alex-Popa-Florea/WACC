@@ -24,13 +24,7 @@ object symbolTable {
     class SymbolTable(private var section: Section, private var parent: Option[SymbolTable]) {
         private var variableMap: Map[String, (TypeCheck, Int)] = Map.empty
         private var children: ListBuffer[SymbolTable] = ListBuffer.empty
-        private var size: Int = section match {
-            case FunctionSection(name) => 0
-            case _ => parent match {
-                case Some(value) => value.getSize()
-                case None => 0
-            }
-        }
+        private var size: Int = 0
 
         /*
             The add method adds a variable to the symbol table, returning true
@@ -83,7 +77,7 @@ object symbolTable {
             foundType match {
                 case None => parent match {
                     case None => None
-                    case _ => parent.get.find(ident)
+                    case Some(value) => value.find(ident)
                 }
                 case _ => 
                     ident.semanticTable = Some(this)
@@ -96,7 +90,7 @@ object symbolTable {
             foundType match {
                 case None => parent match {
                     case None => None
-                    case _ => parent.get.findId(ident)
+                    case Some(value) => value.findId(ident)
                 }
                 case _ => 
                     ident.semanticTable = Some(this)
@@ -120,17 +114,19 @@ object symbolTable {
             size
         }
 
+        def getSizeWithIdent(ident: Ident): Option[Int] = {
+            var foundIdent = variableMap.get(ident.variable)
+            foundIdent match {
+                case None => parent match {
+                    case None => None
+                    case Some(value) => value.getSizeWithIdent(ident)
+                }
+                case _ => Some(size)
+            }
+        }
+
         def updateSize(symbolTable: SymbolTable, incr: Int): Unit = {
             symbolTable.size += incr
-            symbolTable.getSection() match {
-                case FunctionSection(name) =>
-                case _ => 
-                    symbolTable.parent match {
-                        case Some(parent) => 
-                            updateSize(parent, incr)
-                        case None => 
-                    }
-            }
         }
 
         /*

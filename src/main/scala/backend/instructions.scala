@@ -106,12 +106,26 @@ object instructions {
     sealed trait Compare extends Instruction
     case class CMP(cond: Option[Cond], rn: Register, operand2: Operand2) extends Compare {
         override def toString() : String = {
-            s"    CMP${cond.getOrElse("").toString()} ${rn.toString()}, ${operand2.toString()}\n"
+            var cmpString = s"    CMP${cond.getOrElse("").toString()} ${rn.toString()}, "
+            operand2 match {
+                case Immed(kind, value) => cmpString += "#"
+                case Character(value) => cmpString += "#"
+                case _ =>
+            }
+            cmpString += s"${operand2.toString()}\n"
+            cmpString
         }
     }
     case class CMN(cond: Option[Cond], rn: Register, operand2: Operand2) extends Compare {
         override def toString() : String = {
-            s"    CMN${cond.getOrElse("").toString()} ${rn.toString()}, ${operand2.toString()}\n"
+            var cmnString = s"    CMN${cond.getOrElse("").toString()} ${rn.toString()}, "
+            operand2 match {
+                case Immed(kind, value) => cmnString += "#"
+                case Character(value) => cmnString += "#"
+                case _ =>
+            }
+            cmnString += s"${operand2.toString()}\n"
+            cmnString
         }
     }
 

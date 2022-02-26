@@ -382,6 +382,16 @@ object codeGenerator {
                     MOV(None, false, R(0), R(4)), 
                     BL(None, "exit")
                 ))
+
+            case ifStatement: If => 
+                generateExpr(ifStatement.cond, symbolTable, functionTable, label, 4, dataMap, textMap)
+                textMap(label).addOne(CMP(None, R(4), Immed("", 0)))
+                textMap(label).addOne(B(Some(EQCOND()), "L0"))
+                ifStatement.trueStat.map(statement => generateNode(statement, ifStatement.trueSemanticTable.getOrElse(symbolTable), functionTable, label, dataMap, textMap))
+                textMap(label).addOne(B(None, "L1"))
+                textMap(label).addOne(L(0))
+                ifStatement.falseStat.map(statement => generateNode(statement, ifStatement.falseSemanticTable.getOrElse(symbolTable), functionTable, label, dataMap, textMap))
+                textMap(label).addOne(L(1))
             case Skip() => 
 
             case _ => 

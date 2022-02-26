@@ -12,11 +12,12 @@ import scala.sys.process._
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
+import scala.util.matching.Regex
 
 import io.Source._
 
 class backend_tests extends AnyFlatSpec{
-    //DOTN FORGET TO REFACTOR
+    
     //traversing through and getting all .wacc files
     def travel(root: File):ListBuffer[File] = {
         var files: ListBuffer[File] = ListBuffer.empty
@@ -31,9 +32,8 @@ class backend_tests extends AnyFlatSpec{
         files
     }
 
-    //getting output and formatting it correctly
+    //Getting output and formatting it correctly
     def getOutput(file: File): (Int,String) = {
-        import scala.util.matching.Regex
 
         val contents = fromFile(file).mkString
         val guard = "==========================================================="
@@ -50,6 +50,12 @@ class backend_tests extends AnyFlatSpec{
         (exitCode,output)
     }
 
+    val argsMap: Map[String,String] = Map(
+    ("echoBigInt","2000"),("echoBigNegInt","-2000"),("echoChar","c"),("echoInt","10"),
+    ("echoNegInt","-10"),("echoPuncChar",","),("fibonacciFullIt","10"),("fibonacciFullRec","10"),
+    ("IOLoop","1 Y 2 N"),("IOSequence","1"),("printInputTriangle","2"),("read","1"),("readPair","b 2"),("rmStyleAddIO","1"))
+
+    //checks the files in a directory and compiling the .s file and running it with arguments from argsMap
     def checker(dir: File): Unit = {
         for(file <- dir.listFiles()){
             if (file.isFile()){
@@ -71,25 +77,21 @@ class backend_tests extends AnyFlatSpec{
             }
         }
     }
-    val argsMap: Map[String,String] = Map(
-    ("echoBigInt","2000"),("echoBigNegInt","-2000"),("echoChar","c"),("echoInt","10"),
-    ("echoNegInt","-10"),("echoPuncChar",","),("fibonacciFullIt","10"),("fibonacciFullRec","10"),
-    ("IOLoop","1 Y 2 N"),("IOSequence","1"),("printInputTriangle","2"),("read","1"),("readPair","b 2"),("rmStyleAddIO","1"))
 
     val root = new File("./wacc_examples")
     val programs = travel(root).toList
-    "rm -rf output".!
     "mkdir -p output".!
     programs.map(i => main(Array(i.toString(),"output"+i.toString()
                                                         .replace("./wacc_examples","")
                                                         .replace("/"+i.getName(),"")
                                                         )))
 
-    "Array" should "give correct out put and error code" in (pending)
-    // {
-    //     info("Checking array")
-    //     checker(new File("./output/array"))
-    // }
+    //Tests
+    "Array" should "give correct out put and error code" in 
+    {
+        info("Checking array")
+        checker(new File("./output/array"))
+    }
     "Basic" should "give correct out put and error code" in {
         info("Checking basic")
         checker(new File("./output/basic"))
@@ -102,22 +104,21 @@ class backend_tests extends AnyFlatSpec{
         info("Checking basic")
         checker(new File("./output/basic/skip"))
     }
-
-    "Expressions" should "give correct out put and error code" in //(pending)
+    "Expressions" should "give correct out put and error code" in 
     {
         info("Checking expressions")
         checker(new File("./output/expressions"))
     }
-    "Nested_functions" should "give correct out put and error code" in //(pending)
+    "Nested_functions" should "give correct out put and error code" in 
     {
         info("Checking nested_functions")
         checker(new File("./output/function/nested_functions"))
     }
-    "Simple_functions" should "give correct out put and error code" in (pending)
-    // {
-    //     info("Checking simple_functions")
-    //     checker(new File("./output/function/simple_functions"))
-    // }
+    "Simple_functions" should "give correct out put and error code" in 
+    {
+        info("Checking simple_functions")
+        checker(new File("./output/function/simple_functions"))
+    }
     "If" should "give correct out put and error code" in {
         info("Checking if")
         checker(new File("./output/if"))
@@ -134,11 +135,11 @@ class backend_tests extends AnyFlatSpec{
         info("Checking read")
         checker(new File("./output/IO/read"))
     }
-    "Pairs" should "give correct out put and error code" in (pending)
-    // {
-    //     info("Checking pairs")
-    //     checker(new File("./output/pairs"))
-    // }
+    "Pairs" should "give correct out put and error code" in 
+    {
+        info("Checking pairs")
+        checker(new File("./output/pairs"))
+    }
     "ArrayOutOfBounds" should "give correct out put and error code" in {
         info("Checking arrayOutOfBounds")
         checker(new File("./output/runtimeErr/arrayOutOfBounds"))
@@ -147,7 +148,7 @@ class backend_tests extends AnyFlatSpec{
         info("Checking divideByZero")
         checker(new File("./output/runtimeErr/divideByZero"))
     }
-    "IntegerOverflow" should "give correct out put and error code" in //(pending)
+    "IntegerOverflow" should "give correct out put and error code" in 
     {
         info("Checking integerOverflow")
         checker(new File("./output/runtimeErr/integerOverflow"))
@@ -156,11 +157,11 @@ class backend_tests extends AnyFlatSpec{
         info("Checking nullDereference")
         checker(new File("./output/runtimeErr/nullDereference"))
     }
-    "Scope" should "give correct out put and error code" in (pending)
-    // {
-    //     info("Checking scope")
-    //     checker(new File("./output/scope"))
-    // }
+    "Scope" should "give correct out put and error code" in 
+    {
+        info("Checking scope")
+        checker(new File("./output/scope"))
+    }
     "Sequence" should "give correct out put and error code" in {
         info("Checking sequence")
         checker(new File("./output/sequence"))
@@ -173,4 +174,5 @@ class backend_tests extends AnyFlatSpec{
         info("Checking while")
         checker(new File("./output/while"))
     }
+    "rm -rf output".!  //clearing the output folder
 }

@@ -118,7 +118,7 @@ object operators {
     }
     case class GTCOND() extends Cond {
         override def toString() : String = {
-            s"GE"
+            s"GT"
         }
     }
     case class LECOND() extends Cond {

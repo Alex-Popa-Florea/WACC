@@ -437,6 +437,39 @@ object codeGenerator {
                     }
                 }                
                 textMap(label).addOne(L(contLabel))
+
+            case whileStatement: While => 
+                val condLabel = scopeLabels
+                scopeLabels += 1
+                textMap(label).addOne(B(None, s"L${condLabel}"))
+                val bodyLabel = scopeLabels
+                scopeLabels += 1
+                textMap(label).addOne(L(bodyLabel))
+                var i = whileStatement.semanticTable.getOrElse(symbolTable).getSize()
+                while (i > 0) {
+                    if (i > 1024) {
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", 1024)))
+                        i -= 1024
+                    } else {
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", i)))
+                        i = 0
+                    }
+                }
+                whileStatement.stat.map(statement => generateNode(statement, whileStatement.semanticTable.getOrElse(symbolTable), functionTable, label, dataMap, textMap))
+                i = whileStatement.semanticTable.getOrElse(symbolTable).getSize()
+                while (i > 0) {
+                    if (i > 1024) {
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", 1024)))
+                        i -= 1024
+                    } else {
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", i)))
+                        i = 0
+                    }
+                }   
+                textMap(label).addOne(L(condLabel))
+                generateExpr(whileStatement.cond, symbolTable, functionTable, label, 4, dataMap, textMap)
+                textMap(label).addOne(CMP(None, R(4), Immed("", 1)))
+                textMap(label).addOne(B(Some(EQCOND()), s"L${bodyLabel}"))
             case Skip() => 
 
             case _ => 

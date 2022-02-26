@@ -17,7 +17,7 @@ import io.Source._
 
 class backend_tests extends AnyFlatSpec{
     
-    //traversing through and getting all .wacc files
+    //Traversing through and getting all .wacc files
     def travel(root: File):ListBuffer[File] = {
         var files: ListBuffer[File] = ListBuffer.empty
         for (file:File <- root.listFiles()){
@@ -54,7 +54,7 @@ class backend_tests extends AnyFlatSpec{
     ("echoNegInt","-10"),("echoPuncChar",","),("fibonacciFullIt","10"),("fibonacciFullRec","10"),
     ("IOLoop","1 Y 2 N"),("IOSequence","1"),("printInputTriangle","2"),("read","1"),("readPair","b 2"),("rmStyleAddIO","1"))
 
-    //checks the files in a directory and compiling the .s file and running it with arguments from argsMap
+    //Checks the files in a directory and compiling the .s file and running it with arguments from argsMap
     def checker(dir: File): Unit = {
         for(file <- dir.listFiles()){
             if (file.isFile()){
@@ -79,6 +79,7 @@ class backend_tests extends AnyFlatSpec{
 
     val root = new File("./wacc_examples")
     val programs = travel(root).toList
+    "rm -rf output".!  //clearing the output folder
     "mkdir -p output".!
     programs.map(i => main(Array(i.toString(),"output"+i.toString()
                                                         .replace("./wacc_examples","")
@@ -173,5 +174,4 @@ class backend_tests extends AnyFlatSpec{
         info("Checking while")
         checker(new File("./output/while"))
     }
-    "rm -rf output".!  //clearing the output folder
 }

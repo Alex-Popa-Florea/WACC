@@ -470,6 +470,30 @@ object codeGenerator {
                 generateExpr(whileStatement.cond, symbolTable, functionTable, label, 4, dataMap, textMap)
                 textMap(label).addOne(CMP(None, R(4), Immed("", 1)))
                 textMap(label).addOne(B(Some(EQCOND()), s"L${bodyLabel}"))
+
+            case nestedBegin: NestedBegin =>
+                var i = nestedBegin.semanticTable.getOrElse(symbolTable).getSize()
+                while (i > 0) {
+                    if (i > 1024) {
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", 1024)))
+                        i -= 1024
+                    } else {
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", i)))
+                        i = 0
+                    }
+                }
+                nestedBegin.stat.map(statement => generateNode(statement, nestedBegin.semanticTable.getOrElse(symbolTable), functionTable, label, dataMap, textMap))
+                i = nestedBegin.semanticTable.getOrElse(symbolTable).getSize()
+                while (i > 0) {
+                    if (i > 1024) {
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", 1024)))
+                        i -= 1024
+                    } else {
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", i)))
+                        i = 0
+                    }
+                }
+
             case Skip() => 
 
             case _ => 

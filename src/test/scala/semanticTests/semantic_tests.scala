@@ -12,6 +12,7 @@ import wacc.ast._
 import wacc.functionTable._
 import wacc.symbolTable._
 import wacc.types._
+import wacc.section._
 
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
@@ -294,7 +295,7 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     }
   }
   def analyser(p: Node): (SymbolTable, FunctionTable, ListBuffer[(String, (Int, Int))]) = { 
-    val symbolTable = new SymbolTable("Program", None)
+    val symbolTable = new SymbolTable(ProgramSection(), None)
     val functionTable = new FunctionTable()
     analyse(p, symbolTable, functionTable, None)
     val e = errors

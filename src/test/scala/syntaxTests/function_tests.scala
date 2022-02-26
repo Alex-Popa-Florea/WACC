@@ -11,6 +11,7 @@ import parsley.Success
 import wacc.ast._
 import wacc.functionTable._
 import wacc.symbolTable._
+import wacc.section._
 
 import scala.io.Source
 
@@ -52,7 +53,7 @@ class FunctionParserTest extends AnyFlatSpec with AppendedClues
     }
 
     def syntaxAnalyser(p: Node): (Option[(String, (Int, Int))]) = { 
-        val symbolTable = new SymbolTable("Program", None)
+        val symbolTable = new SymbolTable(ProgramSection(), None)
         val functionTable = new FunctionTable()
         analyse(p, symbolTable, functionTable, None)
         returnTypeError

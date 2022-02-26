@@ -3,8 +3,8 @@ a is 42
 b is true
 c is u
 d is hello
-e is 0x22150
-f is 0x22160
+e is 0x22190
+f is 0x221a0
 answer is g
 ===========================================================
 The exit code is 0.

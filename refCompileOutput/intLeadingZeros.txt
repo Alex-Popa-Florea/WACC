@@ -1,0 +1,34 @@
+./wacc_example/sequence/intLeadingZeros.wacc
+calling the reference compiler on ./wacc_example/sequence/intLeadingZeros.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: intLeadingZeros.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# integer variable declaration with leading zeroes
+
+# Output:
+# 42
+# 0
+
+# Program:
+
+begin
+  int x = 0000000000000000000000000000000000000042 ;
+  int y = 0000000000000000000000000000000000000000 ;
+  println x ;
+  println y
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+42
+0
+===========================================================
+The exit code is 0.
+-- Finished
+

@@ -1,0 +1,50 @@
+./wacc_example/scope/scopeWhileNested.wacc
+calling the reference compiler on ./wacc_example/scope/scopeWhileNested.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: scopeWhileNested.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# variable scoping nested within a while-loop
+
+# Output:
+# counting... 5
+# counting... 4
+# counting... 3
+# counting... 2
+# counting... 1
+# 0 Boom!
+
+# Program:
+
+begin
+  int x = 5 ;
+  while x > 0 do
+    begin
+      string x = "counting... " ;
+      print x
+    end ;
+    println x ;
+    x = x - 1
+  done ;
+  print x ;
+  println " Boom!"
+end
+
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+counting... 5
+counting... 4
+counting... 3
+counting... 2
+counting... 1
+0 Boom!
+===========================================================
+The exit code is 0.
+-- Finished
+

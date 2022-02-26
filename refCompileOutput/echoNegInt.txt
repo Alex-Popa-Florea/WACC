@@ -1,0 +1,35 @@
+./wacc_example/IO/read/echoNegInt.wacc
+calling the reference compiler on ./wacc_example/IO/read/echoNegInt.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: echoNegInt.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# echo the user's input int
+
+# Output:
+# enter an integer to echo
+# #input#
+# #output#
+
+# Program:
+
+begin
+  int x = 1 ;
+  println "enter an integer to echo";
+  read x ; 
+  println x 
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+enter an integer to echo
+1
+===========================================================
+The exit code is 0.
+-- Finished
+

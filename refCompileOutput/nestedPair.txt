@@ -1,0 +1,29 @@
+./wacc_example/pairs/nestedPair.wacc
+calling the reference compiler on ./wacc_example/pairs/nestedPair.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: nestedPair.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# create a pair (int, pair (int, int) )
+
+# Output:
+# #empty#
+
+# Program:
+
+begin
+  pair(int, int) p = newpair(2, 3) ;
+  pair(int, pair) q = newpair(1, p)
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+===========================================================
+The exit code is 0.
+-- Finished
+

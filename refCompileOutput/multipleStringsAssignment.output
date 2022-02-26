@@ -1,0 +1,11 @@
+===========================================================
+s1 is Hi
+s2 is Hello
+They are not the same string.
+Now make s1 = s2
+s1 is Hello
+s2 is Hello
+They are the same string.
+===========================================================
+The exit code is 0.
+-- Finished

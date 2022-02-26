@@ -1,0 +1,39 @@
+./wacc_example/expressions/greaterEqExpr.wacc
+calling the reference compiler on ./wacc_example/expressions/greaterEqExpr.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: greaterEqExpr.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# evaluating greater-than
+
+# Output:
+# false
+# true
+# true
+
+# Program:
+
+begin
+  int x = 2 ;
+  int y = 6 ;
+  int z = 4 ;
+  int a = 4 ;
+  println x >= y ;
+  println y >= z ;
+  println z >= z
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+false
+true
+true
+===========================================================
+The exit code is 0.
+-- Finished
+

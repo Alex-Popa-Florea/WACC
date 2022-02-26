@@ -1,0 +1,30 @@
+./wacc_example/pairs/free.wacc
+calling the reference compiler on ./wacc_example/pairs/free.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: free.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# Create and free a simple pair
+
+# Output:
+# #empty#
+
+# Program:
+
+begin
+  pair(int, char) a = newpair(10, 'a') ;
+  free a
+end
+
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+===========================================================
+The exit code is 0.
+-- Finished
+

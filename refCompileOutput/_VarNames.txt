@@ -1,0 +1,32 @@
+./wacc_example/variables/_VarNames.wacc
+calling the reference compiler on ./wacc_example/variables/_VarNames.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: _VarNames.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# variable can have _ in their names
+
+# Output:
+# #empty#
+
+# Exit:
+# 19
+
+# Program:
+
+begin
+  int an_underscore = 19 ;
+  exit an_underscore
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+===========================================================
+The exit code is 19.
+-- Finished
+

@@ -1,0 +1,51 @@
+./wacc_example/function/nested_functions/printInputTriangle.wacc
+calling the reference compiler on ./wacc_example/function/nested_functions/printInputTriangle.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: printInputTriangle.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# print a user-specified sized triangle
+
+# Output:
+# Please enter the size of the triangle to print:
+# #input#
+# #output#
+
+# Program:
+
+begin
+  int f(int x) is
+    if x == 0 then
+      skip
+    else
+      int i = x ;
+      while i > 0 do 
+        print "-" ;
+        i = i - 1
+      done ;
+      println "" ;
+      int s = call f(x - 1)
+    fi ;
+    return 0
+  end
+
+  println "Please enter the size of the triangle to print: " ;
+  int x = 0;
+
+  read x;
+  int s = call f(x) 
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+Please enter the size of the triangle to print: 
+-
+===========================================================
+The exit code is 0.
+-- Finished
+

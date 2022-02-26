@@ -1,0 +1,28 @@
+./wacc_example/scope/intsAndKeywords.wacc
+calling the reference compiler on ./wacc_example/scope/intsAndKeywords.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: intsAndKeywords.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# checking handling of ints and keywords 
+
+# Output:
+# #empty#
+
+# Program:
+begin
+  begin
+    int x = 125end
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+===========================================================
+The exit code is 0.
+-- Finished
+

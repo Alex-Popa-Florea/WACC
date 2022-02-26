@@ -1,0 +1,37 @@
+./wacc_example/pairs/printPairOfNulls.wacc
+calling the reference compiler on ./wacc_example/pairs/printPairOfNulls.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: printPairOfNulls.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# print a pair of null pairs 
+
+# Output:
+# #addrs# = ((nil),(nil))
+
+# Program:
+
+begin
+  pair(pair, pair) p = newpair(null, null) ;
+  print p ;
+  print " = (" ;
+  pair(pair, pair) q = fst p ;
+  print q ;
+  print "," ;
+  pair(int, bool) r = snd p ;
+  print r ; 
+  println ")"
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+0x22150 = ((nil),(nil))
+===========================================================
+The exit code is 0.
+-- Finished
+

@@ -1,0 +1,36 @@
+./wacc_example/expressions/equalsOverBool.wacc
+calling the reference compiler on ./wacc_example/expressions/equalsOverBool.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: equalsOverBool.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# evaluating equality and boolean operator precedence
+
+# Output:
+# true
+# false
+
+# Program:
+
+begin
+  bool p = true ;
+  bool q = true ;
+  bool r = false ;
+  bool s = true ;
+  println p && q != r || s ;
+  println (p && q) != (r || s)
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+true
+false
+===========================================================
+The exit code is 0.
+-- Finished
+

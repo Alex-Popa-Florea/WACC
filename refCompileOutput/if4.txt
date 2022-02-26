@@ -1,0 +1,36 @@
+./wacc_example/if/if4.wacc
+calling the reference compiler on ./wacc_example/if/if4.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: if4.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# Simple conditional statement with boolen expression test
+
+# Output:
+# correct
+
+# Program:
+
+begin
+  bool b = true;
+  bool c = false;	
+  if b && c 
+  then 
+    println "incorrect"
+  else 
+    println "correct"
+  fi
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+correct
+===========================================================
+The exit code is 0.
+-- Finished
+

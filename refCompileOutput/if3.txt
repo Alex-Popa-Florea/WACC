@@ -1,0 +1,36 @@
+./wacc_example/if/if3.wacc
+calling the reference compiler on ./wacc_example/if/if3.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: if3.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# Simple conditional statement with int comparison test
+
+# Output:
+# correct
+
+# Program:
+
+begin
+  int a = 13;	
+  int b = 37;
+  if a < b 
+  then 
+    println "correct"
+  else 
+    println "incorrect"
+  fi
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+correct
+===========================================================
+The exit code is 0.
+-- Finished
+

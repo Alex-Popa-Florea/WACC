@@ -1,0 +1,37 @@
+./wacc_example/function/simple_functions/functionSimpleLoop.wacc
+calling the reference compiler on ./wacc_example/function/simple_functions/functionSimpleLoop.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: functionSimpleLoop.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# define and call a function with a simple loop
+
+# Output:
+# 10
+
+# Program:
+
+begin
+  int f(int n) is
+    int i = 0;
+    while i < n do
+      i = i + 1
+    done;
+    return i 
+  end
+  int x = call f(10) ;
+  println x 
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+10
+===========================================================
+The exit code is 0.
+-- Finished
+

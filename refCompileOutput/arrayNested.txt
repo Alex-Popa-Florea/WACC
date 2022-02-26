@@ -1,0 +1,36 @@
+./wacc_example/array/arrayNested.wacc
+calling the reference compiler on ./wacc_example/array/arrayNested.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: arrayNested.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# basic array declaration and assignment
+
+# Output:
+# 3
+# 3
+
+# Program:
+
+begin
+  int[] a = [1,2,3];
+  int[] b = [3,4];
+  int[][] c = [a,b] ;
+  println c[0][2] ;
+  println c[1][0]
+end
+
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+3
+3
+===========================================================
+The exit code is 0.
+-- Finished
+

@@ -1,0 +1,29 @@
+./wacc_example/IO/print/println.wacc
+calling the reference compiler on ./wacc_example/IO/print/println.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: println.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# simple println statement
+
+# Output:
+# Hello World!
+
+# Program:
+
+begin
+  println "Hello World!"
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+Hello World!
+===========================================================
+The exit code is 0.
+-- Finished
+

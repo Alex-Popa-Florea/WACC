@@ -1,0 +1,31 @@
+./wacc_example/array/printRef.wacc
+calling the reference compiler on ./wacc_example/array/printRef.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: printRef.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# basic array (reference) printing
+
+# Output:
+# Printing an array variable gives an address, such as #addrs#
+
+# Program:
+
+begin
+  print "Printing an array variable gives an address, such as " ;
+  int[] a = [1,2,3] ;
+  println a
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+Printing an array variable gives an address, such as 0x23158
+===========================================================
+The exit code is 0.
+-- Finished
+

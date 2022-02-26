@@ -1,0 +1,36 @@
+./wacc_example/while/whileBoolFlip.wacc
+calling the reference compiler on ./wacc_example/while/whileBoolFlip.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: whileBoolFlip.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# while loop flips bool to terminate
+
+# Output:
+# flip b!
+# end of loop
+
+# Program:
+
+begin
+  bool b = true ;
+  while b do
+    println "flip b!" ;
+    b = !b 
+  done ;
+  println "end of loop"
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+flip b!
+end of loop
+===========================================================
+The exit code is 0.
+-- Finished
+

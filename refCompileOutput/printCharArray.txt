@@ -1,0 +1,33 @@
+./wacc_example/IO/print/printCharArray.wacc
+calling the reference compiler on ./wacc_example/IO/print/printCharArray.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: printCharArray.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# printing the contents of a char[] is possible via an intermediate variable
+
+# Output:
+# hi!
+
+# Exit:
+# 0
+
+# Program:
+
+begin
+  char[] s = ['h','i','!'];
+  println s
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+hi!
+===========================================================
+The exit code is 0.
+-- Finished
+

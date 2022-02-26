@@ -1,0 +1,35 @@
+./wacc_example/function/simple_functions/sameArgName2.wacc
+calling the reference compiler on ./wacc_example/function/simple_functions/sameArgName2.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: sameArgName2.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# program with function that has same parameter name as function 
+# and also returns to same named variable
+
+# Output:
+# 99
+
+# Program:
+
+begin
+  int f(int f) is
+    return f
+  end
+  
+  int f = call f(99);
+  println f
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+99
+===========================================================
+The exit code is 0.
+-- Finished
+

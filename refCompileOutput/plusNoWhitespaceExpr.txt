@@ -1,0 +1,29 @@
+./wacc_example/expressions/plusNoWhitespaceExpr.wacc
+calling the reference compiler on ./wacc_example/expressions/plusNoWhitespaceExpr.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: plusNoWhitespaceExpr.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# addition expressions should not be whitespace sensitive
+
+# Output:
+# 3
+
+# Program:
+
+begin
+  println 1+2
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+3
+===========================================================
+The exit code is 0.
+-- Finished
+

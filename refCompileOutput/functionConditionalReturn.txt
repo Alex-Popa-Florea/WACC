@@ -1,0 +1,37 @@
+./wacc_example/function/nested_functions/functionConditionalReturn.wacc
+calling the reference compiler on ./wacc_example/function/nested_functions/functionConditionalReturn.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: functionConditionalReturn.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# program has function which only contains an if statement and a return in each branch
+
+# Output:
+# true
+
+# Program:
+
+begin
+  bool f() is 
+    if true then
+      return true
+    else
+      return false
+    fi
+  end
+  bool x = call f();
+  println x
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+true
+===========================================================
+The exit code is 0.
+-- Finished
+

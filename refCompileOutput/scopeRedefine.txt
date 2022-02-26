@@ -1,0 +1,38 @@
+./wacc_example/scope/scopeRedefine.wacc
+calling the reference compiler on ./wacc_example/scope/scopeRedefine.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: scopeRedefine.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# more complex variable scoping test that redefines a variable
+
+# Output:
+# true
+# 2
+
+# Program:
+
+begin
+  int x = 1 ;
+  begin
+    x = 2 ;
+    bool x = true ;
+    println x
+  end ;
+  println x 
+end
+
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+true
+2
+===========================================================
+The exit code is 0.
+-- Finished
+

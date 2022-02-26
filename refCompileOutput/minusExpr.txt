@@ -1,0 +1,31 @@
+./wacc_example/expressions/minusExpr.wacc
+calling the reference compiler on ./wacc_example/expressions/minusExpr.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: minusExpr.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# evaluating subtraction
+
+# Output:
+# 5
+
+# Program:
+
+begin
+  int x = 15 ;
+  int y = 20 ;
+  println y - x
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+5
+===========================================================
+The exit code is 0.
+-- Finished
+

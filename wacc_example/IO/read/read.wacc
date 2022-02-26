@@ -1,0 +1,12 @@
+# simple read statement
+
+# Output:
+# input an integer to continue...
+# #input#
+
+# Program:
+
+begin
+  int x = 10;
+  read x
+end

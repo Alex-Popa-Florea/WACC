@@ -1,0 +1,37 @@
+./wacc_example/expressions/orExpr.wacc
+calling the reference compiler on ./wacc_example/expressions/orExpr.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: orExpr.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# evaluating or
+
+# Output:
+# true
+# true
+# false
+
+# Program:
+
+begin
+  bool a = true ;
+  bool b = false ;
+  println a || b ;
+  println a || true ;
+  println b || false
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+true
+true
+false
+===========================================================
+The exit code is 0.
+-- Finished
+

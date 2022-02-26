@@ -1,0 +1,34 @@
+./wacc_example/IO/print/printCharAsString.wacc
+calling the reference compiler on ./wacc_example/IO/print/printCharAsString.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: printCharAsString.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# character array treated as a string
+
+# Output:
+# foo
+# bar
+
+# Program:
+
+begin
+  char[] str = ['f','o','o'];
+  println str;
+  str = ['b','a','r'];
+  println str
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+foo
+bar
+===========================================================
+The exit code is 0.
+-- Finished
+

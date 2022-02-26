@@ -1,0 +1,15 @@
+# Simple conditional statement with int comparison test
+
+# Output:
+# correct
+
+# Program:
+
+begin
+  if false && true 
+  then 
+    println "correct"
+  else 
+    println "correct"
+  fi
+end

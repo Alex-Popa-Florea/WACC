@@ -1,0 +1,30 @@
+./wacc_example/IO/print/printInt.wacc
+calling the reference compiler on ./wacc_example/IO/print/printInt.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: printInt.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# basic Integer printing
+
+# Output:
+# An example integer is 189
+
+# Program:
+
+begin
+  print "An example integer is " ;
+  println 189
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+An example integer is 189
+===========================================================
+The exit code is 0.
+-- Finished
+

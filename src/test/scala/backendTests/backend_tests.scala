@@ -96,11 +96,11 @@ class backend_tests extends AnyFlatSpec{
         info("Checking basic")
         checker(new File("./output/basic"))
     }
-    "Exit" should "give correct out put and error code" in {
+    "Exit" should "give correct output and error code" in {
         info("Checking exit")
         checker(new File("./output/basic/exit"))
     }
-    "Skip" should "give correct out put and error code" in {
+    "Skip" should "give correct output and error code" in {
         info("Checking basic")
         checker(new File("./output/basic/skip"))
     }
@@ -123,15 +123,15 @@ class backend_tests extends AnyFlatSpec{
         info("Checking if")
         checker(new File("./output/if"))
     }
-    "IO" should "give correct out put and error code" in {
+    "IO" should "give correct output and error code" in {
         info("Checking IO")
         checker(new File("./output/IO"))
     }
-    "Print" should "give correct out put and error code" in {
+    "Print" should "give correct output and error code" in {
         info("Checking print")
         checker(new File("./output/IO/print"))
     }
-    "Read" should "give correct out put and error code" in {
+    "Read" should "give correct output and error code" in {
         info("Checking read")
         checker(new File("./output/IO/read"))
     }
@@ -144,7 +144,7 @@ class backend_tests extends AnyFlatSpec{
         info("Checking arrayOutOfBounds")
         checker(new File("./output/runtimeErr/arrayOutOfBounds"))
     }
-    "DivideByZero" should "give correct out put and error code" in {
+    "DivideByZero" should "give correct output and error code" in {
         info("Checking divideByZero")
         checker(new File("./output/runtimeErr/divideByZero"))
     }
@@ -153,7 +153,7 @@ class backend_tests extends AnyFlatSpec{
         info("Checking integerOverflow")
         checker(new File("./output/runtimeErr/integerOverflow"))
     }
-    "NullDereference" should "give correct out put and error code" in {
+    "NullDereference" should "give correct output and error code" in {
         info("Checking nullDereference")
         checker(new File("./output/runtimeErr/nullDereference"))
     }
@@ -166,11 +166,11 @@ class backend_tests extends AnyFlatSpec{
         info("Checking sequence")
         checker(new File("./output/sequence"))
     }
-    "Variables" should "give correct out put and error code" in {
+    "Variables" should "give correct output and error code" in {
         info("Checking variables")
         checker(new File("./output/variables"))
     }
-    "While" should "give correct out put and error code" in {
+    "While" should "give correct output and error code" in {
         info("Checking while")
         checker(new File("./output/while"))
     }

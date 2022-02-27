@@ -2,7 +2,6 @@ package wacc
 
 import backend.codeGenerator.generate
 import backend.codeGenerator.writeToFile
-import backend.codeGenerator.writeToFileWithDir
 import frontend.color._
 import frontend.edata._
 import frontend.error.StringErrorBuilder
@@ -83,10 +82,10 @@ object main {
                     if (semanticallyValid) {
                         val lines = generate(x, symbolTable, functionTable)
                         if(output == ""){
-                            writeToFile(lines, file.getName().replace(".wacc",".s"))
+                            writeToFile(lines, file.getName().replace(".wacc",".s"), false)
                         }
                         else{
-                            writeToFileWithDir(lines, output+"/"+file.getName().replace(".wacc",".s"))
+                            writeToFile(lines, output+"/"+file.getName().replace(".wacc",".s"), true)
                         }
                         
                     } else {

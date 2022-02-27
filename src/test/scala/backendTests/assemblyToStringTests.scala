@@ -19,7 +19,6 @@ import wacc.section._
 
 import backend.codeGenerator.generate
 import backend.codeGenerator.writeToFile
-import backend.codeGenerator.writeToFileWithDir
 import backend.lines._
 import backend.data._
 import backend.instructions._
@@ -45,31 +44,31 @@ class AssemblyToStringTest extends AnyFlatSpec with AppendedClues {
     "ADD instruction" should "produce correct string" in
     {
         info("without cond or S flag")
-        ADD(None, false, R(0), R(1), Immed("", 0)).toString() should equal ("    ADD r0, r1, #0\n")
+        ADD(None, false, R(0), R(1), Immed(0)).toString() should equal ("    ADD r0, r1, #0\n")
 
         info("with cond")
-        ADD(Some(EQCOND()), false, R(0), R(1), Immed("", 0)).toString() should equal ("    ADDEQ r0, r1, #0\n")
+        ADD(Some(EQCOND()), false, R(0), R(1), Immed(0)).toString() should equal ("    ADDEQ r0, r1, #0\n")
 
         info("with S flag")
-        ADD(None, true, R(0), R(1), Immed("", 0)).toString() should equal ("    ADDS r0, r1, #0\n")
+        ADD(None, true, R(0), R(1), Immed(0)).toString() should equal ("    ADDS r0, r1, #0\n")
 
         info("with cond and S flag")
-        ADD(Some(EQCOND()), true, R(0), R(1), Immed("", 0)).toString() should equal ("    ADDEQS r0, r1, #0\n")
+        ADD(Some(EQCOND()), true, R(0), R(1), Immed(0)).toString() should equal ("    ADDEQS r0, r1, #0\n")
     }
 
     "SUB instruction" should "produce correct string" in
     {
         info("without cond or S flag")
-        SUB(None, false, R(0), R(1), Immed("", 0)).toString() should equal ("    SUB r0, r1, #0\n")
+        SUB(None, false, R(0), R(1), Immed(0)).toString() should equal ("    SUB r0, r1, #0\n")
 
         info("with cond")
-        SUB(Some(EQCOND()), false, R(0), R(1), Immed("", 0)).toString() should equal ("    SUBEQ r0, r1, #0\n")
+        SUB(Some(EQCOND()), false, R(0), R(1), Immed(0)).toString() should equal ("    SUBEQ r0, r1, #0\n")
 
         info("with S flag")
-        SUB(None, true, R(0), R(1), Immed("", 0)).toString() should equal ("    SUBS r0, r1, #0\n")
+        SUB(None, true, R(0), R(1), Immed(0)).toString() should equal ("    SUBS r0, r1, #0\n")
 
         info("with cond and S flag")
-        SUB(Some(EQCOND()), true, R(0), R(1), Immed("", 0)).toString() should equal ("    SUBEQS r0, r1, #0\n")
+        SUB(Some(EQCOND()), true, R(0), R(1), Immed(0)).toString() should equal ("    SUBEQS r0, r1, #0\n")
     }
     
     "B instruction" should "produce correct string" in
@@ -118,10 +117,10 @@ class AssemblyToStringTest extends AnyFlatSpec with AppendedClues {
     "Shifts" should "produce correct string" in
     {
         info("with logical shift")
-        LogicalShiftLeft(R(0), Immed("", 0)).toString() should equal ("r0, LSL #0")
+        LogicalShiftLeft(R(0), Immed(0)).toString() should equal ("r0, LSL #0")
 
         info("with arithmetic shift")
-        ArithmeticShiftRight(R(0), Immed("", 0)).toString() should equal ("r0, ASR #0")
+        ArithmeticShiftRight(R(0), Immed(0)).toString() should equal ("r0, ASR #0")
     }
 
     "Offsets" should "produce correct string" in
@@ -130,10 +129,10 @@ class AssemblyToStringTest extends AnyFlatSpec with AppendedClues {
         ZeroOffset(R(0)).toString() should equal ("[r0]")
 
         info("with immeadiate offset")
-        OImmediateOffset(R(0), Immed("", 0)).toString() should equal ("[r0, #0]")
+        OImmediateOffset(R(0), Immed(0)).toString() should equal ("[r0, #0]")
 
         info("with register offset")
-        RegisterOffset(R(0), Immed("", 0)).toString() should equal ("[r0, #0]!")
+        RegisterOffset(R(0), Immed(0)).toString() should equal ("[r0, #0]!")
     }
 
 

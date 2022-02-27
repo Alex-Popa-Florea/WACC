@@ -19,7 +19,6 @@ import wacc.section._
 
 import backend.codeGenerator.generate
 import backend.codeGenerator.writeToFile
-import backend.codeGenerator.writeToFileWithDir
 import backend.lines._
 import backend.data._
 import backend.instructions._
@@ -45,7 +44,7 @@ class AssemblyGenerationTest extends AnyFlatSpec with AppendedClues {
     "Exit statements" should "produce correct assembly lines" in
     {
         val lines = fileToInstructions("./wacc_examples/basic/exit/exitBasic.wacc")
-        lines should equal (List(Text(), Main(), PUSH(List(LR())), LDR(None, R(4), Immed("", 7)), MOV(None, false, R(0), R(4)), BL(None, "exit"), LDR(None, R(0), Immed("", 0)), POP(List(PC())), Ltorg()))
+        lines should equal (List(Text(), Main(), PUSH(List(LR())), LDR(None, R(4), Immed(7)), MOV(None, false, R(0), R(4)), BL(None, "exit"), LDR(None, R(0), Immed(0)), POP(List(PC())), Ltorg()))
     }
 
 

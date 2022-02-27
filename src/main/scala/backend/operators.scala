@@ -10,13 +10,27 @@ object operators {
     }
     case class Character(value: Char) extends Operand2 {
         override def toString() : String = {
-            "'" + value.toString() + "'"
+            if (value == '\u0000') {
+                "0"
+            } else if(value == '\b') {
+                "8"
+            } else if(value == '\t') {
+                "9"
+            } else if(value == '\n') {
+                "10"
+            } else if(value == '\f') {
+                "12"
+            } else if(value == '\r') {
+                "13"
+            } else {
+                "'" + value.toString() + "'"
+            }
         }
     }
 
     case class LogicalShiftLeft(rm: Register, immed: Immed) extends Operand2 {
         override def toString() : String = {
-            rm.toString() + " LSL #" + immed.toString()
+            rm.toString() + ", LSL #" + immed.toString()
         }
     }
 

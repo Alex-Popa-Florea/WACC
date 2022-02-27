@@ -1,27 +1,27 @@
 package backend
 
+import backend.data._
+import backend.instructions._
+import backend.lines._
+import backend.operators._
+import parsley.registers
 import wacc.ast._
+import wacc.functionTable._
+import wacc.section._
+import wacc.symbolTable._
+import wacc.types.BoolCheck
+import wacc.types.CharCheck
+import wacc.types.EmptyPairCheck
+import wacc.types.IntCheck
+import wacc.types.PairCheck
+import wacc.types.StrCheck
+import wacc.types._
 
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.Map
-import wacc.symbolTable._
-import wacc.functionTable._
-import backend.instructions._
-import backend.operators._
-import backend.data._
-import backend.lines._
-import wacc.types.IntCheck
-import wacc.types.BoolCheck
-import wacc.types.CharCheck
-import wacc.types.StrCheck
-import wacc.types.PairCheck
-import wacc.types.EmptyPairCheck
-import parsley.registers
-import wacc.section._
-import wacc.types._
 
 object codeGenerator {
     
@@ -43,27 +43,17 @@ object codeGenerator {
         Method that writes the given lines to a file with given
         file name.
     */
-    def writeToFile(lines: List[Line], fileName: String): Unit = {
+    def writeToFile(lines: List[Line], fileName: String, dir: Boolean): Unit = {
         val file = new File(fileName)
-        val fileWriter = new FileWriter(file)
-        val bw = new BufferedWriter(fileWriter)
-        lines.map(line => bw.write(line.toString()))
-        bw.close()
-    }
-    /*
-        Method that writes the given lines to a file with given
-        file name.
-    */
-    def writeToFileWithDir(lines: List[Line], fileName: String) ={
-        val file = new File(fileName)
-        if(!file.getParentFile.exists()){
-            file.getParentFile.mkdirs()
+        if (dir) {
+            if(!file.getParentFile.exists()){
+                file.getParentFile.mkdirs()
+            }
         }
         val fileWriter = new FileWriter(file)
         val bw = new BufferedWriter(fileWriter)
         lines.map(line => bw.write(line.toString()))
         bw.close()
-
     }
 
     /*
@@ -112,7 +102,6 @@ object codeGenerator {
                     Generates code for user defined functions.
                 */
                 func.map(function => generateNode(function, symbolTable, functionTable, F(function.id.variable), dataMap, textMap))
-
                 textMap(label) = ListBuffer(PUSH(List(LR())))
 
                 /*
@@ -174,81 +163,16 @@ object codeGenerator {
                 textMap(label).addOne(MOV(None, false, R(0), R(4)))
                 lhs match {
                     case ident: Ident => 
-                        ident.symbolTable.get.find(ident) match {
-                            case Some(typeCheck) => typeCheck match {
-                                case IntCheck(_) => 
-                                    generateReadInt(dataMap, textMap)
-                                    textMap(label).addOne(BL(None, "p_read_int"))
-                                    
-                                case CharCheck(_) =>
-                                    generateReadChar(dataMap, textMap)
-                                    textMap(label).addOne(BL(None, "p_read_char"))
-                                
-                                case _ =>
-                            }
-                            case None =>
-                        }
+                        generateReadIdentAndArrayElem(ident, dataMap, textMap, label)
 
-                    case ArrayElem(id, exprs) =>
-                        id.symbolTable.get.find(id) match {
-                            case Some(typeCheck) => typeCheck match {
-                                case IntCheck(_) => 
-                                    generateReadInt(dataMap, textMap)
-                                    textMap(label).addOne(BL(None, "p_read_int"))
-                                    
-                                case CharCheck(_) =>
-                                    generateReadChar(dataMap, textMap)
-                                    textMap(label).addOne(BL(None, "p_read_char"))
-                                
-                                case _ =>
-                            }
-                            case None =>
-                        }
+                    case ArrayElem(id, _) =>
+                        generateReadIdentAndArrayElem(id, dataMap, textMap, label)
 
                     case Fst(expr) =>
-                        expr match {
-                            case ident: Ident => 
-                                ident.symbolTable.get.find(ident) match {
-                                    case Some(typeCheck) => typeCheck match {
-                                        case PairCheck(type1, _, _) => type1 match {
-                                            case IntCheck(_) => 
-                                                generateReadInt(dataMap, textMap)
-                                                textMap(label).addOne(BL(None, "p_read_int"))
-                                                
-                                            case CharCheck(_) =>
-                                                generateReadChar(dataMap, textMap)
-                                                textMap(label).addOne(BL(None, "p_read_char"))
-                                            case _ =>
-                                        }
-                                        case _ =>
-                                    }
-                                case None =>
-                            }
-                            case _ =>
-                        }
+                        generateReadPairCheck(expr, dataMap, textMap, label, true)
                         
                     case Snd(expr) =>
-                        expr match {
-                            case ident: Ident => 
-                                ident.symbolTable.get.find(ident) match {
-                                    case Some(typeCheck) => typeCheck match {
-                                        case PairCheck(_, type2, _) => type2 match {
-                                            case IntCheck(_) => 
-                                                generateReadInt(dataMap, textMap)
-                                                textMap(label).addOne(BL(None, "p_read_int"))
-                                                
-                                            case CharCheck(_) =>
-                                                generateReadChar(dataMap, textMap)
-                                                textMap(label).addOne(BL(None, "p_read_char"))
-                                            
-                                            case _ =>
-                                        }
-                                        case _ =>
-                                    }
-                                case None =>
-                            }
-                            case _ =>
-                        }
+                        generateReadPairCheck(expr, dataMap, textMap, label, false)
                 }
 
             case Free(expr) => 
@@ -660,53 +584,14 @@ object codeGenerator {
                 textMap(label).addOne(MOV(None, false, R(0), R(register)))
                 textMap(label).addOne(BL(None, "p_check_null_pointer"))
                 textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
-                if (!read) {
-                    expr match {
-                        case ident: Ident => 
-                            ident.symbolTable.get.find(ident) match {
-                                case Some(typeCheck) => typeCheck match {
-                                    case PairCheck(type1, _, _) => 
-                                        if (getBytesFromType(type1) == 4) {
-                                            textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
-                                        } else {
-                                            textMap(label).addOne(STRB(None, R(register - 1), ZeroOffset(R(register))))
-                                        }
-                                    
-                                    case _ =>
-                                }
-                                
-                                case None =>
-                            }
-                        case _ =>
-                    }
-                }
-                generateCheckNullPointer(dataMap, textMap)
+                generateLHSFstAndSnd(read, register, expr, dataMap, textMap, label, true)
 
             case Snd(expr) =>
                 generateExpr(expr, symbolTable, functionTable, label, register, dataMap, textMap)
                 textMap(label).addOne(MOV(None, false, R(0), R(register)))
                 textMap(label).addOne(BL(None, "p_check_null_pointer"))
                 textMap(label).addOne(LDR(None, R(register), OImmediateOffset(R(register), Immed(4))))
-                if (!read) {
-                    expr match {
-                        case ident: Ident => 
-                            ident.symbolTable.get.find(ident) match {
-                                case Some(typeCheck) => typeCheck match {
-                                    case PairCheck(_, type2, _) =>
-                                        if (getBytesFromType(type2) == 4) {
-                                            textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
-                                        } else {
-                                            textMap(label).addOne(STRB(None, R(register - 1), ZeroOffset(R(register))))
-                                        }
-                                    
-                                    case _ =>
-                                }
-                                case None =>
-                            }
-                        case _ =>
-                    }
-                }
-                generateCheckNullPointer(dataMap, textMap)
+                generateLHSFstAndSnd(read, register, expr, dataMap, textMap, label, true)
         }
     }
 
@@ -773,48 +658,14 @@ object codeGenerator {
                 textMap(label).addOne(MOV(None, false, R(0), R(register)))
                 textMap(label).addOne(BL(None, "p_check_null_pointer"))
                 textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
-                expr match {
-                    case ident: Ident => 
-                        ident.symbolTable.get.find(ident) match {
-                            case Some(typeCheck) => typeCheck match {
-                                case PairCheck(type1, _, _) => 
-                                    if (getBytesFromType(type1) == 4) {
-                                        textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
-                                    } else {
-                                        textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
-                                    }
-                                
-                                case _ =>
-                            }
-                            case None =>
-                        }
-                    case _ =>
-                }
-                generateCheckNullPointer(dataMap, textMap)
+                generateRHSFstAndSnd(expr, register, dataMap, textMap, label, true)
             
             case Snd(expr) =>
                 generateExpr(expr, symbolTable, functionTable, label, 4, dataMap, textMap)
                 textMap(label).addOne(MOV(None, false, R(0), R(register)))
                 textMap(label).addOne(BL(None, "p_check_null_pointer"))
                 textMap(label).addOne(LDR(None, R(register), OImmediateOffset(R(register), Immed(4))))
-                expr match {
-                    case ident: Ident => 
-                        ident.symbolTable.get.find(ident) match {
-                            case Some(typeCheck) => typeCheck match {
-                                case PairCheck(_, type2, _) => 
-                                if (getBytesFromType(type2) == 4) {
-                                        textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
-                                    } else {
-                                        textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
-                                    }
-                                
-                                case _ =>
-                            }
-                            case None =>
-                        }
-                    case _ =>
-                }
-                generateCheckNullPointer(dataMap, textMap)
+                generateRHSFstAndSnd(expr, register, dataMap, textMap, label, false)
             
             case Call(id, args) => 
                 args.reverse.map(arg => {
@@ -1545,5 +1396,129 @@ object codeGenerator {
             generatePrintString(dataMap, textMap)
             textMap(P("throw_runtime_error")) = runtimeError
         }
+    }
+
+    /*
+        Method that generates Ident and ArrayElem types for Read.
+    */
+    def generateReadIdentAndArrayElem(ident: Ident, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]], label: Scope): Unit = {
+        ident.symbolTable.get.find(ident) match {
+            case Some(typeCheck) => typeCheck match {
+                case IntCheck(_) => 
+                    generateReadInt(dataMap, textMap)
+                    textMap(label).addOne(BL(None, "p_read_int"))
+                                    
+                case CharCheck(_) =>
+                    generateReadChar(dataMap, textMap)
+                    textMap(label).addOne(BL(None, "p_read_char"))
+                                
+                case _ =>
+            }
+            case None =>
+        }
+    }
+
+    /*
+        Method that generates Fst and Snd of Pairs for Read.
+    */
+    def generateReadPairCheck(expr: Expr, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]], label: Scope, fst: Boolean): Unit = {
+        expr match {
+            case ident: Ident => 
+                ident.symbolTable.get.find(ident) match {
+                case Some(typeCheck) => typeCheck match {
+                    case PairCheck(type1, _, _) if (fst) => type1 match {
+                        case IntCheck(_) => 
+                            generateReadInt(dataMap, textMap)
+                            textMap(label).addOne(BL(None, "p_read_int"))
+                                                
+                        case CharCheck(_) =>
+                            generateReadChar(dataMap, textMap)
+                            textMap(label).addOne(BL(None, "p_read_char"))
+                        
+                        case _ =>
+                    }
+                    
+                    case PairCheck(_, type2, _) if (!fst) => type2 match {
+                        case IntCheck(_) => 
+                            generateReadInt(dataMap, textMap)
+                            textMap(label).addOne(BL(None, "p_read_int"))
+                                                
+                        case CharCheck(_) =>
+                            generateReadChar(dataMap, textMap)
+                            textMap(label).addOne(BL(None, "p_read_char"))
+                        
+                        case _ =>
+                    }
+                    
+                    case _ =>
+                }
+                case None =>
+            }
+            case _ =>
+        }
+    }
+
+    /*
+        Method that generates Fst and Snd of PairCheck type for LHS expressions.
+    */
+    def generateLHSFstAndSnd(read: Boolean, register: Int, expr: Expr, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]], label: Scope, fst: Boolean): Unit = {
+        if (!read) {
+            expr match {
+                case ident: Ident => 
+                    ident.symbolTable.get.find(ident) match {
+                        case Some(typeCheck) => typeCheck match {
+                            case PairCheck(type1, _, _) if (fst) => 
+                                if (getBytesFromType(type1) == 4) {
+                                    textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
+                                } else {
+                                    textMap(label).addOne(STRB(None, R(register - 1), ZeroOffset(R(register))))
+                                }
+                            
+                            case PairCheck(_, type2, _) if (!fst) => 
+                                if (getBytesFromType(type2) == 4) {
+                                    textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
+                                } else {
+                                    textMap(label).addOne(STRB(None, R(register - 1), ZeroOffset(R(register))))
+                                }
+
+                        case _ =>
+                    }        
+                    case None =>
+                }
+                case _ =>
+            }
+        }
+        generateCheckNullPointer(dataMap, textMap)
+    }
+
+    /*
+        Method that generates Fst and Snd of PairCheck type for RHS expressions.
+    */
+    def generateRHSFstAndSnd(expr: Expr, register: Int, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]], label: Scope, fst: Boolean): Unit = {
+        expr match {
+            case ident: Ident => 
+                ident.symbolTable.get.find(ident) match {
+                    case Some(typeCheck) => typeCheck match {
+                        case PairCheck(type1, _, _) if (fst) => 
+                            if (getBytesFromType(type1) == 4) {
+                                textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
+                            } else {
+                                textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
+                            }
+
+                        case PairCheck(_, type2, _) if (!fst) => 
+                            if (getBytesFromType(type2) == 4) {
+                                textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
+                            } else {
+                                textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
+                            }    
+                    
+                    case _ =>
+            }    
+                case None =>
+            }
+            case _ =>
+        }
+        generateCheckNullPointer(dataMap, textMap)
     }
 }

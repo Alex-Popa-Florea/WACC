@@ -583,7 +583,7 @@ object codeGenerator {
                 generateExpr(expr, symbolTable, functionTable, label, register, dataMap, textMap)
                 textMap(label).addOne(MOV(None, false, R(0), R(register)))
                 textMap(label).addOne(BL(None, "p_check_null_pointer"))
-                textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
+                textMap(label).addOne(LDR(None, R(register), OImmediateOffset(R(register), Immed("", 4))))
                 if (!read) {
                     symbolTable.find(expr match {
                         case ident: Ident => ident

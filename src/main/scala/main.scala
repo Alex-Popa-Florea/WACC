@@ -31,6 +31,7 @@ object main {
             Assert that an input file has been provided for compilation
         */
         assert(args.head != "")
+        var output = args(1)
 
         /*
             Create a new symbol table and function table
@@ -78,7 +79,13 @@ object main {
                         println("")
                         symbolTable.printSymbolTables(symbolTable, 0)
                         val lines = generate(x, symbolTable, functionTable)
-                        writeToFile(lines, file.getName().replace(".wacc",".s"))
+                        if(output == ""){
+                            writeToFile(lines, file.getName().replace(".wacc",".s"))
+                        }
+                        else{
+                            writeToFile(lines, output++"/"++file.getName().replace(".wacc",".s"))
+                        }
+                        
                     } else {
                         /*
                         Otherwise, print the errors produced using the error generator

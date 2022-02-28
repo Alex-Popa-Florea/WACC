@@ -26,7 +26,11 @@ object codeGenerator {
     
     var msg = 0
     var scopeLabels = 0
-    
+    var MAX_NUM_BYTES = 1024
+    var REGISTER4 = 4
+    var REGISTER5 = 5
+    var REGISTER0 = 0
+
     val runtimeError: ListBuffer[Instruction] = ListBuffer(
         BL(None, "p_print_string"), 
         MOV(None, false, R(0), 
@@ -34,6 +38,10 @@ object codeGenerator {
         BL(None, "exit")
     )
 
+    /*
+        Method that writes the given lines to a file with given
+        file name.
+    */
     def writeToFile(lines: List[Line], fileName: String): Unit = {
         val fileWriter = new FileWriter(new File(fileName))
         val bw = new BufferedWriter(fileWriter)
@@ -41,6 +49,9 @@ object codeGenerator {
         bw.close()
     }
 
+    /*
+        Method that 
+    */
     def generate(program: Node, symbolTable: SymbolTable, functionTable: FunctionTable): List[Line] = {
         val dataMap: Map[Scope, Msg] = Map.empty
         val textMap: Map[Scope, ListBuffer[Instruction]] = Map.empty
@@ -87,9 +98,9 @@ object codeGenerator {
                 */
                 var i = symbolTable.getSize()
                 while (i > 0) {
-                    if (i > 1024) {
-                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", 1024)))
-                        i -= 1024
+                    if (i > MAX_NUM_BYTES) {
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        i -= MAX_NUM_BYTES
                     } else {
                         textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", i)))
                         i = 0
@@ -105,9 +116,9 @@ object codeGenerator {
                 */
                 i = symbolTable.getSize()
                 while (i > 0) {
-                    if (i > 1024) {
-                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", 1024)))
-                        i -= 1024
+                    if (i > MAX_NUM_BYTES) {
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        i -= MAX_NUM_BYTES
                     } else {
                         textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", i)))
                         i = 0
@@ -118,13 +129,23 @@ object codeGenerator {
                 textMap(label).addOne(POP(List(PC())))
                 textMap(label).addOne(Ltorg())
 
-            case Function(t, id, vars, stat) => 
+            case function: Function =>
+                val funcLabel = F(function.id.variable)
+                textMap(funcLabel) = ListBuffer(PUSH(List(LR())))
+                function.stat.map(statement => {
+                    generateNode(statement, function.semanticTable.get, functionTable, funcLabel, dataMap, textMap)
+                })
+                textMap(funcLabel).addOne(POP(List(PC())))
+                textMap(funcLabel).addOne(Ltorg())
+
+                // textMap(F(funcName)).addOne(F(funcName))
+
             case Parameter(t, id) => 
 
             case Skip() => 
 
             case AssignType(t, id, rhs) => 
-                generateRHS(rhs, symbolTable, functionTable, label, 4, dataMap, textMap)
+                generateRHS(rhs, symbolTable, functionTable, label, REGISTER4, dataMap, textMap)
                 val a_mode2 = if (symbolTable.getSizeWithIdent(id).get - symbolTable.findId(id).get == 0) {
                     ZeroOffset(SP())       
                 } else {
@@ -132,18 +153,18 @@ object codeGenerator {
                 }
                 val lhsSize = getBytes(id, symbolTable)
                 if (lhsSize == 4) {
-                    textMap(label).addOne(STR(None, R(4), a_mode2))
+                    textMap(label).addOne(STR(None, R(REGISTER4), a_mode2))
                 } else {
-                    textMap(label).addOne(STRB(None, R(4), a_mode2))
+                    textMap(label).addOne(STRB(None, R(REGISTER4), a_mode2))
                 }
 
             case Assign(lhs, rhs) => 
-                generateRHS(rhs, symbolTable, functionTable, label, 4, dataMap, textMap)
-                generateLHS(lhs, symbolTable, functionTable, label, 5, dataMap, textMap, false)
+                generateRHS(rhs, symbolTable, functionTable, label, REGISTER4, dataMap, textMap)
+                generateLHS(lhs, symbolTable, functionTable, label, REGISTER5, dataMap, textMap, false)
 
             case Read(lhs) => 
-                generateLHS(lhs, symbolTable, functionTable, label, 4, dataMap, textMap, true)
-                textMap(label).addOne(MOV(None, false, R(0), R(4)))
+                generateLHS(lhs, symbolTable, functionTable, label, REGISTER4, dataMap, textMap, true)
+                textMap(label).addOne(MOV(None, false, R(REGISTER0), R(REGISTER4)))
                 lhs match {
                     case ident: Ident => 
                         symbolTable.find(ident) match {
@@ -228,6 +249,9 @@ object codeGenerator {
 
             case Free(expr) => 
             case Return(expr) => 
+                generateExpr(expr, symbolTable, functionTable, label, REGISTER4, dataMap, textMap)
+                textMap(label).addOne(MOV(None, false, R(REGISTER0), R(REGISTER4)))
+                textMap(label).addOne(POP(List(PC())))
 
             case Exit(expr) => 
                 generateExpr(expr, symbolTable, functionTable, label, 4, dataMap, textMap)
@@ -490,6 +514,10 @@ object codeGenerator {
             case _ => 
         }
     }
+
+    // def generateFunction(vars: List[Parameter], stat: List[Statement], symbolTable: SymbolTable, functionTable: FunctionTable, label: Scope, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
+
+    // }
 
 
     def generateLHS(lhs: AssignLHS, symbolTable: SymbolTable, functionTable: FunctionTable, label: Scope, register: Int, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]], read: Boolean): Unit = {

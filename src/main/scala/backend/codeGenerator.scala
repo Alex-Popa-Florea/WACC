@@ -732,8 +732,18 @@ object codeGenerator {
                 }
                 generateCheckNullPointer(dataMap, textMap)
             case Call(id, args) =>
-                 
-        }
+                args.reverse.map(arg => {
+                    generateExpr(arg, symbolTable, functionTable, label, 4, dataMap, textMap)
+                    if (getBytes(arg, symbolTable) == 1) {
+                        textMap(label).addOne(STRB(None, R(REGISTER4), RegisterOffset(SP(), Immed("", -1))))
+                    } else {
+                        textMap(label).addOne(STR(None, R(REGISTER4), RegisterOffset(SP(), Immed("", -4))))
+                    }
+                })
+                textMap(label).addOne(BL(None, "f_" + id.variable))
+                textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", args.foldLeft(0)((arg1, arg2) => arg1 + getBytes(arg2, symbolTable)))))
+                textMap(label).addOne(MOV(None, false, R(REGISTER4), R(REGISTER0)))    
+            }
     }
 
     def getBytes(expr: Expr, symbolTable: SymbolTable): Int = {

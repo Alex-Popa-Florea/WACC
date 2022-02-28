@@ -52,6 +52,11 @@ object operators {
             value.toString()
         }
     }
+    case class RegisterOffset(rn: Register, immed: Immed) extends Offset {
+        override def toString() : String = {
+            s"[${rn.toString()}, #${immed.toString()}]!"
+        }
+    } 
 
     sealed trait PreIndexedOffset extends A_mode2
     case class PrImmediateOffset(rn: Register, immed: Immed) extends PreIndexedOffset

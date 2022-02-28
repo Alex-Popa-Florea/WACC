@@ -1,0 +1,31 @@
+./wacc_example/basic/exit/exitBasic2.wacc
+calling the reference compiler on ./wacc_example/basic/exit/exitBasic2.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: exitBasic2.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# basic exit statement
+
+# Output:
+# #empty#
+
+# Exit:
+# 42
+
+# Program:
+
+begin
+  exit 42
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+===========================================================
+The exit code is 42.
+-- Finished
+

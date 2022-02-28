@@ -1,0 +1,35 @@
+./wacc_example/expressions/andOverOrExpr.wacc
+calling the reference compiler on ./wacc_example/expressions/andOverOrExpr.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: andOverOrExpr.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# evaluating boolean operator precedence
+
+# Output:
+# true
+# false
+
+# Program:
+
+begin
+  bool a = false ;
+  bool b = false ;
+  bool c = true ;
+  println a && b || c ;
+  println a && (b || c)
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+true
+false
+===========================================================
+The exit code is 0.
+-- Finished
+

@@ -1,0 +1,54 @@
+./wacc_example/while/whileCount.wacc
+calling the reference compiler on ./wacc_example/while/whileCount.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: whileCount.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# simple counting while loop
+
+# Output:
+# Can you count to 10?
+# 1
+# 2
+# 3
+# 4
+# 5
+# 6
+# 7
+# 8
+# 9
+# 10
+
+# Program:
+
+begin
+  int i = 1 ;
+  println "Can you count to 10?" ;
+  while i <= 10 do
+    println i ;
+    i = i + 1
+  done
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+Can you count to 10?
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+===========================================================
+The exit code is 0.
+-- Finished
+

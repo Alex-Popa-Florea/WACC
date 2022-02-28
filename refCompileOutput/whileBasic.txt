@@ -1,0 +1,30 @@
+./wacc_example/while/whileBasic.wacc
+calling the reference compiler on ./wacc_example/while/whileBasic.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: whileBasic.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# simple while loop
+
+# Output:
+# #empty#
+
+# Program:
+
+begin
+  while false do
+    skip
+  done
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+===========================================================
+The exit code is 0.
+-- Finished
+

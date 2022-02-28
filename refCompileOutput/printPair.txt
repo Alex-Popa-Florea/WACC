@@ -1,0 +1,37 @@
+./wacc_example/pairs/printPair.wacc
+calling the reference compiler on ./wacc_example/pairs/printPair.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: printPair.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# print pair program
+
+# Output:
+# #addrs# = (10, a)
+
+# Program:
+
+begin
+  pair(int, char) p = newpair(10, 'a') ;
+  print p ; 
+  print " = (" ;
+  int x = fst p ;
+  print x ;
+  print ", " ;
+  char c = snd p ;
+  print c ;
+  println ')' 
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+0x22150 = (10, a)
+===========================================================
+The exit code is 0.
+-- Finished
+

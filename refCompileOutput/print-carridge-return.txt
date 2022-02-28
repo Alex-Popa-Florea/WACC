@@ -1,0 +1,29 @@
+./wacc_example/IO/print/print-carridge-return.wacc
+calling the reference compiler on ./wacc_example/IO/print/print-carridge-return.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: print-carridge-return.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# simple print statement off a string with a carridge-return character
+
+# Output:
+#  World!
+
+# Program:
+
+begin
+  print "Hello \r World!\n"
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+Hello  World!
+===========================================================
+The exit code is 0.
+-- Finished
+

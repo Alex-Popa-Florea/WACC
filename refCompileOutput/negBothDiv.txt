@@ -1,0 +1,31 @@
+./wacc_example/expressions/negBothDiv.wacc
+calling the reference compiler on ./wacc_example/expressions/negBothDiv.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: negBothDiv.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# division of a negative number by a negative number
+
+# Output:
+# 2
+
+# Program:
+
+begin
+  int x = -4 ;
+  int y = -2 ;
+  println x / y
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+2
+===========================================================
+The exit code is 0.
+-- Finished
+

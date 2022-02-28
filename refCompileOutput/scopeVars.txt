@@ -1,0 +1,40 @@
+./wacc_example/scope/scopeVars.wacc
+calling the reference compiler on ./wacc_example/scope/scopeVars.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: scopeVars.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# simple variable scoping test
+
+# Output:
+# 2
+# 4
+# 2
+
+# Program:
+
+begin
+  int x = 2 ;
+  println x ;
+  begin
+    int x = 4 ;
+    println x
+  end ;
+  println x 
+end
+
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+2
+4
+2
+===========================================================
+The exit code is 0.
+-- Finished
+

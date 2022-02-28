@@ -1,0 +1,36 @@
+./wacc_example/while/loopCharCondition.wacc
+calling the reference compiler on ./wacc_example/while/loopCharCondition.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: loopCharCondition.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# Use a character as a loop condition. Enter the loop once only, then exit the loop.
+
+# Output:
+# Change c
+# Should print "Change c" once before.
+
+# Program:
+
+begin
+	char c = '\0' ;
+	while c == '\0' do
+		c = 'a' ;
+		println "Change c"
+	done ;
+	println "Should print \"Change c\" once before."
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+Change c
+Should print "Change c" once before.
+===========================================================
+The exit code is 0.
+-- Finished
+

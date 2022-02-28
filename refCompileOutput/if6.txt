@@ -1,0 +1,36 @@
+./wacc_example/if/if6.wacc
+calling the reference compiler on ./wacc_example/if/if6.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: if6.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# Simple conditional statement with character comparison test
+
+# Output:
+# correct
+
+# Program:
+
+begin
+  char c1 = 'f';
+  char c2 = 'F';	
+  if c1 == c2 
+  then 
+    println "incorrect"
+  else 
+    println "correct"
+  fi
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+correct
+===========================================================
+The exit code is 0.
+-- Finished
+

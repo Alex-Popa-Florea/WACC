@@ -1,0 +1,31 @@
+./wacc_example/expressions/divExpr.wacc
+calling the reference compiler on ./wacc_example/expressions/divExpr.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: divExpr.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# evaluating integer division
+
+# Output:
+# 1
+
+# Program:
+
+begin
+  int x = 5 ;
+  int y = 3 ;
+  println x / y
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+1
+===========================================================
+The exit code is 0.
+-- Finished
+

@@ -1,0 +1,31 @@
+./wacc_example/expressions/plusExpr.wacc
+calling the reference compiler on ./wacc_example/expressions/plusExpr.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: plusExpr.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# evaluating addition
+
+# Output:
+# 35
+
+# Program:
+
+begin
+  int x = 15 ;
+  int y = 20 ;
+  println x + y
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+35
+===========================================================
+The exit code is 0.
+-- Finished
+

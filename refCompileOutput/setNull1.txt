@@ -1,0 +1,33 @@
+./wacc_example/runtimeErr/nullDereference/setNull1.wacc
+calling the reference compiler on ./wacc_example/runtimeErr/nullDereference/setNull1.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: setNull1.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# attempt dereference of a null pair by setting an element of it
+
+# Output:
+# #runtime_error#
+
+# Exit:
+# 255
+
+# Program:
+
+begin
+	pair(int, int) p = null ;
+	fst p = 1
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+NullReferenceError: dereference a null reference
+===========================================================
+The exit code is 255.
+-- Finished
+

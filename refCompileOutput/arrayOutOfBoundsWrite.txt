@@ -1,0 +1,36 @@
+./wacc_example/runtimeErr/arrayOutOfBounds/arrayOutOfBoundsWrite.wacc
+calling the reference compiler on ./wacc_example/runtimeErr/arrayOutOfBounds/arrayOutOfBoundsWrite.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: arrayOutOfBoundsWrite.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# attempt write out of array bounds (gods, this really should not work!)
+
+# Output:
+# #runtime_error#
+
+# Exit:
+# 255
+
+# Program:
+
+begin
+
+  int[] b = [1, 2, 3] ;
+	int[] a = [43, 2, 18, 1] ;
+	a[5] = 100 ;
+  println a[5]
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+ArrayIndexOutOfBoundsError: index too large
+===========================================================
+The exit code is 255.
+-- Finished
+

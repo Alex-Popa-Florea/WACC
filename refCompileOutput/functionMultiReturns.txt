@@ -1,0 +1,38 @@
+./wacc_example/function/simple_functions/functionMultiReturns.wacc
+calling the reference compiler on ./wacc_example/function/simple_functions/functionMultiReturns.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: functionMultiReturns.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# a simple function with multiple returns, importantly one at the end.
+
+# Output:
+# 1
+
+# Program:
+
+begin
+  int returnInWhile() is
+    while true do
+      return 1 ;
+      println "How on Earth did we get here?"
+    done ;
+    return 2
+  end
+
+  int x = call returnInWhile() ;
+  println x
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+1
+===========================================================
+The exit code is 0.
+-- Finished
+

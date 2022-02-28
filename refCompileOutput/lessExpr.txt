@@ -1,0 +1,35 @@
+./wacc_example/expressions/lessExpr.wacc
+calling the reference compiler on ./wacc_example/expressions/lessExpr.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: lessExpr.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# evaluating less-than
+
+# Output:
+# true
+# false
+
+# Program:
+
+begin
+  int x = 2 ;
+  int y = 6 ;
+  int z = 4 ;
+  println x < y ;
+  println y < z
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+true
+false
+===========================================================
+The exit code is 0.
+-- Finished
+

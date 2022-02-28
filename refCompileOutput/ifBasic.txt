@@ -1,0 +1,34 @@
+./wacc_example/if/ifBasic.wacc
+calling the reference compiler on ./wacc_example/if/ifBasic.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: ifBasic.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# simple if statement
+
+# Output:
+# #empty#
+
+# Program:
+
+begin
+  if true 
+  then
+    skip
+  else
+    skip
+  fi
+end
+
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+===========================================================
+The exit code is 0.
+-- Finished
+

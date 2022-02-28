@@ -1,0 +1,30 @@
+./wacc_example/sequence/basicSeq2.wacc
+calling the reference compiler on ./wacc_example/sequence/basicSeq2.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: basicSeq2.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# basic sequential composition
+
+# Output:
+# #empty#
+
+# Program:
+
+begin 
+  skip;
+  skip;
+  skip 
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+===========================================================
+The exit code is 0.
+-- Finished
+

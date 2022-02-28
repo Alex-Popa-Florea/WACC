@@ -1,0 +1,42 @@
+./wacc_example/expressions/ordAndchrExpr.wacc
+calling the reference compiler on ./wacc_example/expressions/ordAndchrExpr.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: ordAndchrExpr.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# evalutaing ord and chr
+
+# Output:
+# a is 97
+# 99 is c
+
+# Program:
+
+begin
+  char a = 'a' ;
+  int i = 99 ;
+
+  print a ;
+  print " is " ;
+  println ord a ;
+
+  print i ;
+  print " is " ;
+  println chr i
+end
+
+
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+a is 97
+99 is c
+===========================================================
+The exit code is 0.
+-- Finished
+

@@ -1,0 +1,35 @@
+./wacc_example/expressions/lessCharExpr.wacc
+calling the reference compiler on ./wacc_example/expressions/lessCharExpr.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: lessCharExpr.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# evaluating less-than on characters
+
+# Output:
+# true
+# false
+
+# Program:
+
+begin
+  char a = 'a' ;
+  char e = 'e' ;
+  char c = 'c' ;
+  println a < e ;
+  println e < c
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+true
+false
+===========================================================
+The exit code is 0.
+-- Finished
+

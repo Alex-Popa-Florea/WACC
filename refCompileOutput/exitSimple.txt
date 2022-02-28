@@ -1,0 +1,32 @@
+./wacc_example/sequence/exitSimple.wacc
+calling the reference compiler on ./wacc_example/sequence/exitSimple.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: exitSimple.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# exit with unreachable print
+
+# Output:
+# #empty#
+
+# Exit:
+# 42
+
+# Program:
+
+begin
+  exit 42 ;
+  println "Should not print this."
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+===========================================================
+The exit code is 42.
+-- Finished
+

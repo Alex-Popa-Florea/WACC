@@ -1,0 +1,40 @@
+./wacc_example/scope/scopeIfRedefine.wacc
+calling the reference compiler on ./wacc_example/scope/scopeIfRedefine.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: scopeIfRedefine.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# variable scoping test that redefines a variable within an if-statement
+
+# Output:
+# true
+# 12
+
+# Program:
+
+begin
+  int x = 12 ;
+  if x == 12 then
+    bool x = true ;
+    println x
+  else
+    char x = 'a';
+    println x
+  fi ;
+  println x 
+end
+
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+true
+12
+===========================================================
+The exit code is 0.
+-- Finished
+

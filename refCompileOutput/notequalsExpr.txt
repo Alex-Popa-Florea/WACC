@@ -1,0 +1,39 @@
+./wacc_example/expressions/notequalsExpr.wacc
+calling the reference compiler on ./wacc_example/expressions/notequalsExpr.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: notequalsExpr.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# evaluating inequality
+
+# Output:
+# true
+# true
+# false
+
+# Program:
+
+begin
+  int x = 2 ;
+  int y = 4 ;
+  int z = 4 ;
+  bool b = x != y ;
+  println b ;
+  println x != y ;
+  println y != z
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+true
+true
+false
+===========================================================
+The exit code is 0.
+-- Finished
+

@@ -1,0 +1,34 @@
+./wacc_example/expressions/intExpr1.wacc
+calling the reference compiler on ./wacc_example/expressions/intExpr1.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: intExpr1.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# evaluating a moderately complex integer expression
+
+# Output:
+# Correct
+
+# Program:
+
+begin
+  int a = ( 10 * 1 + 2 * 15 );
+  if a == 40 then
+    println "Correct"
+  else
+    println "Wrong"
+  fi
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+Correct
+===========================================================
+The exit code is 0.
+-- Finished
+

@@ -1,0 +1,26 @@
+./wacc_example/basic/skip/skip.wacc
+calling the reference compiler on ./wacc_example/basic/skip/skip.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: skip.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# simple skip program
+
+# Output:
+# #empty#
+
+# Program:
+
+begin skip end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+===========================================================
+The exit code is 0.
+-- Finished
+

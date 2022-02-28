@@ -1,0 +1,43 @@
+./wacc_example/function/simple_functions/negFunction.wacc
+calling the reference compiler on ./wacc_example/function/simple_functions/negFunction.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: negFunction.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# a simple negation function definition and usage
+
+# Output:
+# true
+# false
+# true
+
+# Program:
+
+begin
+  bool neg(bool b) is
+    return !b 
+  end
+  bool b = true ;
+  println b ;
+  b = call neg(b) ;
+  println b ;
+  b = call neg(b) ;
+  b = call neg(b) ;
+  b = call neg(b) ;
+  println b
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+true
+false
+true
+===========================================================
+The exit code is 0.
+-- Finished
+

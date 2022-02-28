@@ -1,0 +1,36 @@
+./wacc_example/pairs/writeSnd.wacc
+calling the reference compiler on ./wacc_example/pairs/writeSnd.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: writeSnd.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# create a pair and write to its second element
+
+# Output:
+# a
+# Z
+
+# Program:
+
+begin
+  pair(int, char) p = newpair(10, 'a') ;
+  char s = snd p ;
+  println s ;
+  snd p = 'Z' ;
+  s = snd p ;
+  println s
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+a
+Z
+===========================================================
+The exit code is 0.
+-- Finished
+

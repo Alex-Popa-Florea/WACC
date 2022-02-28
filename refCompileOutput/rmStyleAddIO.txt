@@ -1,0 +1,48 @@
+wacc_example/while/rmStyleAddIO.wacc
+calling the reference compiler on wacc_example/while/rmStyleAddIO.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: rmStyleAddIO.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# register machine style addition
+
+# Output:
+# Enter the first number: #input# Enter the second number: #input# Initial value of x: #output#
+# #output#
+# final value of x: #output
+
+# Program:
+
+begin
+  int x = 0 ;
+  int y = 0 ;
+  print "Enter the first number: " ;
+  read x ;
+  print "Enter the second number: " ;
+  read y ;
+  print "Initial value of x: " ;
+  println x ;
+  while y > 0 do
+    print "(+)" ;
+    x = x + 1 ;
+    y = y - 1
+  done ;
+  println "" ;
+  print "final value of x: " ;
+  println x
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+Enter the first number: Enter the second number: Initial value of x: 1
+(+)(+)
+final value of x: 3
+===========================================================
+The exit code is 0.
+-- Finished
+

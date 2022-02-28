@@ -1,0 +1,40 @@
+./wacc_example/function/simple_functions/incFunction.wacc
+calling the reference compiler on ./wacc_example/function/simple_functions/incFunction.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: incFunction.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# a simple increment function definition and usage
+
+# Output:
+# 1
+# 4
+
+# Program:
+
+begin
+  int inc(int x) is
+    return x + 1
+  end
+  int x = 0 ;
+  x = call inc(x) ;
+  println x ;
+  x = call inc(x) ;
+  x = call inc(x) ;
+  x = call inc(x) ;
+  println x
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+1
+4
+===========================================================
+The exit code is 0.
+-- Finished
+

@@ -114,12 +114,19 @@ object symbolTable {
             size
         }
 
+        def increaseSize(increment: Int) = {
+            size += increment 
+        }
+
         def getSizeWithIdent(ident: Ident): Option[Int] = {
             var foundIdent = variableMap.get(ident.variable)
             foundIdent match {
                 case None => parent match {
                     case None => None
-                    case Some(value) => value.getSizeWithIdent(ident)
+                    case Some(parentExtracted) => parentExtracted.getSizeWithIdent(ident) match {
+                        case Some(value) => Some(value + size)
+                        case None => None
+                    }
                 }
                 case _ => Some(size)
             }

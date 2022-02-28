@@ -21,6 +21,7 @@ import wacc.types.PairCheck
 import wacc.types.EmptyPairCheck
 import parsley.registers
 import wacc.section._
+import wacc.types
 
 object codeGenerator {
     
@@ -37,6 +38,9 @@ object codeGenerator {
         Immed("", -1)), 
         BL(None, "exit")
     )
+
+    var functionStackSize = 0
+    var stackOffset = 0
 
     /*
         Method that writes the given lines to a file with given
@@ -132,6 +136,17 @@ object codeGenerator {
             case function: Function =>
                 val funcLabel = F(function.id.variable)
                 textMap(funcLabel) = ListBuffer(PUSH(List(LR())))
+                functionStackSize = function.semanticTable.getOrElse(symbolTable).getSize() - functionTable.getFuncMap()(function.id.variable)._2.foldLeft(0)((x, y) => x + getBytesFromType(y)) - 4 // fills adhithi with antijoy
+                var i = functionStackSize
+                while (i > 0) {
+                    if (i > MAX_NUM_BYTES) {
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        i -= MAX_NUM_BYTES
+                    } else {
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", i)))
+                        i = 0
+                    }
+                }
                 function.stat.map(statement => {
                     generateNode(statement, function.semanticTable.get, functionTable, funcLabel, dataMap, textMap)
                 })
@@ -146,10 +161,10 @@ object codeGenerator {
 
             case AssignType(t, id, rhs) => 
                 generateRHS(rhs, symbolTable, functionTable, label, REGISTER4, dataMap, textMap)
-                val a_mode2 = if (symbolTable.getSizeWithIdent(id).get - symbolTable.findId(id).get == 0) {
+                val a_mode2 = if (symbolTable.getSizeWithIdent(id).get - symbolTable.findId(id).get + stackOffset == 0) {
                     ZeroOffset(SP())       
                 } else {
-                    OImmediateOffset(SP(), Immed("", symbolTable.getSizeWithIdent(id).get - symbolTable.findId(id).get))
+                    OImmediateOffset(SP(), Immed("", symbolTable.getSizeWithIdent(id).get - symbolTable.findId(id).get + stackOffset))
                 }
                 val lhsSize = getBytes(id, symbolTable)
                 if (lhsSize == 4) {
@@ -239,18 +254,21 @@ object codeGenerator {
                             case _ =>
                         }
                 }
-                // lhs match {
-                //     case ident: Ident => 
-                //         ADD(None, false, R(4), SP(), Immed("", symbolTable.getSizeWithIdent(ident).get - symbolTable.findId(ident).get))
-                //     case ArrayElem(id, exprs) =>
-                //     case Fst(expr) =>
-                //     case Snd(expr) =>
-                // }
 
             case Free(expr) => 
             case Return(expr) => 
                 generateExpr(expr, symbolTable, functionTable, label, REGISTER4, dataMap, textMap)
                 textMap(label).addOne(MOV(None, false, R(REGISTER0), R(REGISTER4)))
+                var i = functionStackSize
+                while (i > 0) {
+                    if (i > MAX_NUM_BYTES) {
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        i -= MAX_NUM_BYTES
+                    } else {
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", i)))
+                        i = 0
+                    }
+                }
                 textMap(label).addOne(POP(List(PC())))
 
             case Exit(expr) => 
@@ -409,9 +427,9 @@ object codeGenerator {
                 textMap(label).addOne(B(Some(EQCOND()), s"L${falseLabel}"))
                 var i = ifStatement.trueSemanticTable.getOrElse(symbolTable).getSize()
                 while (i > 0) {
-                    if (i > 1024) {
-                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", 1024)))
-                        i -= 1024
+                    if (i > MAX_NUM_BYTES) {
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        i -= MAX_NUM_BYTES
                     } else {
                         textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", i)))
                         i = 0
@@ -420,9 +438,9 @@ object codeGenerator {
                 ifStatement.trueStat.map(statement => generateNode(statement, ifStatement.trueSemanticTable.getOrElse(symbolTable), functionTable, label, dataMap, textMap))
                 i = ifStatement.trueSemanticTable.getOrElse(symbolTable).getSize()
                 while (i > 0) {
-                    if (i > 1024) {
-                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", 1024)))
-                        i -= 1024
+                    if (i > MAX_NUM_BYTES) {
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        i -= MAX_NUM_BYTES
                     } else {
                         textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", i)))
                         i = 0
@@ -434,9 +452,9 @@ object codeGenerator {
                 textMap(label).addOne(L(falseLabel))
                 i = ifStatement.falseSemanticTable.getOrElse(symbolTable).getSize()
                 while (i > 0) {
-                    if (i > 1024) {
-                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", 1024)))
-                        i -= 1024
+                    if (i > MAX_NUM_BYTES) {
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        i -= MAX_NUM_BYTES
                     } else {
                         textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", i)))
                         i = 0
@@ -445,9 +463,9 @@ object codeGenerator {
                 ifStatement.falseStat.map(statement => generateNode(statement, ifStatement.falseSemanticTable.getOrElse(symbolTable), functionTable, label, dataMap, textMap))
                 i = ifStatement.falseSemanticTable.getOrElse(symbolTable).getSize()
                 while (i > 0) {
-                    if (i > 1024) {
-                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", 1024)))
-                        i -= 1024
+                    if (i > MAX_NUM_BYTES) {
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        i -= MAX_NUM_BYTES
                     } else {
                         textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", i)))
                         i = 0
@@ -464,9 +482,9 @@ object codeGenerator {
                 textMap(label).addOne(L(bodyLabel))
                 var i = whileStatement.semanticTable.getOrElse(symbolTable).getSize()
                 while (i > 0) {
-                    if (i > 1024) {
-                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", 1024)))
-                        i -= 1024
+                    if (i > MAX_NUM_BYTES) {
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        i -= MAX_NUM_BYTES
                     } else {
                         textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", i)))
                         i = 0
@@ -475,9 +493,9 @@ object codeGenerator {
                 whileStatement.stat.map(statement => generateNode(statement, whileStatement.semanticTable.getOrElse(symbolTable), functionTable, label, dataMap, textMap))
                 i = whileStatement.semanticTable.getOrElse(symbolTable).getSize()
                 while (i > 0) {
-                    if (i > 1024) {
-                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", 1024)))
-                        i -= 1024
+                    if (i > MAX_NUM_BYTES) {
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        i -= MAX_NUM_BYTES
                     } else {
                         textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", i)))
                         i = 0
@@ -491,9 +509,9 @@ object codeGenerator {
             case nestedBegin: NestedBegin =>
                 var i = nestedBegin.semanticTable.getOrElse(symbolTable).getSize()
                 while (i > 0) {
-                    if (i > 1024) {
-                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", 1024)))
-                        i -= 1024
+                    if (i > MAX_NUM_BYTES) {
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        i -= MAX_NUM_BYTES
                     } else {
                         textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", i)))
                         i = 0
@@ -502,9 +520,9 @@ object codeGenerator {
                 nestedBegin.stat.map(statement => generateNode(statement, nestedBegin.semanticTable.getOrElse(symbolTable), functionTable, label, dataMap, textMap))
                 i = nestedBegin.semanticTable.getOrElse(symbolTable).getSize()
                 while (i > 0) {
-                    if (i > 1024) {
-                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", 1024)))
-                        i -= 1024
+                    if (i > MAX_NUM_BYTES) {
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        i -= MAX_NUM_BYTES
                     } else {
                         textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", i)))
                         i = 0
@@ -524,12 +542,12 @@ object codeGenerator {
         lhs match {
             case ident: Ident => 
                 if (read) {
-                    textMap(label).addOne(ADD(None, false, R(register), SP(), Immed("", symbolTable.getSizeWithIdent(ident).get - symbolTable.findId(ident).get)))
+                    textMap(label).addOne(ADD(None, false, R(register), SP(), Immed("", symbolTable.getSizeWithIdent(ident).get - symbolTable.findId(ident).get + stackOffset)))
                 } else {
-                    val a_mode2 = if (symbolTable.getSizeWithIdent(ident).get - symbolTable.findId(ident).get == 0) {
+                    val a_mode2 = if (symbolTable.getSizeWithIdent(ident).get - symbolTable.findId(ident).get + stackOffset == 0) {
                         ZeroOffset(SP())       
                     } else {
-                        OImmediateOffset(SP(), Immed("", symbolTable.getSizeWithIdent(ident).get - symbolTable.findId(ident).get))
+                        OImmediateOffset(SP(), Immed("", symbolTable.getSizeWithIdent(ident).get - symbolTable.findId(ident).get + stackOffset))
                     }
                     val lhsSize = getBytes(ident, symbolTable)
                     if (lhsSize == 4) {
@@ -539,7 +557,7 @@ object codeGenerator {
                     }
                 }
             case arrayElem: ArrayElem =>
-                textMap(label).addOne(ADD(None, false, R(register), SP(), Immed("", symbolTable.getSizeWithIdent(arrayElem.id).get - symbolTable.findId(arrayElem.id).get)))
+                textMap(label).addOne(ADD(None, false, R(register), SP(), Immed("", symbolTable.getSizeWithIdent(arrayElem.id).get - symbolTable.findId(arrayElem.id).get + stackOffset)))
                 var i = 0
                 arrayElem.exprs.map(expr => {
                     generateExpr(expr, symbolTable, functionTable, label, register + 1, dataMap, textMap)
@@ -731,15 +749,18 @@ object codeGenerator {
                     case None =>
                 }
                 generateCheckNullPointer(dataMap, textMap)
-            case Call(id, args) =>
+            case Call(id, args) => 
                 args.reverse.map(arg => {
                     generateExpr(arg, symbolTable, functionTable, label, 4, dataMap, textMap)
                     if (getBytes(arg, symbolTable) == 1) {
                         textMap(label).addOne(STRB(None, R(REGISTER4), RegisterOffset(SP(), Immed("", -1))))
+                        stackOffset += 1
                     } else {
                         textMap(label).addOne(STR(None, R(REGISTER4), RegisterOffset(SP(), Immed("", -4))))
+                        stackOffset += 4
                     }
                 })
+                stackOffset = 0
                 textMap(label).addOne(BL(None, "f_" + id.variable))
                 textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", args.foldLeft(0)((arg1, arg2) => arg1 + getBytes(arg2, symbolTable)))))
                 textMap(label).addOne(MOV(None, false, R(REGISTER4), R(REGISTER0)))    
@@ -818,13 +839,34 @@ object codeGenerator {
         }
     }
 
+        def getBytesFromType(typeCheck: types.TypeCheck): Int = {
+        typeCheck match {
+            case IntCheck(nested) => 4
+            case BoolCheck(nested) =>
+                if (nested == 0) {
+                    1
+                } else {
+                    4
+                }
+            case CharCheck(nested) =>
+                if (nested == 0) {
+                    1
+                } else {
+                    4
+                }
+            case StrCheck(nested) => 4
+            case PairCheck(type1, type2, nested) => 4
+            case EmptyPairCheck() => 0
+        }
+    }
+
     def generateExpr(expr: Expr, symbolTable: SymbolTable, functionTable: FunctionTable, label: Scope, register: Int, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
         expr match {
             case ident: Ident => 
-                val a_mode2 = if (symbolTable.getSizeWithIdent(ident).get - symbolTable.findId(ident).get == 0) {
+                val a_mode2 = if (symbolTable.getSizeWithIdent(ident).get - symbolTable.findId(ident).get + stackOffset == 0) {
                     ZeroOffset(SP())
                 } else {
-                    OImmediateOffset(SP(), Immed("", symbolTable.getSizeWithIdent(ident).get - symbolTable.findId(ident).get))
+                    OImmediateOffset(SP(), Immed("", symbolTable.getSizeWithIdent(ident).get - symbolTable.findId(ident).get + stackOffset))
                 }
                 val exprSize = getBytes(expr, symbolTable)
                 if (exprSize == 4) {
@@ -833,7 +875,7 @@ object codeGenerator {
                     textMap(label).addOne(LDRSB(None, R(register), a_mode2))
                 }
             case arrayElem: ArrayElem => 
-                textMap(label).addOne(ADD(None, false, R(register), SP(), Immed("", symbolTable.getSizeWithIdent(arrayElem.id).get - symbolTable.findId(arrayElem.id).get)))
+                textMap(label).addOne(ADD(None, false, R(register), SP(), Immed("", symbolTable.getSizeWithIdent(arrayElem.id).get - symbolTable.findId(arrayElem.id).get + stackOffset)))
                 var i = 0
                 arrayElem.exprs.map(expr => {
                     generateExpr(expr, symbolTable, functionTable, label, register + 1, dataMap, textMap)

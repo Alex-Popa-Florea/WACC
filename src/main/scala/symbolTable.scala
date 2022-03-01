@@ -32,7 +32,7 @@ object symbolTable {
             name previously added, false otherwise.
         */
         def add(ident: Ident, varType: TypeCheck): Boolean = {
-            ident.semanticTable = Some(this)
+            ident.symbolTable = Some(this)
             variableMap.get(ident.variable) match {
                 case None => 
                     varType match {
@@ -80,7 +80,7 @@ object symbolTable {
                     case Some(value) => value.find(ident)
                 }
                 case _ => 
-                    ident.semanticTable = Some(this)
+                    ident.symbolTable = Some(this)
                     Some(foundType.get._1)
             }
         }
@@ -93,7 +93,6 @@ object symbolTable {
                     case Some(value) => value.findId(ident)
                 }
                 case _ => 
-                    ident.semanticTable = Some(this)
                     Some(foundType.get._2)
             }
         }
@@ -119,7 +118,11 @@ object symbolTable {
         }
 
         def getSizeWithIdent(ident: Ident): Option[Int] = {
-            var foundIdent = variableMap.get(ident.variable)
+            val foundIdent = if (ident.symbolTable == Some(this)) {
+                variableMap.get(ident.variable)
+            } else {
+                None
+            }
             foundIdent match {
             case None => parent match {
                 case None => None

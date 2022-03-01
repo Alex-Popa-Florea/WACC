@@ -916,6 +916,18 @@ object codeGenerator {
     }
 
     def generateExpr(expr: Expr, symbolTable: SymbolTable, functionTable: FunctionTable, label: Scope, register: Int, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
+        
+        val reg1 = if (register < 10) {
+            register
+        } else {
+            register + 1
+        }
+        val reg2 = if (register < 10) {
+            register + 1
+        } else {
+            register
+        }
+
         expr match {
             case ident: Ident => 
                 val a_mode2 = if (symbolTable.getSizeWithIdent(ident).get - symbolTable.findId(ident).get + stackOffset == 0) {
@@ -935,7 +947,7 @@ object codeGenerator {
                 arrayElem.exprs.map(expr => {
                     generateExpr(expr, symbolTable, functionTable, label, register + 1, dataMap, textMap)
                     textMap(label).addAll(List(
-                        LDR(None, R(register), ZeroOffset(R(register))), 
+                        LDR(None, R(register), ZeroOffset(R(register))),
                         MOV(None, false, R(0), R(register + 1)),
                         MOV(None, false, R(1), R(register)),
                         BL(None, "p_check_array_bounds"),
@@ -1007,34 +1019,44 @@ object codeGenerator {
                 generateExpr(expr1, symbolTable, functionTable, label, register, dataMap, textMap)
             case binOpInt: BinOpInt => 
                 generateExpr(binOpInt.expr1, symbolTable, functionTable, label, register, dataMap, textMap) 
-                generateExpr(binOpInt.expr2, symbolTable, functionTable, label , register + 1, dataMap, textMap)
+                if (register + 1 > 10) {
+                    textMap(label).addOne(PUSH(List(R(10))))
+                    stackOffset += 4
+                    generateExpr(binOpInt.expr2, symbolTable, functionTable, label, register, dataMap, textMap)
+                } else {
+                    generateExpr(binOpInt.expr2, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                }
+                if (register + 1 > 10) {
+                    stackOffset -= 4
+                    textMap(label).addOne(POP(List(R(11))))
+                }
                 binOpInt match {
                     case Mul(expr1, expr2) => 
                         generateOverflow(dataMap, textMap)
-                        textMap(label).addOne(SMULL(None, false, R(register), R(register + 1), R(register), R(register + 1)))
+                        textMap(label).addOne(SMULL(None, false, R(register), R(register + 1), R(reg1), R(reg2)))
                         textMap(label).addOne(CMP(None, R(register + 1), R(register)))
                         textMap(label).addOne(BL(Some(NECOND()), "p_throw_overflow_error"))
                     case Div(expr1, expr2) =>
                         generateCheckDivZero(dataMap, textMap)
-                        textMap(label).addOne(MOV(None, false, R(0), R(register)))
-                        textMap(label).addOne(MOV(None, false, R(1), R(register + 1)))
+                        textMap(label).addOne(MOV(None, false, R(0), R(reg1)))
+                        textMap(label).addOne(MOV(None, false, R(1), R(reg2)))
                         textMap(label).addOne(BL(None, "p_check_divide_by_zero"))
                         textMap(label).addOne(BL(None, "__aeabi_idiv"))
                         textMap(label).addOne(MOV(None, false, R(4), R(0)))
                     case Mod(expr1, expr2) =>
                         generateCheckDivZero(dataMap, textMap)
-                        textMap(label).addOne(MOV(None, false, R(0), R(register)))
-                        textMap(label).addOne(MOV(None, false, R(1), R(register + 1)))
+                        textMap(label).addOne(MOV(None, false, R(0), R(reg1)))
+                        textMap(label).addOne(MOV(None, false, R(1), R(reg2)))
                         textMap(label).addOne(BL(None, "p_check_divide_by_zero"))
                         textMap(label).addOne(BL(None, "__aeabi_idivmod"))
                         textMap(label).addOne(MOV(None, false, R(4), R(1)))
                     case Add(expr1, expr2) =>
                         generateOverflow(dataMap, textMap)
-                        textMap(label).addOne(ADD(None, true, R(register), R(register), R(register + 1)))
+                        textMap(label).addOne(ADD(None, true, R(register), R(reg1), R(reg2)))
                         textMap(label).addOne(BL(Some(VSCOND()), "p_throw_overflow_error"))
                     case Sub(expr1, expr2) =>
                         generateOverflow(dataMap, textMap)
-                        textMap(label).addOne(SUB(None, true, R(register), R(register), R(register + 1)))
+                        textMap(label).addOne(SUB(None, true, R(register), R(reg1), R(reg2)))
                         textMap(label).addOne(BL(Some(VSCOND()), "p_throw_overflow_error"))
                 }
             case binOpComp: BinOpComp => 

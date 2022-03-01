@@ -21,7 +21,7 @@ import wacc.types.PairCheck
 import wacc.types.EmptyPairCheck
 import parsley.registers
 import wacc.section._
-import wacc.types
+import wacc.types._
 
 object codeGenerator {
     
@@ -254,6 +254,55 @@ object codeGenerator {
                 }
 
             case Free(expr) => 
+                generateExpr(expr, symbolTable, functionTable, label, REGISTER4, dataMap, textMap)
+                textMap(label).addOne(MOV(None, false, R(0), R(REGISTER4)))
+                expr match {
+                    case ident: Ident => symbolTable.find(ident) match {
+                        case Some(value) => value match {
+                            case baseTypeCheck: BaseTypeCheck => 
+                                if (baseTypeCheck.nested != 0) {
+                                    textMap(label).addOne(BL(None, "p_free_array"))
+                                    generateFreeArray(dataMap, textMap)
+                                }
+                            case PairCheck(type1, type2, nested) =>
+                                if (nested != 0) {
+                                    textMap(label).addOne(BL(None, "p_free_array"))
+                                    generateFreeArray(dataMap, textMap)
+                                } else {
+                                    textMap(label).addOne(BL(None, "p_free_pair"))
+                                    generateFreePair(dataMap, textMap)
+                                }
+                            case EmptyPairCheck() => 
+                                textMap(label).addOne(BL(None, "p_free_pair"))
+                                generateFreePair(dataMap, textMap)
+                        }
+                        case None =>
+                    }
+                    case ArrayElem(id, exprs) => symbolTable.find(id) match {
+                        case Some(value) => value match {
+                            case baseTypeCheck: BaseTypeCheck => 
+                                if (baseTypeCheck.nested != exprs.size) {
+                                    textMap(label).addOne(BL(None, "p_free_array"))
+                                    generateFreeArray(dataMap, textMap)
+                                }
+                            case PairCheck(type1, type2, nested) =>
+                                if (nested != exprs.size) {
+                                    textMap(label).addOne(BL(None, "p_free_array"))
+                                    generateFreeArray(dataMap, textMap)
+                                } else {
+                                    textMap(label).addOne(BL(None, "p_free_pair"))
+                                    generateFreePair(dataMap, textMap)
+                                }
+                            case _ => 
+                        }
+                        case None =>
+                    }
+                    case PairLiter() => 
+                        textMap(label).addOne(BL(None, "p_free_pair"))
+                        generateFreePair(dataMap, textMap)
+                    case _ =>
+                }
+
             case Return(expr) => 
                 generateExpr(expr, symbolTable, functionTable, label, REGISTER4, dataMap, textMap)
                 textMap(label).addOne(MOV(None, false, R(REGISTER0), R(REGISTER4)))
@@ -845,7 +894,7 @@ object codeGenerator {
         }
     }
 
-        def getBytesFromType(typeCheck: types.TypeCheck): Int = {
+        def getBytesFromType(typeCheck: TypeCheck): Int = {
         typeCheck match {
             case IntCheck(nested) => 4
             case BoolCheck(nested) =>
@@ -1257,6 +1306,51 @@ object codeGenerator {
                 CMP(None, R(1), Immed("", 0)),
                 LDR(Some(EQCOND()), R(0), Label(s"msg_${dataMap(func).id}")),
                 BL(Some(EQCOND()), "p_throw_runtime_error"),
+                POP(List(PC()))
+            )
+            generateString(dataMap, textMap)
+            textMap(P("throw_runtime_error")) = runtimeError
+        }
+    }
+
+    def generateFreePair(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
+        val func = P("free_pair")
+        if (!dataMap.contains(func)) {
+            val string = s"NullReferenceError: dereference a null reference\\n\\0"
+            dataMap(func) = Msg(msg, 50, string)
+            msg += 1
+            textMap(func) = ListBuffer(
+                PUSH(List(LR())),
+                CMP(None, R(0), Immed("", 0)),
+                LDR(Some(EQCOND()), R(0), Label(s"msg_${dataMap(func).id}")),
+                B(Some(EQCOND()), "p_throw_runtime_error"),
+                PUSH(List(R(0))),
+                LDR(None, R(0), ZeroOffset(R(0))),
+                BL(None, "free"),
+                LDR(None, R(0), ZeroOffset(SP())),
+                LDR(None, R(0), OImmediateOffset(R(0), Immed("", 4))),
+                BL(None, "free"),
+                POP(List(R(0))),
+                BL(None, "free"),
+                POP(List(PC()))
+            )
+            generateString(dataMap, textMap)
+            textMap(P("throw_runtime_error")) = runtimeError
+        }
+    }
+
+    def generateFreeArray(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
+        val func = P("free_array")
+        if (!dataMap.contains(func)) {
+            val string = s"NullReferenceError: dereference a null reference\\n\\0"
+            dataMap(func) = Msg(msg, 50, string)
+            msg += 1
+            textMap(func) = ListBuffer(
+                PUSH(List(LR())),
+                CMP(None, R(0), Immed("", 0)),
+                LDR(Some(EQCOND()), R(0), Label(s"msg_${dataMap(func).id}")),
+                B(Some(EQCOND()), "p_throw_runtime_error"),
+                BL(None, "free"),
                 POP(List(PC()))
             )
             generateString(dataMap, textMap)

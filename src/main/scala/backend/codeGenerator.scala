@@ -153,8 +153,6 @@ object codeGenerator {
                 textMap(funcLabel).addOne(POP(List(PC())))
                 textMap(funcLabel).addOne(Ltorg())
 
-                // textMap(F(funcName)).addOne(F(funcName))
-
             case Parameter(t, id) => 
 
             case Skip() => 
@@ -426,6 +424,7 @@ object codeGenerator {
                 scopeLabels += 1
                 textMap(label).addOne(B(Some(EQCOND()), s"L${falseLabel}"))
                 var i = ifStatement.trueSemanticTable.getOrElse(symbolTable).getSize()
+                functionStackSize += i
                 while (i > 0) {
                     if (i > MAX_NUM_BYTES) {
                         textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
@@ -437,6 +436,7 @@ object codeGenerator {
                 }
                 ifStatement.trueStat.map(statement => generateNode(statement, ifStatement.trueSemanticTable.getOrElse(symbolTable), functionTable, label, dataMap, textMap))
                 i = ifStatement.trueSemanticTable.getOrElse(symbolTable).getSize()
+                functionStackSize -= i
                 while (i > 0) {
                     if (i > MAX_NUM_BYTES) {
                         textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
@@ -451,6 +451,7 @@ object codeGenerator {
                 textMap(label).addOne(B(None, s"L${contLabel}"))
                 textMap(label).addOne(L(falseLabel))
                 i = ifStatement.falseSemanticTable.getOrElse(symbolTable).getSize()
+                functionStackSize += i
                 while (i > 0) {
                     if (i > MAX_NUM_BYTES) {
                         textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
@@ -462,6 +463,7 @@ object codeGenerator {
                 }
                 ifStatement.falseStat.map(statement => generateNode(statement, ifStatement.falseSemanticTable.getOrElse(symbolTable), functionTable, label, dataMap, textMap))
                 i = ifStatement.falseSemanticTable.getOrElse(symbolTable).getSize()
+                functionStackSize -= i
                 while (i > 0) {
                     if (i > MAX_NUM_BYTES) {
                         textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
@@ -481,6 +483,7 @@ object codeGenerator {
                 scopeLabels += 1
                 textMap(label).addOne(L(bodyLabel))
                 var i = whileStatement.semanticTable.getOrElse(symbolTable).getSize()
+                functionStackSize += i
                 while (i > 0) {
                     if (i > MAX_NUM_BYTES) {
                         textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
@@ -492,6 +495,7 @@ object codeGenerator {
                 }
                 whileStatement.stat.map(statement => generateNode(statement, whileStatement.semanticTable.getOrElse(symbolTable), functionTable, label, dataMap, textMap))
                 i = whileStatement.semanticTable.getOrElse(symbolTable).getSize()
+                functionStackSize -= i
                 while (i > 0) {
                     if (i > MAX_NUM_BYTES) {
                         textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
@@ -508,6 +512,7 @@ object codeGenerator {
 
             case nestedBegin: NestedBegin =>
                 var i = nestedBegin.semanticTable.getOrElse(symbolTable).getSize()
+                functionStackSize += i
                 while (i > 0) {
                     if (i > MAX_NUM_BYTES) {
                         textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
@@ -519,6 +524,7 @@ object codeGenerator {
                 }
                 nestedBegin.stat.map(statement => generateNode(statement, nestedBegin.semanticTable.getOrElse(symbolTable), functionTable, label, dataMap, textMap))
                 i = nestedBegin.semanticTable.getOrElse(symbolTable).getSize()
+                functionStackSize -= i
                 while (i > 0) {
                     if (i > MAX_NUM_BYTES) {
                         textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
@@ -528,7 +534,7 @@ object codeGenerator {
                         i = 0
                     }
                 }
-
+                
             case _ => 
         }
     }

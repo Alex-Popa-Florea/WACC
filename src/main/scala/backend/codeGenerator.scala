@@ -1012,7 +1012,7 @@ object codeGenerator {
                     case Mul(expr1, expr2) => 
                         generateOverflow(dataMap, textMap)
                         textMap(label).addOne(SMULL(None, false, R(register), R(register + 1), R(register), R(register + 1)))
-                        textMap(label).addOne(CMP(None, R(register + 1), R(register)))
+                        textMap(label).addOne(CMP(None, R(register + 1), ArithmeticShiftRight(R(register), Immed("", 31))))
                         textMap(label).addOne(BL(Some(NECOND()), "p_throw_overflow_error"))
                     case Div(expr1, expr2) =>
                         generateCheckDivZero(dataMap, textMap)

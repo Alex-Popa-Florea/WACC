@@ -588,11 +588,6 @@ object codeGenerator {
         }
     }
 
-    // def generateFunction(vars: List[Parameter], stat: List[Statement], symbolTable: SymbolTable, functionTable: FunctionTable, label: Scope, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
-
-    // }
-
-
     def generateLHS(lhs: AssignLHS, symbolTable: SymbolTable, functionTable: FunctionTable, label: Scope, register: Int, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]], read: Boolean): Unit = {
         lhs match {
             case ident: Ident => 
@@ -945,32 +940,42 @@ object codeGenerator {
                 textMap(label).addOne(ADD(None, false, R(register), SP(), Immed("", symbolTable.getSizeWithIdent(arrayElem.id).get - symbolTable.findId(arrayElem.id).get + stackOffset)))
                 var i = 0
                 arrayElem.exprs.map(expr => {
-                    generateExpr(expr, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                    if (register + 1 > 10) {
+                        textMap(label).addOne(PUSH(List(R(10))))
+                        stackOffset += 4
+                        generateExpr(expr, symbolTable, functionTable, label, register, dataMap, textMap)
+                    } else {
+                        generateExpr(expr, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                    }
+                    if (register + 1 > 10) {
+                        stackOffset -= 4
+                        textMap(label).addOne(POP(List(R(11))))
+                    }
                     textMap(label).addAll(List(
-                        LDR(None, R(register), ZeroOffset(R(register))),
-                        MOV(None, false, R(0), R(register + 1)),
-                        MOV(None, false, R(1), R(register)),
+                        LDR(None, R(reg1), ZeroOffset(R(reg1))),
+                        MOV(None, false, R(0), R(reg2)),
+                        MOV(None, false, R(1), R(reg1)),
                         BL(None, "p_check_array_bounds"),
-                        ADD(None, false, R(register), R(register), Immed("", 4)),
+                        ADD(None, false, R(reg1), R(reg1), Immed("", 4)),
                         symbolTable.find(arrayElem.id) match {
                             case Some(value) => value match {
                                 case BoolCheck(nested) => 
                                     if (nested - i == 1) {
-                                        ADD(None, false, R(register), R(register), R(register + 1))
+                                        ADD(None, false, R(register), R(reg1), R(reg2))
                                     } else {
-                                        ADD(None, false, R(register), R(register), LogicalShiftLeft(R(register + 1), Immed("", 2)))
+                                        ADD(None, false, R(register), R(reg1), LogicalShiftLeft(R(reg2), Immed("", 2)))
                                     }
                                 case CharCheck(nested) =>
                                     if (nested - i == 1) {
-                                        ADD(None, false, R(register), R(register), R(register + 1))
+                                        ADD(None, false, R(register), R(reg1), R(reg2))
                                     } else {
-                                        ADD(None, false, R(register), R(register), LogicalShiftLeft(R(register + 1), Immed("", 2)))
+                                        ADD(None, false, R(register), R(reg1), LogicalShiftLeft(R(reg2), Immed("", 2)))
                                     }
                                 case _ =>
-                                    ADD(None, false, R(register), R(register), LogicalShiftLeft(R(register + 1), Immed("", 2)))
+                                    ADD(None, false, R(register), R(reg1), LogicalShiftLeft(R(reg2), Immed("", 2)))
                             }
                             case None => 
-                                ADD(None, false, R(register), R(register), LogicalShiftLeft(R(register + 1), Immed("", 2))) //HEYYYY BROTHER MAYBE CHECK THAT THIS IS RIGHTTT OHHH 
+                                ADD(None, false, R(register), R(reg1), LogicalShiftLeft(R(reg2), Immed("", 2))) //HEYYYY BROTHER MAYBE CHECK THAT THIS IS RIGHTTT OHHH 
                         }
                     ))
                     generateCheckArrayBounds(dataMap, textMap)
@@ -1042,14 +1047,14 @@ object codeGenerator {
                         textMap(label).addOne(MOV(None, false, R(1), R(reg2)))
                         textMap(label).addOne(BL(None, "p_check_divide_by_zero"))
                         textMap(label).addOne(BL(None, "__aeabi_idiv"))
-                        textMap(label).addOne(MOV(None, false, R(4), R(0)))
+                        textMap(label).addOne(MOV(None, false, R(register), R(0)))
                     case Mod(expr1, expr2) =>
                         generateCheckDivZero(dataMap, textMap)
                         textMap(label).addOne(MOV(None, false, R(0), R(reg1)))
                         textMap(label).addOne(MOV(None, false, R(1), R(reg2)))
                         textMap(label).addOne(BL(None, "p_check_divide_by_zero"))
                         textMap(label).addOne(BL(None, "__aeabi_idivmod"))
-                        textMap(label).addOne(MOV(None, false, R(4), R(1)))
+                        textMap(label).addOne(MOV(None, false, R(register), R(1)))
                     case Add(expr1, expr2) =>
                         generateOverflow(dataMap, textMap)
                         textMap(label).addOne(ADD(None, true, R(register), R(reg1), R(reg2)))
@@ -1061,8 +1066,18 @@ object codeGenerator {
                 }
             case binOpComp: BinOpComp => 
                 generateExpr(binOpComp.expr1, symbolTable, functionTable, label, register, dataMap, textMap) 
-                generateExpr(binOpComp.expr2, symbolTable, functionTable, label , register + 1, dataMap, textMap)
-                textMap(label).addOne(CMP(None, R(register), R(register + 1)))
+                if (register + 1 > 10) {
+                    textMap(label).addOne(PUSH(List(R(10))))
+                    stackOffset += 4
+                    generateExpr(binOpComp.expr2, symbolTable, functionTable, label, register, dataMap, textMap)
+                } else {
+                    generateExpr(binOpComp.expr2, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                }
+                if (register + 1 > 10) {
+                    stackOffset -= 4
+                    textMap(label).addOne(POP(List(R(11))))
+                }
+                textMap(label).addOne(CMP(None, R(reg1), R(reg2)))
                 binOpComp match {
                     case GT(expr1, expr2) => 
                         textMap(label).addAll(List(
@@ -1087,8 +1102,18 @@ object codeGenerator {
                 }
             case binOpEqs: BinOpEqs => 
                 generateExpr(binOpEqs.expr1, symbolTable, functionTable, label, register, dataMap, textMap) 
-                generateExpr(binOpEqs.expr2, symbolTable, functionTable, label , register + 1, dataMap, textMap)
-                textMap(label).addOne(CMP(None, R(register), R(register + 1)))
+                if (register + 1 > 10) {
+                    textMap(label).addOne(PUSH(List(R(10))))
+                    stackOffset += 4
+                    generateExpr(binOpEqs.expr2, symbolTable, functionTable, label, register, dataMap, textMap)
+                } else {
+                    generateExpr(binOpEqs.expr2, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                }
+                if (register + 1 > 10) {
+                    stackOffset -= 4
+                    textMap(label).addOne(POP(List(R(11))))
+                }
+                textMap(label).addOne(CMP(None, R(reg1), R(reg2)))
                 binOpEqs match {
                     case EQ(expr1, expr2) => 
                         textMap(label).addAll(List(
@@ -1103,12 +1128,22 @@ object codeGenerator {
                 }
             case binOpBool: BinOpBool => 
                 generateExpr(binOpBool.expr1, symbolTable, functionTable, label, register, dataMap, textMap) 
-                generateExpr(binOpBool.expr2, symbolTable, functionTable, label , register + 1, dataMap, textMap)
+                if (register + 1 > 10) {
+                    textMap(label).addOne(PUSH(List(R(10))))
+                    stackOffset += 4
+                    generateExpr(binOpBool.expr2, symbolTable, functionTable, label, register, dataMap, textMap)
+                } else {
+                    generateExpr(binOpBool.expr2, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                }
+                if (register + 1 > 10) {
+                    stackOffset -= 4
+                    textMap(label).addOne(POP(List(R(11))))
+                }
                 binOpBool match {
                     case And(expr1, expr2) => 
-                        textMap(label).addOne(AND(None, false, R(register), R(register), R(register + 1)))
+                        textMap(label).addOne(AND(None, false, R(register), R(reg1), R(reg2)))
                     case Or(expr1, expr2) =>
-                        textMap(label).addOne(ORR(None, false, R(register), R(register), R(register + 1)))
+                        textMap(label).addOne(ORR(None, false, R(register), R(reg1), R(reg2)))
                 }
         }
     }

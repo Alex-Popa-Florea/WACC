@@ -1,0 +1,30 @@
+./wacc_example/pairs/printNullPair.wacc
+calling the reference compiler on ./wacc_example/pairs/printNullPair.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: printNullPair.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# print pair a null pair
+
+# Output:
+# (nil)
+
+# Program:
+
+begin
+  pair(pair, pair) p = null ;
+  println p
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+(nil)
+===========================================================
+The exit code is 0.
+-- Finished
+

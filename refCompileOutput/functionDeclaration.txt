@@ -1,0 +1,31 @@
+./wacc_example/function/simple_functions/functionDeclaration.wacc
+calling the reference compiler on ./wacc_example/function/simple_functions/functionDeclaration.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: functionDeclaration.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# a simple function is declared, but not called
+
+# Output:
+# #empty#
+
+# Program:
+
+begin
+  int f() is
+    return 0 
+  end
+  skip
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+===========================================================
+The exit code is 0.
+-- Finished
+

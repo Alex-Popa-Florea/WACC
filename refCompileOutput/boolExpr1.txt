@@ -1,0 +1,34 @@
+./wacc_example/expressions/boolExpr1.wacc
+calling the reference compiler on ./wacc_example/expressions/boolExpr1.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: boolExpr1.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# evaluating a moderately complex boolean expression
+
+# Output:
+# Correct
+
+# Program:
+
+begin
+  bool b = ! ( ( true && false) || (true && false) );
+  if b == true then
+    println "Correct"
+  else
+    println "Wrong"
+  fi
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+Correct
+===========================================================
+The exit code is 0.
+-- Finished
+

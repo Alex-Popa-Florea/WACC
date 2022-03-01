@@ -1,0 +1,7 @@
+===========================================================
+This program calculates the nth fibonacci number recursively.
+Please enter n (should not be too large): The input n is 10
+The nth fibonacci number is 55
+===========================================================
+The exit code is 0.
+-- Finished

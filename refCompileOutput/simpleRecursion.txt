@@ -1,0 +1,39 @@
+./wacc_example/function/nested_functions/simpleRecursion.wacc
+calling the reference compiler on ./wacc_example/function/nested_functions/simpleRecursion.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: simpleRecursion.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# a simple recursive function
+
+# Output:
+# #empty#
+
+# Program:
+
+begin
+  int rec(int x) is
+    if x == 0 
+    then
+      skip
+    else
+      int y = call rec(x - 1)
+    fi ;
+    return 42  
+  end
+
+  int x = 0 ;
+  x = call rec(8)
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+===========================================================
+The exit code is 0.
+-- Finished
+

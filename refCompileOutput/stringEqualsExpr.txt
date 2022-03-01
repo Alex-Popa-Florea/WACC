@@ -1,0 +1,39 @@
+./wacc_example/expressions/stringEqualsExpr.wacc
+calling the reference compiler on ./wacc_example/expressions/stringEqualsExpr.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: stringEqualsExpr.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# evaluating string equality
+
+# Output:
+# true
+# false
+# false
+
+# Program:
+
+begin
+  string s1 = "Hello" ;
+  string s2 = "foo" ;
+  string s3 = "bar" ;
+  bool b = s1 == s1 ;
+  println b ;
+  println s1 == s2 ;
+  println s2 == s3
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+true
+false
+false
+===========================================================
+The exit code is 0.
+-- Finished
+

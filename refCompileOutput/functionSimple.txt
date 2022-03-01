@@ -1,0 +1,33 @@
+./wacc_example/function/simple_functions/functionSimple.wacc
+calling the reference compiler on ./wacc_example/function/simple_functions/functionSimple.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: functionSimple.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# a simple function definition and call
+
+# Output:
+# 0
+
+# Program:
+
+begin
+  int f() is
+    return 0 
+  end
+  int x = call f() ;
+  println x 
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+0
+===========================================================
+The exit code is 0.
+-- Finished
+

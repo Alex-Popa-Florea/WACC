@@ -1,0 +1,37 @@
+./wacc_example/function/simple_functions/functionReturnPair.wacc
+calling the reference compiler on ./wacc_example/function/simple_functions/functionReturnPair.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: functionReturnPair.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# creates a pair which is returned from a function
+
+# Output:
+# 10
+
+# Program:
+
+begin
+
+  pair(int, int) getPair() is
+    pair(int, int) p = newpair(10,15);
+    return p
+  end
+
+  pair(int, int) p = call getPair();
+  int x = fst p;
+  println x
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+10
+===========================================================
+The exit code is 0.
+-- Finished
+

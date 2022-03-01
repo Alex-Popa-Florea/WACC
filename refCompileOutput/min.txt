@@ -1,0 +1,38 @@
+./wacc_example/while/min.wacc
+calling the reference compiler on ./wacc_example/while/min.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: min.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# find the min of two numbers
+
+# Output:
+# min value = 10
+
+# Program:
+
+begin
+  int i = 0 ;
+  int x = 10 ;
+  int y = 17 ;
+  while y > 0 && x > 0 do
+    x = x - 1 ;
+    y = y - 1 ;
+    i = i + 1
+  done ;
+  print "min value = " ;
+  println i
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+min value = 10
+===========================================================
+The exit code is 0.
+-- Finished
+

@@ -1,0 +1,49 @@
+wacc_example/IO/IOLoop.wacc
+calling the reference compiler on wacc_example/IO/IOLoop.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: IOLoop.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# simple input/output loop
+
+# Output:
+# Please input an integer: #input#
+# echo input: #output#
+# Do you want to continue entering input?
+# (enter Y for 'yes' and N for 'no')
+# #input#
+# ...
+
+# Program:
+
+begin
+  char continue = 'Y' ;
+  int buff = 0 ;
+  while continue != 'N' do
+    print "Please input an integer: " ;
+    read buff ;
+    print "echo input: " ;
+    println buff ;
+    println "Do you want to continue entering input?" ; 
+    println "(enter Y for \'yes\' and N for \'no\')" ;
+    read continue
+  done
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+Please input an integer: echo input: 1
+Do you want to continue entering input?
+(enter Y for 'yes' and N for 'no')
+Please input an integer: echo input: 2
+Do you want to continue entering input?
+(enter Y for 'yes' and N for 'no')
+===========================================================
+The exit code is 0.
+-- Finished
+

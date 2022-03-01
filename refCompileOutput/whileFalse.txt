@@ -1,0 +1,33 @@
+./wacc_example/while/whileFalse.wacc
+calling the reference compiler on ./wacc_example/while/whileFalse.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: whileFalse.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# simple unentered while loop
+
+# Output:
+# end of loop
+
+# Program:
+
+begin
+  string a = "ahhh";
+  while a== "ahhh" do
+    println "looping..."
+  done ;
+  println "end of loop"
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+end of loop
+===========================================================
+The exit code is 0.
+-- Finished
+

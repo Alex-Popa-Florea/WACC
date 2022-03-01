@@ -1,0 +1,37 @@
+./wacc_example/scope/scope.wacc
+calling the reference compiler on ./wacc_example/scope/scope.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: scope.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# simple scoping test
+
+# Output:
+# #empty#
+
+# Program:
+
+begin
+  begin
+    begin
+      begin
+        begin
+          skip
+        end
+      end
+    end
+  end
+end
+
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+===========================================================
+The exit code is 0.
+-- Finished
+

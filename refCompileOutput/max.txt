@@ -1,0 +1,38 @@
+./wacc_example/while/max.wacc
+calling the reference compiler on ./wacc_example/while/max.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: max.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# find the max of two numbers
+
+# Output:
+# max value = 17
+
+# Program:
+
+begin
+  int i = 0 ;
+  int x = 10 ;
+  int y = 17 ;
+  while (y > 0 || x > 0) do
+    x = x - 1 ;
+    y = y - 1 ;
+    i = i + 1
+  done ;
+  print "max value = ";
+  println i
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+max value = 17
+===========================================================
+The exit code is 0.
+-- Finished
+

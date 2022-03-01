@@ -1,0 +1,38 @@
+./wacc_example/array/modifyString.wacc
+calling the reference compiler on ./wacc_example/array/modifyString.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: modifyString.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# create and modify string as array of characters
+
+# Output:
+# hello world!
+# Hello world!
+# Hi!
+
+# Program:
+
+begin
+  char[] str = ['h','e','l','l','o',' ','w','o','r','l','d','!'] ;
+  println str ;
+  str[0] = 'H' ;
+  println str ;
+  str = ['H','i','!'] ;
+  println str
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+hello world!
+Hello world!
+Hi!
+===========================================================
+The exit code is 0.
+-- Finished
+

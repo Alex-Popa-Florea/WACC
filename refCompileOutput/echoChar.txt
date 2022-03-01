@@ -1,0 +1,35 @@
+./wacc_example/IO/read/echoChar.wacc
+calling the reference compiler on ./wacc_example/IO/read/echoChar.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: echoChar.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# echo the user's input char
+
+# Output:
+# enter a character to echo
+# #input#
+# #output#
+
+# Program:
+
+begin
+	char c = '\0' ;
+  println "enter a character to echo";
+	read c ;
+	println c 
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+enter a character to echo
+1
+===========================================================
+The exit code is 0.
+-- Finished
+

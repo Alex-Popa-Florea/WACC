@@ -1,0 +1,36 @@
+./wacc_example/pairs/null.wacc
+calling the reference compiler on ./wacc_example/pairs/null.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: null.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# null pair assignment
+
+# Output:
+# (nil)
+# (nil)
+
+# Program:
+
+begin
+  pair(pair, pair) p = null ;
+  println p ;
+  p = null ;
+  println p
+end
+
+
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+(nil)
+(nil)
+===========================================================
+The exit code is 0.
+-- Finished
+

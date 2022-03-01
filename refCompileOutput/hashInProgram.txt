@@ -1,0 +1,34 @@
+./wacc_example/IO/print/hashInProgram.wacc
+calling the reference compiler on ./wacc_example/IO/print/hashInProgram.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: hashInProgram.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# In-line comments and printing #
+
+# Output:
+# We can print the hash character: #
+# We can also print # when its in a string.
+
+# Program:
+
+begin 
+  int x = 0 ; # comments can be in-line
+  print "We can print the hash character: " ;
+  println '#' ;
+  println "We can also print # when its in a string."
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+We can print the hash character: #
+We can also print # when its in a string.
+===========================================================
+The exit code is 0.
+-- Finished
+

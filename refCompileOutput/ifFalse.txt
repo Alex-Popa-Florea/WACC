@@ -1,0 +1,35 @@
+./wacc_example/if/ifFalse.wacc
+calling the reference compiler on ./wacc_example/if/ifFalse.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: ifFalse.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# simple false if statement 
+
+# Output:
+# here
+
+# Program:
+
+begin
+  if false
+  then
+    println "not here"
+  else
+    println "here"
+  fi
+end
+
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+here
+===========================================================
+The exit code is 0.
+-- Finished
+

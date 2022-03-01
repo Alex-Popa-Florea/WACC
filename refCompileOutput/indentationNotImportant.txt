@@ -1,0 +1,32 @@
+./wacc_example/scope/indentationNotImportant.wacc
+calling the reference compiler on ./wacc_example/scope/indentationNotImportant.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: indentationNotImportant.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# consistent indentation is for readability purposes only
+
+# Output:
+# #empty#
+
+# Program:
+
+           begin
+ while 
+false 
+         do
+    skip
+done
+                    end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+===========================================================
+The exit code is 0.
+-- Finished
+

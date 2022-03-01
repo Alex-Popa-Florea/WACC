@@ -1,0 +1,29 @@
+./wacc_example/sequence/stringAssignment.wacc
+calling the reference compiler on ./wacc_example/sequence/stringAssignment.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: stringAssignment.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# simple string variable declaration and assignment
+
+# Output:
+# #empty#
+
+# Program:
+
+begin
+  string s = "foo" ;
+  s = "bar"
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+===========================================================
+The exit code is 0.
+-- Finished
+

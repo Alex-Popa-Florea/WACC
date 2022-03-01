@@ -1,0 +1,30 @@
+./wacc_example/expressions/negExpr.wacc
+calling the reference compiler on ./wacc_example/expressions/negExpr.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: negExpr.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# evaluating negation
+
+# Output:
+# -42
+
+# Program:
+
+begin
+	int x = 42 ;
+  println -x
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+-42
+===========================================================
+The exit code is 0.
+-- Finished
+

@@ -1,0 +1,34 @@
+./wacc_example/runtimeErr/divideByZero/divideByZero.wacc
+calling the reference compiler on ./wacc_example/runtimeErr/divideByZero/divideByZero.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: divideByZero.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# attempt divide by zero
+
+# Output:
+# #runtime_error#
+
+# Exit:
+# 255
+
+# Program:
+
+begin
+	int x = 10 ;
+	int y = 0 ;
+	print x / y
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+DivideByZeroError: divide or modulo by zero
+===========================================================
+The exit code is 255.
+-- Finished
+

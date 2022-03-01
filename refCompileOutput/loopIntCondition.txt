@@ -1,0 +1,36 @@
+./wacc_example/while/loopIntCondition.wacc
+calling the reference compiler on ./wacc_example/while/loopIntCondition.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: loopIntCondition.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# Use a integer as a loop condition. Enter the loop once only, then exit the loop.
+
+# Output:
+# Change n
+# Should print "Change n" once before.
+
+# Program:
+
+begin
+	int n = 0 ;
+	while n != 1 do
+		n = 1 ;
+		println "Change n"
+	done ;
+	println "Should print \"Change n\" once before."
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+Change n
+Should print "Change n" once before.
+===========================================================
+The exit code is 0.
+-- Finished
+

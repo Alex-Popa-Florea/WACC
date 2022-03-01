@@ -1,0 +1,32 @@
+./wacc_example/expressions/boolCalc.wacc
+calling the reference compiler on ./wacc_example/expressions/boolCalc.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: boolCalc.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# simple boolean calculation
+
+# Output:
+# false
+
+# Program:
+
+begin
+  bool b1 = true ;
+  bool b2 = false ;
+  bool b3 = b1 && b2 ;
+  println b3
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+false
+===========================================================
+The exit code is 0.
+-- Finished
+

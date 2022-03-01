@@ -1,0 +1,30 @@
+./wacc_example/IO/print/printEscChar.wacc
+calling the reference compiler on ./wacc_example/IO/print/printEscChar.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: printEscChar.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# basic escaped character printing
+
+# Output:
+# An escaped character example is "
+
+# Program:
+
+begin
+  print "An escaped character example is " ;
+  println '\"'
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+An escaped character example is "
+===========================================================
+The exit code is 0.
+-- Finished
+

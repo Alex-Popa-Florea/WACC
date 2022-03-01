@@ -1,0 +1,34 @@
+./wacc_example/IO/IOSequence.wacc
+calling the reference compiler on ./wacc_example/IO/IOSequence.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: IOSequence.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# basic input/output sequence
+
+# Output:
+# Please input an integer: #input#
+# You input: #output#
+
+# Program:
+
+begin 
+  int x = 0 ;
+  print "Please input an integer: " ;
+  read x ;
+  print "You input: " ;
+  println x
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+Please input an integer: You input: 1
+===========================================================
+The exit code is 0.
+-- Finished
+

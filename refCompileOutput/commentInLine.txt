@@ -1,0 +1,28 @@
+./wacc_example/basic/skip/commentInLine.wacc
+calling the reference compiler on ./wacc_example/basic/skip/commentInLine.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: commentInLine.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# simple skip program with in-line comment
+
+# Output:
+# #empty#
+
+# Program:
+
+begin 
+  skip # I can write comments in-line 
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+===========================================================
+The exit code is 0.
+-- Finished
+

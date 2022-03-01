@@ -1,0 +1,34 @@
+./wacc_example/runtimeErr/nullDereference/freeNull.wacc
+calling the reference compiler on ./wacc_example/runtimeErr/nullDereference/freeNull.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: freeNull.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# Create and free a null pair
+
+# Output:
+# #runtime_error#
+
+# Exit:
+# 255
+
+# Program:
+
+begin
+  pair(pair, pair) a = null ;
+  free a
+end
+
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+NullReferenceError: dereference a null reference
+===========================================================
+The exit code is 255.
+-- Finished
+

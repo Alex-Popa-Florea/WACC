@@ -1,0 +1,43 @@
+./wacc_example/runtimeErr/integerOverflow/intmultOverflow.wacc
+calling the reference compiler on ./wacc_example/runtimeErr/integerOverflow/intmultOverflow.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: intmultOverflow.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# integer overflow - generates odd assembly error!
+
+# Output:
+# 2147483
+# 2147483000
+# #runtime_error#
+
+# Exit:
+# 255
+
+# Program:
+
+begin
+  int x = 2147483 ;
+  println x ;
+  x = x * 1000 ;
+  println x ;
+  x = x * 1000 ;
+  println x ;
+  x = x * 1000 ; #err here?
+  println x 
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+2147483
+2147483000
+OverflowError: the result is too small/large to store in a 4-byte signed-integer.
+===========================================================
+The exit code is 255.
+-- Finished
+

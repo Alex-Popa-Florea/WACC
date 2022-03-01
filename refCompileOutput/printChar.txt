@@ -1,0 +1,30 @@
+./wacc_example/IO/print/printChar.wacc
+calling the reference compiler on ./wacc_example/IO/print/printChar.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: printChar.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# basic character printing
+
+# Output:
+# A simple character example is f
+
+# Program:
+
+begin
+  print "A simple character example is " ;
+  println 'f'
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+A simple character example is f
+===========================================================
+The exit code is 0.
+-- Finished
+

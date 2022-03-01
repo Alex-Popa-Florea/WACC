@@ -1,0 +1,40 @@
+./wacc_example/scope/ifNested1.wacc
+calling the reference compiler on ./wacc_example/scope/ifNested1.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: ifNested1.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# Nested conditional statement
+
+# Output:
+# correct
+
+# Program:
+
+begin
+  int a = 13;	
+  if a == 13 
+  then 
+    if a > 5
+    then
+      println "correct"
+    else
+      println "incorrect"
+    fi
+  else 
+    println "incorrect"
+  fi
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+correct
+===========================================================
+The exit code is 0.
+-- Finished
+

@@ -1,0 +1,29 @@
+./wacc_example/pairs/createRefPair.wacc
+calling the reference compiler on ./wacc_example/pairs/createRefPair.wacc
+please provide a stdin stream to use when executing the program:
+-- Test: createRefPair.wacc
+
+-- Uploaded file: 
+---------------------------------------------------------------
+# create a pair(int, char) with a second reference to it
+
+# Output:
+# #empty#
+
+# Program:
+
+begin
+  pair(int, char) p = newpair(10, 'a') ;
+  pair(int, char) q = p
+end
+---------------------------------------------------------------
+
+-- Compiler Output:
+-- Compiling...
+-- Assembling and Linking...
+-- Executing...
+===========================================================
+===========================================================
+The exit code is 0.
+-- Finished
+

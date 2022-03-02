@@ -103,16 +103,16 @@ class backend_tests extends AnyFlatSpec{
         checker(new File("./output/basic/skip"))
     }
 
-    "Expressions" should "give correct out put and error code" in (pending)
-    // {
-    //     info("Checking expressions")
-    //     checker(new File("./output/expressions"))
-    // }
-    "Nested_functions" should "give correct out put and error code" in (pending)
-    // {
-    //     info("Checking nested_functions")
-    //     checker(new File("./output/function/nested_functions"))
-    // }
+    "Expressions" should "give correct out put and error code" in //(pending)
+    {
+        info("Checking expressions")
+        checker(new File("./output/expressions"))
+    }
+    "Nested_functions" should "give correct out put and error code" in //(pending)
+    {
+        info("Checking nested_functions")
+        checker(new File("./output/function/nested_functions"))
+    }
     "Simple_functions" should "give correct out put and error code" in (pending)
     // {
     //     info("Checking simple_functions")
@@ -147,11 +147,11 @@ class backend_tests extends AnyFlatSpec{
         info("Checking divideByZero")
         checker(new File("./output/runtimeErr/divideByZero"))
     }
-    "IntegerOverflow" should "give correct out put and error code" in (pending)
-    // {
-    //     info("Checking integerOverflow")
-    //     checker(new File("./output/runtimeErr/integerOverflow"))
-    // }
+    "IntegerOverflow" should "give correct out put and error code" in //(pending)
+    {
+        info("Checking integerOverflow")
+        checker(new File("./output/runtimeErr/integerOverflow"))
+    }
     "NullDereference" should "give correct out put and error code" in {
         info("Checking nullDereference")
         checker(new File("./output/runtimeErr/nullDereference"))

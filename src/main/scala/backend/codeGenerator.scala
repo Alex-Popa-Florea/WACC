@@ -1026,7 +1026,7 @@ object codeGenerator {
             case Neg(expr1) => 
                 generateOverflow(dataMap, textMap)
                 generateExpr(expr1, symbolTable, functionTable, label, register, dataMap, textMap)
-                textMap(label).addOne(RSB(None, false, R(register), R(register), Immed("", 0)))
+                textMap(label).addOne(RSB(None, true, R(register), R(register), Immed("", 0)))
                 textMap(label).addOne(BL(Some(VSCOND()), "p_throw_overflow_error"))
             case Len(expr1) => 
                 generateExpr(expr1, symbolTable, functionTable, label, register, dataMap, textMap)

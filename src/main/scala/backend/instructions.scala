@@ -52,7 +52,7 @@ object instructions {
             }
             addString += s" ${rd.toString()}, ${rn.toString()}, "
             operand2 match {
-                case Immed(kind, value) => addString += "#"
+                case Immed(value) => addString += "#"
                 case Character(value) => addString += "#"
                 case _ =>
             }
@@ -68,7 +68,7 @@ object instructions {
             }
             subString += s" ${rd.toString()}, ${rn.toString()}, "
             operand2 match {
-                case Immed(kind, value) => subString += "#"
+                case Immed(value) => subString += "#"
                 case Character(value) => subString += "#"
                 case _ =>
             }
@@ -84,7 +84,7 @@ object instructions {
             }
             subString += s" ${rd.toString()}, ${rn.toString()}, "
             operand2 match {
-                case Immed(kind, value) => subString += "#"
+                case Immed(value) => subString += "#"
                 case Character(value) => subString += "#"
                 case _ =>
             }
@@ -108,7 +108,7 @@ object instructions {
         override def toString() : String = {
             var cmpString = s"    CMP${cond.getOrElse("").toString()} ${rn.toString()}, "
             operand2 match {
-                case Immed(kind, value) => cmpString += "#"
+                case Immed(value) => cmpString += "#"
                 case Character(value) => cmpString += "#"
                 case _ =>
             }
@@ -120,7 +120,7 @@ object instructions {
         override def toString() : String = {
             var cmnString = s"    CMN${cond.getOrElse("").toString()} ${rn.toString()}, "
             operand2 match {
-                case Immed(kind, value) => cmnString += "#"
+                case Immed(value) => cmnString += "#"
                 case Character(value) => cmnString += "#"
                 case _ =>
             }
@@ -138,7 +138,7 @@ object instructions {
             }
             movString += s" ${rd.toString()}, "
             operand2 match {
-                case Immed(kind, value) => movString += "#"
+                case Immed(value) => movString += "#"
                 case Character(value) => movString += "#"
                 case _ =>
             }
@@ -154,7 +154,7 @@ object instructions {
             }
             andString += s" ${rd.toString()}, ${rn.toString()}, "
             operand2 match {
-                case Immed(kind, value) => andString += "#"
+                case Immed(value) => andString += "#"
                 case Character(value) => andString += "#"
                 case _ =>
             }
@@ -170,7 +170,7 @@ object instructions {
             }
             eorString += s" ${rd.toString()}, ${rn.toString()}, "
             operand2 match {
-                case Immed(kind, value) => eorString += "#"
+                case Immed(value) => eorString += "#"
                 case Character(value) => eorString += "#"
                 case _ =>
             }
@@ -186,7 +186,7 @@ object instructions {
             }
             orrString += s" ${rd.toString()}, ${rn.toString()}, "
             operand2 match {
-                case Immed(kind, value) => orrString += "#"
+                case Immed(value) => orrString += "#"
                 case Character(value) => orrString += "#"
                 case _ =>
             }
@@ -214,7 +214,7 @@ object instructions {
             a_mode2 match {
                 case OImmediateOffset(rn, immed) => ldrString += s"${a_mode2.toString()}\n"
                 case ZeroOffset(rn) => ldrString += s"${a_mode2.toString()}\n"
-                case Immed(kind, value) => ldrString += s"=${a_mode2.toString()}\n"
+                case Immed(value) => ldrString += s"=${a_mode2.toString()}\n"
                 case Label(value) => ldrString += s"=${a_mode2.toString()}\n"
                 case _ => ldrString += s"#${a_mode2.toString()}\n"
             }
@@ -227,7 +227,7 @@ object instructions {
             a_mode2 match {
                 case OImmediateOffset(rn, immed) => ldrString += s"${a_mode2.toString()}\n"
                 case ZeroOffset(rn) => ldrString += s"${a_mode2.toString()}\n"
-                case Immed(kind, value) => ldrString += s"=${a_mode2.toString()}\n"
+                case Immed(value) => ldrString += s"=${a_mode2.toString()}\n"
                 case Label(value) => ldrString += s"=${a_mode2.toString()}\n"
                 case _ => ldrString += s"#${a_mode2.toString()}\n"
             }
@@ -240,7 +240,7 @@ object instructions {
             a_mode2 match {
                 case OImmediateOffset(rn, immed) => ldrString += s"${a_mode2.toString()}\n"
                 case ZeroOffset(rn) => ldrString += s"${a_mode2.toString()}\n"
-                case Immed(kind, value) => ldrString += s"=${a_mode2.toString()}\n"
+                case Immed(value) => ldrString += s"=${a_mode2.toString()}\n"
                 case Label(value) => ldrString += s"=${a_mode2.toString()}\n"
                 case _ => ldrString += s"#${a_mode2.toString()}\n"
             }
@@ -253,7 +253,7 @@ object instructions {
         override def toString() : String = {
             var strString = s"    STR${cond.getOrElse("").toString()} ${rd.toString()}, "
             a_mode2 match {
-                case Immed(kind, value) => strString += s"=${a_mode2.toString()}\n"
+                case Immed(value) => strString += s"=${a_mode2.toString()}\n"
                 case Label(value) => strString += s"=${a_mode2.toString()}\n"
                 case _ => strString += s"${a_mode2.toString()}\n"
             }
@@ -264,7 +264,7 @@ object instructions {
         override def toString() : String = {
             var strString = s"    STR${cond.getOrElse("").toString()}B ${rd.toString()}, "
             a_mode2 match {
-                case Immed(kind, value) => strString += s"=${a_mode2.toString()}\n"
+                case Immed(value) => strString += s"=${a_mode2.toString()}\n"
                 case Label(value) => strString += s"=${a_mode2.toString()}\n"
                 case _ => strString += s"${a_mode2.toString()}\n"
             }

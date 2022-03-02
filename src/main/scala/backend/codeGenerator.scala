@@ -35,7 +35,7 @@ object codeGenerator {
     val runtimeError: ListBuffer[Instruction] = ListBuffer(
         BL(None, "p_print_string"), 
         MOV(None, false, R(0), 
-        Immed("", -1)), 
+        Immed(-1)), 
         BL(None, "exit")
     )
 
@@ -119,10 +119,10 @@ object codeGenerator {
                 var i = symbolTable.getSize()
                 while (i > 0) {
                     if (i > MAX_NUM_BYTES) {
-                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed(MAX_NUM_BYTES)))
                         i -= MAX_NUM_BYTES
                     } else {
-                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", i)))
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed(i)))
                         i = 0
                     }
                 }
@@ -137,15 +137,15 @@ object codeGenerator {
                 i = symbolTable.getSize()
                 while (i > 0) {
                     if (i > MAX_NUM_BYTES) {
-                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed(MAX_NUM_BYTES)))
                         i -= MAX_NUM_BYTES
                     } else {
-                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", i)))
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed(i)))
                         i = 0
                     }
                 }
 
-                textMap(label).addOne(LDR(None, R(0), Immed("", 0)))
+                textMap(label).addOne(LDR(None, R(0), Immed(0)))
                 textMap(label).addOne(POP(List(PC())))
                 textMap(label).addOne(Ltorg())
 
@@ -156,10 +156,10 @@ object codeGenerator {
                 var i = functionStackSize
                 while (i > 0) {
                     if (i > MAX_NUM_BYTES) {
-                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed(MAX_NUM_BYTES)))
                         i -= MAX_NUM_BYTES
                     } else {
-                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", i)))
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed(i)))
                         i = 0
                     }
                 }
@@ -178,7 +178,7 @@ object codeGenerator {
                 val a_mode2 = if (symbolTable.getSizeWithIdent(id).get - id.symbolTable.get.findId(id).get + stackOffset == 0) {
                     ZeroOffset(SP())       
                 } else {
-                    OImmediateOffset(SP(), Immed("", symbolTable.getSizeWithIdent(id).get - id.symbolTable.get.findId(id).get + stackOffset))
+                    OImmediateOffset(SP(), Immed(symbolTable.getSizeWithIdent(id).get - id.symbolTable.get.findId(id).get + stackOffset))
                 }
                 val lhsSize = getBytes(id, symbolTable)
                 if (lhsSize == 4) {
@@ -325,10 +325,10 @@ object codeGenerator {
                 var i = functionStackSize
                 while (i > 0) {
                     if (i > MAX_NUM_BYTES) {
-                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed(MAX_NUM_BYTES)))
                         i -= MAX_NUM_BYTES
                     } else {
-                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", i)))
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed(i)))
                         i = 0
                     }
                 }
@@ -484,7 +484,7 @@ object codeGenerator {
 
             case ifStatement: If => 
                 generateExpr(ifStatement.cond, symbolTable, functionTable, label, 4, dataMap, textMap)
-                textMap(label).addOne(CMP(None, R(4), Immed("", 0)))
+                textMap(label).addOne(CMP(None, R(4), Immed(0)))
                 val falseLabel = scopeLabels
                 scopeLabels += 1
                 textMap(label).addOne(B(Some(EQCOND()), s"L${falseLabel}"))
@@ -492,10 +492,10 @@ object codeGenerator {
                 functionStackSize += i
                 while (i > 0) {
                     if (i > MAX_NUM_BYTES) {
-                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed(MAX_NUM_BYTES)))
                         i -= MAX_NUM_BYTES
                     } else {
-                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", i)))
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed(i)))
                         i = 0
                     }
                 }
@@ -504,10 +504,10 @@ object codeGenerator {
                 functionStackSize -= i
                 while (i > 0) {
                     if (i > MAX_NUM_BYTES) {
-                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed(MAX_NUM_BYTES)))
                         i -= MAX_NUM_BYTES
                     } else {
-                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", i)))
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed(i)))
                         i = 0
                     }
                 }
@@ -519,10 +519,10 @@ object codeGenerator {
                 functionStackSize += i
                 while (i > 0) {
                     if (i > MAX_NUM_BYTES) {
-                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed(MAX_NUM_BYTES)))
                         i -= MAX_NUM_BYTES
                     } else {
-                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", i)))
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed(i)))
                         i = 0
                     }
                 }
@@ -531,10 +531,10 @@ object codeGenerator {
                 functionStackSize -= i
                 while (i > 0) {
                     if (i > MAX_NUM_BYTES) {
-                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed(MAX_NUM_BYTES)))
                         i -= MAX_NUM_BYTES
                     } else {
-                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", i)))
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed(i)))
                         i = 0
                     }
                 }                
@@ -551,10 +551,10 @@ object codeGenerator {
                 functionStackSize += i
                 while (i > 0) {
                     if (i > MAX_NUM_BYTES) {
-                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed(MAX_NUM_BYTES)))
                         i -= MAX_NUM_BYTES
                     } else {
-                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", i)))
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed(i)))
                         i = 0
                     }
                 }
@@ -563,16 +563,16 @@ object codeGenerator {
                 functionStackSize -= i
                 while (i > 0) {
                     if (i > MAX_NUM_BYTES) {
-                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed(MAX_NUM_BYTES)))
                         i -= MAX_NUM_BYTES
                     } else {
-                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", i)))
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed(i)))
                         i = 0
                     }
                 }   
                 textMap(label).addOne(L(condLabel))
                 generateExpr(whileStatement.cond, symbolTable, functionTable, label, 4, dataMap, textMap)
-                textMap(label).addOne(CMP(None, R(4), Immed("", 1)))
+                textMap(label).addOne(CMP(None, R(4), Immed(1)))
                 textMap(label).addOne(B(Some(EQCOND()), s"L${bodyLabel}"))
 
             case nestedBegin: NestedBegin =>
@@ -580,10 +580,10 @@ object codeGenerator {
                 functionStackSize += i
                 while (i > 0) {
                     if (i > MAX_NUM_BYTES) {
-                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed(MAX_NUM_BYTES)))
                         i -= MAX_NUM_BYTES
                     } else {
-                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", i)))
+                        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed(i)))
                         i = 0
                     }
                 }
@@ -592,10 +592,10 @@ object codeGenerator {
                 functionStackSize -= i
                 while (i > 0) {
                     if (i > MAX_NUM_BYTES) {
-                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", MAX_NUM_BYTES)))
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed(MAX_NUM_BYTES)))
                         i -= MAX_NUM_BYTES
                     } else {
-                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", i)))
+                        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed(i)))
                         i = 0
                     }
                 }
@@ -608,12 +608,12 @@ object codeGenerator {
         lhs match {
             case ident: Ident => 
                 if (read) {
-                    textMap(label).addOne(ADD(None, false, R(register), SP(), Immed("", symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset)))
+                    textMap(label).addOne(ADD(None, false, R(register), SP(), Immed(symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset)))
                 } else {
                     val a_mode2 = if (symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset == 0) {
                         ZeroOffset(SP())       
                     } else {
-                        OImmediateOffset(SP(), Immed("", symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset))
+                        OImmediateOffset(SP(), Immed(symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset))
                     }
                     val lhsSize = getBytes(ident, symbolTable)
                     if (lhsSize == 4) {
@@ -623,7 +623,7 @@ object codeGenerator {
                     }
                 }
             case arrayElem: ArrayElem =>
-                textMap(label).addOne(ADD(None, false, R(register), SP(), Immed("", symbolTable.getSizeWithIdent(arrayElem.id).get - arrayElem.id.symbolTable.get.findId(arrayElem.id).get + stackOffset)))
+                textMap(label).addOne(ADD(None, false, R(register), SP(), Immed(symbolTable.getSizeWithIdent(arrayElem.id).get - arrayElem.id.symbolTable.get.findId(arrayElem.id).get + stackOffset)))
                 var i = 0
                 arrayElem.exprs.map(expr => {
                     generateExpr(expr, symbolTable, functionTable, label, register + 1, dataMap, textMap)
@@ -632,26 +632,26 @@ object codeGenerator {
                         MOV(None, false, R(0), R(register + 1)),
                         MOV(None, false, R(1), R(register)),
                         BL(None, "p_check_array_bounds"),
-                        ADD(None, false, R(register), R(register), Immed("", 4)),
+                        ADD(None, false, R(register), R(register), Immed(4)),
                         arrayElem.id.symbolTable.get.find(arrayElem.id) match {
                             case Some(value) => value match {
                                 case BoolCheck(nested) => 
                                     if (nested - i == 1) {
                                         ADD(None, false, R(register), R(register), R(register + 1))
                                     } else {
-                                        ADD(None, false, R(register), R(register), LogicalShiftLeft(R(register + 1), Immed("", 2)))
+                                        ADD(None, false, R(register), R(register), LogicalShiftLeft(R(register + 1), Immed(2)))
                                     }
                                 case CharCheck(nested) =>
                                     if (nested - i == 1) {
                                         ADD(None, false, R(register), R(register), R(register + 1))
                                     } else {
-                                        ADD(None, false, R(register), R(register), LogicalShiftLeft(R(register + 1), Immed("", 2)))
+                                        ADD(None, false, R(register), R(register), LogicalShiftLeft(R(register + 1), Immed(2)))
                                     }
                                 case _ =>
-                                    ADD(None, false, R(register), R(register), LogicalShiftLeft(R(register + 1), Immed("", 2)))
+                                    ADD(None, false, R(register), R(register), LogicalShiftLeft(R(register + 1), Immed(2)))
                             }
                             case None => 
-                                ADD(None, false, R(register), R(register), LogicalShiftLeft(R(register + 1), Immed("", 2))) //HEYYYY BROTHER MAYBE CHECK THAT THIS IS RIGHTTT OHHH 
+                                ADD(None, false, R(register), R(register), LogicalShiftLeft(R(register + 1), Immed(2))) //HEYYYY BROTHER MAYBE CHECK THAT THIS IS RIGHTTT OHHH 
                         }
                     ))
                     generateCheckArrayBounds(dataMap, textMap)
@@ -696,7 +696,7 @@ object codeGenerator {
                 generateExpr(expr, symbolTable, functionTable, label, register, dataMap, textMap)
                 textMap(label).addOne(MOV(None, false, R(0), R(register)))
                 textMap(label).addOne(BL(None, "p_check_null_pointer"))
-                textMap(label).addOne(LDR(None, R(register), OImmediateOffset(R(register), Immed("", 4))))
+                textMap(label).addOne(LDR(None, R(register), OImmediateOffset(R(register), Immed(4))))
                 if (!read) {
                     expr match {
                         case ident: Ident => 
@@ -725,10 +725,10 @@ object codeGenerator {
             case ArrayLiter(array) => 
                 var elemSize = 0
                 if (array.isEmpty) {
-                    textMap(label).addOne(LDR(None, R(0), Immed("", 4)))
+                    textMap(label).addOne(LDR(None, R(0), Immed(4)))
                 } else {
                     elemSize = getBytes(array.head, symbolTable)
-                    textMap(label).addOne(LDR(None, R(0), Immed("", array.size * elemSize + 4)))
+                    textMap(label).addOne(LDR(None, R(0), Immed(array.size * elemSize + 4)))
                 }
                 textMap(label).addOne(BL(None, "malloc"))
                 textMap(label).addOne(MOV(None, false, R(register), R(0)))
@@ -738,22 +738,22 @@ object codeGenerator {
                         generateExpr(expr, symbolTable, functionTable, label, register + 1, dataMap, textMap)
                         textMap(label).addOne(
                             if (elemSize == 4) {
-                                STR(None, R(register + 1), OImmediateOffset(R(register), Immed("", i)))
+                                STR(None, R(register + 1), OImmediateOffset(R(register), Immed(i)))
                             } else {
-                                STRB(None, R(register + 1), OImmediateOffset(R(register), Immed("", i)))
+                                STRB(None, R(register + 1), OImmediateOffset(R(register), Immed(i)))
                             })
                         i += elemSize
                     })
                 }
-                textMap(label).addOne(LDR(None, R(register + 1), Immed("", array.size)))
+                textMap(label).addOne(LDR(None, R(register + 1), Immed(array.size)))
                 textMap(label).addOne(STR(None, R(register + 1), ZeroOffset(R(register))))
             case NewPair(expr1, expr2) => 
-                textMap(label).addOne(LDR(None, R(0), Immed("", 8)))
+                textMap(label).addOne(LDR(None, R(0), Immed(8)))
                 textMap(label).addOne(BL(None, "malloc"))
                 textMap(label).addOne(MOV(None, false, R(register), R(0)))
                 generateExpr(expr1, symbolTable, functionTable, label, register + 1, dataMap, textMap)
                 val expr1Bytes = getBytes(expr1, symbolTable)
-                textMap(label).addOne(LDR(None, R(0), Immed("", expr1Bytes)))
+                textMap(label).addOne(LDR(None, R(0), Immed(expr1Bytes)))
                 textMap(label).addOne(BL(None, "malloc"))
                 if (expr1Bytes == 4) {
                     textMap(label).addOne(STR(None, R(register + 1), ZeroOffset(R(0))))
@@ -763,14 +763,14 @@ object codeGenerator {
                 textMap(label).addOne(STR(None, R(0), ZeroOffset(R(register))))
                 generateExpr(expr2, symbolTable, functionTable, label, register + 1, dataMap, textMap)
                 val expr2Bytes = getBytes(expr2, symbolTable)
-                textMap(label).addOne(LDR(None, R(0), Immed("", getBytes(expr2, symbolTable))))
+                textMap(label).addOne(LDR(None, R(0), Immed(getBytes(expr2, symbolTable))))
                 textMap(label).addOne(BL(None, "malloc"))
                 if (expr2Bytes == 4) {
                     textMap(label).addOne(STR(None, R(register + 1), ZeroOffset(R(0))))
                 } else {
                     textMap(label).addOne(STRB(None, R(register + 1), ZeroOffset(R(0))))
                 }
-                textMap(label).addOne(STR(None, R(0), OImmediateOffset(R(register), Immed("", 4))))
+                textMap(label).addOne(STR(None, R(0), OImmediateOffset(R(register), Immed(4))))
                 
             case Fst(expr) => 
                 generateExpr(expr, symbolTable, functionTable, label, 4, dataMap, textMap)
@@ -798,7 +798,7 @@ object codeGenerator {
                 generateExpr(expr, symbolTable, functionTable, label, 4, dataMap, textMap)
                 textMap(label).addOne(MOV(None, false, R(0), R(register)))
                 textMap(label).addOne(BL(None, "p_check_null_pointer"))
-                textMap(label).addOne(LDR(None, R(register), OImmediateOffset(R(register), Immed("", 4))))
+                textMap(label).addOne(LDR(None, R(register), OImmediateOffset(R(register), Immed(4))))
                 expr match {
                     case ident: Ident => 
                         ident.symbolTable.get.find(ident) match {
@@ -820,16 +820,16 @@ object codeGenerator {
                 args.reverse.map(arg => {
                     generateExpr(arg, symbolTable, functionTable, label, 4, dataMap, textMap)
                     if (getBytes(arg, symbolTable) == 1) {
-                        textMap(label).addOne(STRB(None, R(REGISTER4), RegisterOffset(SP(), Immed("", -1))))
+                        textMap(label).addOne(STRB(None, R(REGISTER4), RegisterOffset(SP(), Immed(-1))))
                         stackOffset += 1
                     } else {
-                        textMap(label).addOne(STR(None, R(REGISTER4), RegisterOffset(SP(), Immed("", -4))))
+                        textMap(label).addOne(STR(None, R(REGISTER4), RegisterOffset(SP(), Immed(-4))))
                         stackOffset += 4
                     }
                 })
                 stackOffset = 0
                 textMap(label).addOne(BL(None, "f_" + id.variable))
-                textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", args.foldLeft(0)((arg1, arg2) => arg1 + getBytes(arg2, symbolTable)))))
+                textMap(label).addOne(ADD(None, false, SP(), SP(), Immed(args.foldLeft(0)((arg1, arg2) => arg1 + getBytes(arg2, symbolTable)))))
                 textMap(label).addOne(MOV(None, false, R(REGISTER4), R(REGISTER0)))    
             }
     }
@@ -945,7 +945,7 @@ object codeGenerator {
                 val a_mode2 = if (symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset == 0) {
                     ZeroOffset(SP())
                 } else {
-                    OImmediateOffset(SP(), Immed("", symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset))
+                    OImmediateOffset(SP(), Immed(symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset))
                 }
                 val exprSize = getBytes(expr, symbolTable)
                 if (exprSize == 4) {
@@ -954,7 +954,7 @@ object codeGenerator {
                     textMap(label).addOne(LDRSB(None, R(register), a_mode2))
                 }
             case arrayElem: ArrayElem => 
-                textMap(label).addOne(ADD(None, false, R(register), SP(), Immed("", symbolTable.getSizeWithIdent(arrayElem.id).get - arrayElem.id.symbolTable.get.findId(arrayElem.id).get + stackOffset)))
+                textMap(label).addOne(ADD(None, false, R(register), SP(), Immed(symbolTable.getSizeWithIdent(arrayElem.id).get - arrayElem.id.symbolTable.get.findId(arrayElem.id).get + stackOffset)))
                 var i = 0
                 arrayElem.exprs.map(expr => {
                     if (register + 1 > 10) {
@@ -973,26 +973,26 @@ object codeGenerator {
                         MOV(None, false, R(0), R(reg2)),
                         MOV(None, false, R(1), R(reg1)),
                         BL(None, "p_check_array_bounds"),
-                        ADD(None, false, R(reg1), R(reg1), Immed("", 4)),
+                        ADD(None, false, R(reg1), R(reg1), Immed(4)),
                         arrayElem.id.symbolTable.get.find(arrayElem.id) match {
                             case Some(value) => value match {
                                 case BoolCheck(nested) => 
                                     if (nested - i == 1) {
                                         ADD(None, false, R(register), R(reg1), R(reg2))
                                     } else {
-                                        ADD(None, false, R(register), R(reg1), LogicalShiftLeft(R(reg2), Immed("", 2)))
+                                        ADD(None, false, R(register), R(reg1), LogicalShiftLeft(R(reg2), Immed(2)))
                                     }
                                 case CharCheck(nested) =>
                                     if (nested - i == 1) {
                                         ADD(None, false, R(register), R(reg1), R(reg2))
                                     } else {
-                                        ADD(None, false, R(register), R(reg1), LogicalShiftLeft(R(reg2), Immed("", 2)))
+                                        ADD(None, false, R(register), R(reg1), LogicalShiftLeft(R(reg2), Immed(2)))
                                     }
                                 case _ =>
-                                    ADD(None, false, R(register), R(reg1), LogicalShiftLeft(R(reg2), Immed("", 2)))
+                                    ADD(None, false, R(register), R(reg1), LogicalShiftLeft(R(reg2), Immed(2)))
                             }
                             case None => 
-                                ADD(None, false, R(register), R(reg1), LogicalShiftLeft(R(reg2), Immed("", 2))) //HEYYYY BROTHER MAYBE CHECK THAT THIS IS RIGHTTT OHHH 
+                                ADD(None, false, R(register), R(reg1), LogicalShiftLeft(R(reg2), Immed(2))) //HEYYYY BROTHER MAYBE CHECK THAT THIS IS RIGHTTT OHHH 
                         }
                     ))
                     generateCheckArrayBounds(dataMap, textMap)
@@ -1005,12 +1005,12 @@ object codeGenerator {
                     textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
                 }
             case IntLiter(x) => 
-                textMap(label).addOne(LDR(None, R(register), Immed("", x)))
+                textMap(label).addOne(LDR(None, R(register), Immed(x)))
             case BoolLiter(bool) =>
                 if (bool) {
-                    textMap(label).addOne(MOV(None, false, R(register), Immed("", 1)))
+                    textMap(label).addOne(MOV(None, false, R(register), Immed(1)))
                 } else {
-                    textMap(label).addOne(MOV(None, false, R(register), Immed("", 0)))
+                    textMap(label).addOne(MOV(None, false, R(register), Immed(0)))
                 }
             case CharLiter(char) => 
                 textMap(label).addOne(MOV(None, false, R(register), Character(char)))
@@ -1023,14 +1023,14 @@ object codeGenerator {
                     textMap(label).addOne(LDR(None, R(register), Label(s"msg_${dataMap(PrintString(string)).id}")))
                 }
             case PairLiter() =>
-                textMap(label).addOne(LDR(None, R(register), Immed("", 0)))
+                textMap(label).addOne(LDR(None, R(register), Immed(0)))
             case Not(expr1) =>
                 generateExpr(expr1, symbolTable, functionTable, label, register, dataMap, textMap)
-                textMap(label).addOne(EOR(None, false, R(register), R(register), Immed("", 1)))
+                textMap(label).addOne(EOR(None, false, R(register), R(register), Immed(1)))
             case Neg(expr1) => 
                 generateOverflow(dataMap, textMap)
                 generateExpr(expr1, symbolTable, functionTable, label, register, dataMap, textMap)
-                textMap(label).addOne(RSB(None, true, R(register), R(register), Immed("", 0)))
+                textMap(label).addOne(RSB(None, true, R(register), R(register), Immed(0)))
                 textMap(label).addOne(BL(Some(VSCOND()), "p_throw_overflow_error"))
             case Len(expr1) => 
                 generateExpr(expr1, symbolTable, functionTable, label, register, dataMap, textMap)
@@ -1056,7 +1056,7 @@ object codeGenerator {
                     case Mul(expr1, expr2) => 
                         generateOverflow(dataMap, textMap)
                         textMap(label).addOne(SMULL(None, false, R(register), R(register + 1), R(reg1), R(reg2)))
-                        textMap(label).addOne(CMP(None, R(register + 1), ArithmeticShiftRight(R(register), Immed("", 31))))
+                        textMap(label).addOne(CMP(None, R(register + 1), ArithmeticShiftRight(R(register), Immed(31))))
                         textMap(label).addOne(BL(Some(NECOND()), "p_throw_overflow_error"))
                     case Div(expr1, expr2) =>
                         generateCheckDivZero(dataMap, textMap)
@@ -1098,23 +1098,23 @@ object codeGenerator {
                 binOpComp match {
                     case GT(expr1, expr2) => 
                         textMap(label).addAll(List(
-                            MOV(Some(GTCOND()), false, R(register), Immed("", 1)),
-                            MOV(Some(LECOND()), false, R(register), Immed("", 0))
+                            MOV(Some(GTCOND()), false, R(register), Immed(1)),
+                            MOV(Some(LECOND()), false, R(register), Immed(0))
                         ))
                     case GTE(expr1, expr2) =>
                         textMap(label).addAll(List(
-                            MOV(Some(GECOND()), false, R(register), Immed("", 1)),
-                            MOV(Some(LTCOND()), false, R(register), Immed("", 0))
+                            MOV(Some(GECOND()), false, R(register), Immed(1)),
+                            MOV(Some(LTCOND()), false, R(register), Immed(0))
                         ))
                     case LT(expr1, expr2) =>
                         textMap(label).addAll(List(
-                            MOV(Some(LTCOND()), false, R(register), Immed("", 1)),
-                            MOV(Some(GECOND()), false, R(register), Immed("", 0))
+                            MOV(Some(LTCOND()), false, R(register), Immed(1)),
+                            MOV(Some(GECOND()), false, R(register), Immed(0))
                         ))
                     case LTE(expr1, expr2) =>
                         textMap(label).addAll(List(
-                            MOV(Some(LECOND()), false, R(register), Immed("", 1)),
-                            MOV(Some(GTCOND()), false, R(register), Immed("", 0))
+                            MOV(Some(LECOND()), false, R(register), Immed(1)),
+                            MOV(Some(GTCOND()), false, R(register), Immed(0))
                         ))
                 }
             case binOpEqs: BinOpEqs => 
@@ -1134,13 +1134,13 @@ object codeGenerator {
                 binOpEqs match {
                     case EQ(expr1, expr2) => 
                         textMap(label).addAll(List(
-                            MOV(Some(EQCOND()), false, R(register), Immed("", 1)),
-                            MOV(Some(NECOND()), false, R(register), Immed("", 0))
+                            MOV(Some(EQCOND()), false, R(register), Immed(1)),
+                            MOV(Some(NECOND()), false, R(register), Immed(0))
                         ))
                     case NEQ(expr1, expr2) =>
                         textMap(label).addAll(List(
-                            MOV(Some(NECOND()), false, R(register), Immed("", 1)),
-                            MOV(Some(EQCOND()), false, R(register), Immed("", 0))
+                            MOV(Some(NECOND()), false, R(register), Immed(1)),
+                            MOV(Some(EQCOND()), false, R(register), Immed(0))
                         ))
                 }
             case binOpBool: BinOpBool => 
@@ -1168,11 +1168,11 @@ object codeGenerator {
 
 
     def generateStackStart(symbolTable: SymbolTable, label: Scope, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
-        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed("", symbolTable.getSize())))
+        textMap(label).addOne(SUB(None, false, SP(), SP(), Immed(symbolTable.getSize())))
     }
 
     def generateStackEnd(symbolTable: SymbolTable, label: Scope, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
-        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed("", symbolTable.getSize())))
+        textMap(label).addOne(ADD(None, false, SP(), SP(), Immed(symbolTable.getSize())))
     }
 
     def generateReference(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
@@ -1185,9 +1185,9 @@ object codeGenerator {
                 PUSH(List(LR())), 
                 MOV(None, false, R(1), R(0)),
                 LDR(None, R(0), Label(s"msg_${dataMap(func).id}")),
-                ADD(None, false, R(0), R(0), Immed("", 4)),
+                ADD(None, false, R(0), R(0), Immed(4)),
                 BL(None, "printf"),
-                MOV(None, false, R(0), Immed("", 0)),
+                MOV(None, false, R(0), Immed(0)),
                 BL(None, "fflush"),
                 POP(List(PC()))
             )
@@ -1204,9 +1204,9 @@ object codeGenerator {
             textMap(func) = ListBuffer(
                 PUSH(List(LR())), 
                 LDR(None, R(0), Label(s"msg_${dataMap(func).id}")),
-                ADD(None, false, R(0), R(0), Immed("", 4)),
+                ADD(None, false, R(0), R(0), Immed(4)),
                 BL(None, "puts"),
-                MOV(None, false, R(0), Immed("", 0)),
+                MOV(None, false, R(0), Immed(0)),
                 BL(None, "fflush"),
                 POP(List(PC()))
             )
@@ -1222,11 +1222,11 @@ object codeGenerator {
             textMap(func) = ListBuffer(
                 PUSH(List(LR())), 
                 LDR(None, R(1), ZeroOffset(R(0))),
-                ADD(None, false, R(2), R(0), Immed("", 4)),
+                ADD(None, false, R(2), R(0), Immed(4)),
                 LDR(None, R(0), Label(s"msg_${dataMap(func).id}")),
-                ADD(None, false, R(0), R(0), Immed("", 4)),
+                ADD(None, false, R(0), R(0), Immed(4)),
                 BL(None, "printf"),
-                MOV(None, false, R(0), Immed("", 0)),
+                MOV(None, false, R(0), Immed(0)),
                 BL(None, "fflush"),
                 POP(List(PC()))
             )
@@ -1243,9 +1243,9 @@ object codeGenerator {
                 PUSH(List(LR())), 
                 MOV(None, false, R(1), R(0)),
                 LDR(None, R(0), Label(s"msg_${dataMap(func).id}")),
-                ADD(None, false, R(0), R(0), Immed("", 4)),
+                ADD(None, false, R(0), R(0), Immed(4)),
                 BL(None, "printf"),
-                MOV(None, false, R(0), Immed("", 0)),
+                MOV(None, false, R(0), Immed(0)),
                 BL(None, "fflush"),
                 POP(List(PC()))
             )
@@ -1262,7 +1262,7 @@ object codeGenerator {
                 PUSH(List(LR())), 
                 MOV(None, false, R(1), R(0)),
                 LDR(None, R(0), Label(s"msg_${dataMap(func).id}")),
-                ADD(None, false, R(0), R(0), Immed("", 4)),
+                ADD(None, false, R(0), R(0), Immed(4)),
                 BL(None, "scanf"),
                 POP(List(PC()))
             )
@@ -1279,7 +1279,7 @@ object codeGenerator {
                 PUSH(List(LR())), 
                 MOV(None, false, R(1), R(0)),
                 LDR(None, R(0), Label(s"msg_${dataMap(func).id}")),
-                ADD(None, false, R(0), R(0), Immed("", 4)),
+                ADD(None, false, R(0), R(0), Immed(4)),
                 BL(None, "scanf"),
                 POP(List(PC()))
             )
@@ -1298,12 +1298,12 @@ object codeGenerator {
             msg += 1
             textMap(P("print_bool")) = ListBuffer(
                 PUSH(List(LR())), 
-                CMP(None, R(0), Immed("", 0)),
+                CMP(None, R(0), Immed(0)),
                 LDR(Some(NECOND()), R(0), Label(s"msg_${dataMap(trueFunc).id}")),
                 LDR(Some(EQCOND()), R(0), Label(s"msg_${dataMap(falseFunc).id}")),
-                ADD(None, false, R(0), R(0), Immed("", 4)),
+                ADD(None, false, R(0), R(0), Immed(4)),
                 BL(None, "printf"),
-                MOV(None, false, R(0), Immed("", 0)),
+                MOV(None, false, R(0), Immed(0)),
                 BL(None, "fflush"),
                 POP(List(PC()))
             )
@@ -1337,7 +1337,7 @@ object codeGenerator {
             msg += 1
             textMap(P("check_array_bounds")) = ListBuffer(
                 PUSH(List(LR())), 
-                CMP(None, R(0), Immed("", 0)),
+                CMP(None, R(0), Immed(0)),
                 LDR(Some(LTCOND()), R(0), Label(s"msg_${dataMap(negativeFunc).id}")),
                 BL(Some(LTCOND()), "p_throw_runtime_error"),
                 LDR(None, R(1), ZeroOffset(R(1))),
@@ -1359,7 +1359,7 @@ object codeGenerator {
             msg += 1
             textMap(func) = ListBuffer(
                 PUSH(List(LR())),
-                CMP(None, R(0), Immed("", 0)),
+                CMP(None, R(0), Immed(0)),
                 LDR(Some(EQCOND()), R(0), Label(s"msg_${dataMap(func).id}")),
                 BL(Some(EQCOND()), "p_throw_runtime_error"),
                 POP(List(PC()))
@@ -1377,7 +1377,7 @@ object codeGenerator {
             msg += 1
             textMap(func) = ListBuffer(
                 PUSH(List(LR())),
-                CMP(None, R(1), Immed("", 0)),
+                CMP(None, R(1), Immed(0)),
                 LDR(Some(EQCOND()), R(0), Label(s"msg_${dataMap(func).id}")),
                 BL(Some(EQCOND()), "p_throw_runtime_error"),
                 POP(List(PC()))
@@ -1395,14 +1395,14 @@ object codeGenerator {
             msg += 1
             textMap(func) = ListBuffer(
                 PUSH(List(LR())),
-                CMP(None, R(0), Immed("", 0)),
+                CMP(None, R(0), Immed(0)),
                 LDR(Some(EQCOND()), R(0), Label(s"msg_${dataMap(func).id}")),
                 B(Some(EQCOND()), "p_throw_runtime_error"),
                 PUSH(List(R(0))),
                 LDR(None, R(0), ZeroOffset(R(0))),
                 BL(None, "free"),
                 LDR(None, R(0), ZeroOffset(SP())),
-                LDR(None, R(0), OImmediateOffset(R(0), Immed("", 4))),
+                LDR(None, R(0), OImmediateOffset(R(0), Immed(4))),
                 BL(None, "free"),
                 POP(List(R(0))),
                 BL(None, "free"),
@@ -1421,7 +1421,7 @@ object codeGenerator {
             msg += 1
             textMap(func) = ListBuffer(
                 PUSH(List(LR())),
-                CMP(None, R(0), Immed("", 0)),
+                CMP(None, R(0), Immed(0)),
                 LDR(Some(EQCOND()), R(0), Label(s"msg_${dataMap(func).id}")),
                 B(Some(EQCOND()), "p_throw_runtime_error"),
                 BL(None, "free"),

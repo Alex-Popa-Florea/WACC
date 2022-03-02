@@ -3,7 +3,7 @@ package backend
 object operators {
     sealed trait Operand2
 
-    case class Immed(kind: String, value: Int) extends Operand2 with A_mode2 {
+    case class Immed(value: Int) extends Operand2 with A_mode2 {
         override def toString() : String = {
             value.toString()
         }

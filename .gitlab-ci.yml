@@ -8,12 +8,17 @@ build-job:
   script:
     - sbt clean compile
 
+backend-test-job:
+  stage: backend-test
+  script:
+    - sbt clean "testOnly backend_tests.*"
+
 semantic-test-job:
   stage: semantic-test
   script:
-    - sbt clean "testOnly valid_programs_tests.SemanticTest"
+    - sbt clean "testOnly semantic_tests.*"
 
 syntax-test-job:
   stage: syntax-test
   script:
-    - sbt clean "testOnly valid_programs_tests.ExprParserTest valid_programs_tests.ProgramParserTest valid_programs_tests.FunctionParserTest valid_programs_tests.TypeParserTest valid_programs_tests.StatParserTest"    
+    - sbt clean "testOnly syntax_tests.*"

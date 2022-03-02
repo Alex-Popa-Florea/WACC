@@ -2,16 +2,12 @@ stages:
   - build
   - syntax-test
   - semantic-test
+  - backend-test
 
 build-job:       
   stage: build
   script:
     - sbt clean compile
-
-backend-test-job:
-  stage: backend-test
-  script:
-    - sbt clean "testOnly backend_tests.*"
 
 semantic-test-job:
   stage: semantic-test
@@ -22,3 +18,9 @@ syntax-test-job:
   stage: syntax-test
   script:
     - sbt clean "testOnly syntax_tests.*"
+
+backend-test-job:
+  stage: backend-test
+  script:
+    - sbt clean "testOnly backend_tests.*"
+

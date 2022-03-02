@@ -33,6 +33,11 @@ object operators {
             rm.toString() + ", LSL #" + immed.toString()
         }
     }
+    case class ArithmeticShiftRight(rm: Register, immed: Immed) extends Operand2 {
+        override def toString() : String = {
+            rm.toString() + ", ASR #" + immed.toString()
+        }
+    }
 
     sealed trait A_mode2
 

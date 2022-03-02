@@ -677,14 +677,12 @@ object codeGenerator {
                         case ident: Ident => 
                             ident.symbolTable.get.find(ident) match {
                                 case Some(typeCheck) => typeCheck match {
-                                    case PairCheck(type1, _, _) => type1 match {
-                                        case IntCheck(_) => textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register)))) 
-                                        case BoolCheck(_) => textMap(label).addOne(STRB(None, R(register - 1), ZeroOffset(R(register))))
-                                        case CharCheck(_) => textMap(label).addOne(STRB(None, R(register - 1), ZeroOffset(R(register))))
-                                        case StrCheck(_) => textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
-                                        case PairCheck(_, _, _) => textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
-                                        case EmptyPairCheck() => textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
-                                    }
+                                    case PairCheck(type1, _, _) => 
+                                        if (getBytesFromType(type1) == 4) {
+                                            textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
+                                        } else {
+                                            textMap(label).addOne(STRB(None, R(register - 1), ZeroOffset(R(register))))
+                                        }
                                     case _ =>
                                 }
                                 case None =>
@@ -704,14 +702,12 @@ object codeGenerator {
                         case ident: Ident => 
                             ident.symbolTable.get.find(ident) match {
                                 case Some(typeCheck) => typeCheck match {
-                                    case PairCheck(_, type2, _) => type2 match {
-                                        case IntCheck(_) => textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register)))) 
-                                        case BoolCheck(_) => textMap(label).addOne(STRB(None, R(register - 1), ZeroOffset(R(register))))
-                                        case CharCheck(_) => textMap(label).addOne(STRB(None, R(register - 1), ZeroOffset(R(register))))
-                                        case StrCheck(_) => textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
-                                        case PairCheck(_, _, _) => textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
-                                        case EmptyPairCheck() => textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
-                                    }
+                                    case PairCheck(_, type2, _) =>
+                                        if (getBytesFromType(type2) == 4) {
+                                            textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
+                                        } else {
+                                            textMap(label).addOne(STRB(None, R(register - 1), ZeroOffset(R(register))))
+                                        }
                                     case _ =>
                                 }
                                 case None =>
@@ -785,14 +781,12 @@ object codeGenerator {
                     case ident: Ident => 
                         ident.symbolTable.get.find(ident) match {
                             case Some(typeCheck) => typeCheck match {
-                                case PairCheck(type1, _, _) => type1 match {
-                                    case IntCheck(_) => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register)))) 
-                                    case BoolCheck(_) => textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
-                                    case CharCheck(_) => textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
-                                    case StrCheck(_) => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
-                                    case PairCheck(_, _, _) => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
-                                    case EmptyPairCheck() => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
-                                }
+                                case PairCheck(type1, _, _) => 
+                                    if (getBytesFromType(type1) == 4) {
+                                        textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
+                                    } else {
+                                        textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
+                                    }
                                 case _ =>
                             }
                             case None =>
@@ -809,14 +803,12 @@ object codeGenerator {
                     case ident: Ident => 
                         ident.symbolTable.get.find(ident) match {
                             case Some(typeCheck) => typeCheck match {
-                                case PairCheck(_, type2, _) => type2 match {
-                                    case IntCheck(_) => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register)))) 
-                                    case BoolCheck(_) => textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
-                                    case CharCheck(_) => textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
-                                    case StrCheck(_) => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
-                                    case PairCheck(_, _, _) => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
-                                    case EmptyPairCheck() => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
-                                }
+                                case PairCheck(_, type2, _) => 
+                                if (getBytesFromType(type2) == 4) {
+                                        textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
+                                    } else {
+                                        textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
+                                    }
                                 case _ =>
                             }
                             case None =>
@@ -931,7 +923,7 @@ object codeGenerator {
                 }
             case StrCheck(nested) => 4
             case PairCheck(type1, type2, nested) => 4
-            case EmptyPairCheck() => 0
+            case EmptyPairCheck() => 4
         }
     }
 

@@ -1,5 +1,5 @@
-./wacc_example/expressions/negDivisorDiv.wacc
-calling the reference compiler on ./wacc_example/expressions/negDivisorDiv.wacc
+./wacc_examples/expressions/negDivisorDiv.wacc
+calling the reference compiler on ./wacc_examples/expressions/negDivisorDiv.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: negDivisorDiv.wacc
 

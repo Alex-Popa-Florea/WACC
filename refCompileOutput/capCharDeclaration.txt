@@ -1,5 +1,5 @@
-./wacc_example/variables/capCharDeclaration.wacc
-calling the reference compiler on ./wacc_example/variables/capCharDeclaration.wacc
+./wacc_examples/variables/capCharDeclaration.wacc
+calling the reference compiler on ./wacc_examples/variables/capCharDeclaration.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: capCharDeclaration.wacc
 

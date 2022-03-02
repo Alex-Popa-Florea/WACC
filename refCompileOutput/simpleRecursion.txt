@@ -1,5 +1,5 @@
-./wacc_example/function/nested_functions/simpleRecursion.wacc
-calling the reference compiler on ./wacc_example/function/nested_functions/simpleRecursion.wacc
+./wacc_examples/function/nested_functions/simpleRecursion.wacc
+calling the reference compiler on ./wacc_examples/function/nested_functions/simpleRecursion.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: simpleRecursion.wacc
 

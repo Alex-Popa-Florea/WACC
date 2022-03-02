@@ -1,4 +1,4 @@
-package valid_programs_tests
+package semantic_tests
 
 import frontend.lexer._
 import frontend.parser._

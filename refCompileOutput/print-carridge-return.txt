@@ -1,5 +1,5 @@
-./wacc_example/IO/print/print-carridge-return.wacc
-calling the reference compiler on ./wacc_example/IO/print/print-carridge-return.wacc
+./wacc_examples/IO/print/print-carridge-return.wacc
+calling the reference compiler on ./wacc_examples/IO/print/print-carridge-return.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: print-carridge-return.wacc
 

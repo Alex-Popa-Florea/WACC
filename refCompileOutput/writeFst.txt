@@ -1,5 +1,5 @@
-./wacc_example/pairs/writeFst.wacc
-calling the reference compiler on ./wacc_example/pairs/writeFst.wacc
+./wacc_examples/pairs/writeFst.wacc
+calling the reference compiler on ./wacc_examples/pairs/writeFst.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: writeFst.wacc
 

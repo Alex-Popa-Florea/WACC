@@ -1,5 +1,5 @@
-./wacc_example/function/nested_functions/printTriangle.wacc
-calling the reference compiler on ./wacc_example/function/nested_functions/printTriangle.wacc
+./wacc_examples/function/nested_functions/printTriangle.wacc
+calling the reference compiler on ./wacc_examples/function/nested_functions/printTriangle.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: printTriangle.wacc
 

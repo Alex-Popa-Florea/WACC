@@ -1,5 +1,5 @@
-./wacc_example/expressions/boolCalc.wacc
-calling the reference compiler on ./wacc_example/expressions/boolCalc.wacc
+./wacc_examples/expressions/boolCalc.wacc
+calling the reference compiler on ./wacc_examples/expressions/boolCalc.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: boolCalc.wacc
 

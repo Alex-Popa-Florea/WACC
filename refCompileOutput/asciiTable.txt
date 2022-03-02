@@ -1,5 +1,5 @@
-./wacc_example/function/simple_functions/asciiTable.wacc
-calling the reference compiler on ./wacc_example/function/simple_functions/asciiTable.wacc
+./wacc_examples/function/simple_functions/asciiTable.wacc
+calling the reference compiler on ./wacc_examples/function/simple_functions/asciiTable.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: asciiTable.wacc
 

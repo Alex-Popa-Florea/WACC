@@ -1,5 +1,5 @@
-./wacc_example/sequence/stringAssignment.wacc
-calling the reference compiler on ./wacc_example/sequence/stringAssignment.wacc
+./wacc_examples/sequence/stringAssignment.wacc
+calling the reference compiler on ./wacc_examples/sequence/stringAssignment.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: stringAssignment.wacc
 

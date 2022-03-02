@@ -1,5 +1,5 @@
-./wacc_example/variables/boolDeclaration.wacc
-calling the reference compiler on ./wacc_example/variables/boolDeclaration.wacc
+./wacc_examples/variables/boolDeclaration.wacc
+calling the reference compiler on ./wacc_examples/variables/boolDeclaration.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: boolDeclaration.wacc
 

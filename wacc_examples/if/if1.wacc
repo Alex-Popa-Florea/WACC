@@ -6,10 +6,11 @@
 # Program:
 
 begin
-  if false && true 
+  int a = 13;	
+  if a == 13 
   then 
     println "correct"
   else 
-    println "correct"
+    println "incorrect"
   fi
 end

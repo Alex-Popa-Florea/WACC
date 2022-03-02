@@ -1,5 +1,5 @@
-./wacc_example/expressions/orExpr.wacc
-calling the reference compiler on ./wacc_example/expressions/orExpr.wacc
+./wacc_examples/expressions/orExpr.wacc
+calling the reference compiler on ./wacc_examples/expressions/orExpr.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: orExpr.wacc
 

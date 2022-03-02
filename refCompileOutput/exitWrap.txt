@@ -1,5 +1,5 @@
-./wacc_example/basic/exit/exitWrap.wacc
-calling the reference compiler on ./wacc_example/basic/exit/exitWrap.wacc
+./wacc_examples/basic/exit/exitWrap.wacc
+calling the reference compiler on ./wacc_examples/basic/exit/exitWrap.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: exitWrap.wacc
 

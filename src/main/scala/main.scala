@@ -31,7 +31,14 @@ object main {
             Assert that an input file has been provided for compilation
         */
         assert(args.head != "")
-        var output = args(1)
+        val output=
+            if (args.size == 2){
+                args(1)
+            }
+            else{
+                ""
+            }
+        
 
         /*
             Create a new symbol table and function table
@@ -83,7 +90,8 @@ object main {
                             writeToFile(lines, file.getName().replace(".wacc",".s"))
                         }
                         else{
-                            writeToFile(lines, output++"/"++file.getName().replace(".wacc",".s"))
+                            println(output+"/"+file.getName().replace(".wacc",".s"))
+                            writeToFile(lines, output+"/"+file.getName().replace(".wacc",".s"))
                         }
                         
                     } else {

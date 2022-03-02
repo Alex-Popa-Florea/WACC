@@ -1,5 +1,5 @@
-wacc_example/pairs/readPair.wacc
-calling the reference compiler on wacc_example/pairs/readPair.wacc
+./wacc_examples/pairs/readPair.wacc
+calling the reference compiler on ./wacc_examples/pairs/readPair.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: readPair.wacc
 
@@ -43,7 +43,7 @@ end
 -- Executing...
 ===========================================================
 Please enter the first element (char): Please enter the second element (int): The first element was 1
-The second element was 2
+The second element was 0
 ===========================================================
 The exit code is 0.
 -- Finished

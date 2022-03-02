@@ -1,5 +1,5 @@
-./wacc_example/expressions/multNoWhitespaceExpr.wacc
-calling the reference compiler on ./wacc_example/expressions/multNoWhitespaceExpr.wacc
+./wacc_examples/expressions/multNoWhitespaceExpr.wacc
+calling the reference compiler on ./wacc_examples/expressions/multNoWhitespaceExpr.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: multNoWhitespaceExpr.wacc
 

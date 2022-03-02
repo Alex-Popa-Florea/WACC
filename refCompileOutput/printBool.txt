@@ -1,5 +1,5 @@
-./wacc_example/IO/print/printBool.wacc
-calling the reference compiler on ./wacc_example/IO/print/printBool.wacc
+./wacc_examples/IO/print/printBool.wacc
+calling the reference compiler on ./wacc_examples/IO/print/printBool.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: printBool.wacc
 

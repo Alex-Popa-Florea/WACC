@@ -1,5 +1,5 @@
-./wacc_example/while/fibonacciIterative.wacc
-calling the reference compiler on ./wacc_example/while/fibonacciIterative.wacc
+./wacc_examples/while/fibonacciIterative.wacc
+calling the reference compiler on ./wacc_examples/while/fibonacciIterative.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: fibonacciIterative.wacc
 

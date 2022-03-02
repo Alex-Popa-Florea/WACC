@@ -1,5 +1,5 @@
-./wacc_example/runtimeErr/arrayOutOfBounds/arrayOutOfBoundsWrite.wacc
-calling the reference compiler on ./wacc_example/runtimeErr/arrayOutOfBounds/arrayOutOfBoundsWrite.wacc
+./wacc_examples/runtimeErr/arrayOutOfBounds/arrayOutOfBoundsWrite.wacc
+calling the reference compiler on ./wacc_examples/runtimeErr/arrayOutOfBounds/arrayOutOfBoundsWrite.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: arrayOutOfBoundsWrite.wacc
 

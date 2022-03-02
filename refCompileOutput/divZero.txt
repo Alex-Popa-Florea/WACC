@@ -1,5 +1,5 @@
-./wacc_example/runtimeErr/divideByZero/divZero.wacc
-calling the reference compiler on ./wacc_example/runtimeErr/divideByZero/divZero.wacc
+./wacc_examples/runtimeErr/divideByZero/divZero.wacc
+calling the reference compiler on ./wacc_examples/runtimeErr/divideByZero/divZero.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: divZero.wacc
 

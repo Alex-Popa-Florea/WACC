@@ -1,5 +1,5 @@
-./wacc_example/while/max.wacc
-calling the reference compiler on ./wacc_example/while/max.wacc
+./wacc_examples/while/max.wacc
+calling the reference compiler on ./wacc_examples/while/max.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: max.wacc
 

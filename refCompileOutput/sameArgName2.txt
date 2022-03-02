@@ -1,5 +1,5 @@
-./wacc_example/function/simple_functions/sameArgName2.wacc
-calling the reference compiler on ./wacc_example/function/simple_functions/sameArgName2.wacc
+./wacc_examples/function/simple_functions/sameArgName2.wacc
+calling the reference compiler on ./wacc_examples/function/simple_functions/sameArgName2.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: sameArgName2.wacc
 

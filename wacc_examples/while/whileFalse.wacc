@@ -6,8 +6,7 @@
 # Program:
 
 begin
-  string a = "ahhh";
-  while a== "ahhh" do
+  while false do
     println "looping..."
   done ;
   println "end of loop"

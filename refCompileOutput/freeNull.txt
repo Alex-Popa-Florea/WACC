@@ -1,5 +1,5 @@
-./wacc_example/runtimeErr/nullDereference/freeNull.wacc
-calling the reference compiler on ./wacc_example/runtimeErr/nullDereference/freeNull.wacc
+./wacc_examples/runtimeErr/nullDereference/freeNull.wacc
+calling the reference compiler on ./wacc_examples/runtimeErr/nullDereference/freeNull.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: freeNull.wacc
 

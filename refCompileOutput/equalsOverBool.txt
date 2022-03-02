@@ -1,5 +1,5 @@
-./wacc_example/expressions/equalsOverBool.wacc
-calling the reference compiler on ./wacc_example/expressions/equalsOverBool.wacc
+./wacc_examples/expressions/equalsOverBool.wacc
+calling the reference compiler on ./wacc_examples/expressions/equalsOverBool.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: equalsOverBool.wacc
 

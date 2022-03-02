@@ -1,5 +1,5 @@
-./wacc_example/while/min.wacc
-calling the reference compiler on ./wacc_example/while/min.wacc
+./wacc_examples/while/min.wacc
+calling the reference compiler on ./wacc_examples/while/min.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: min.wacc
 

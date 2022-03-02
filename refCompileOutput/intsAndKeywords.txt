@@ -1,5 +1,5 @@
-./wacc_example/scope/intsAndKeywords.wacc
-calling the reference compiler on ./wacc_example/scope/intsAndKeywords.wacc
+./wacc_examples/scope/intsAndKeywords.wacc
+calling the reference compiler on ./wacc_examples/scope/intsAndKeywords.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: intsAndKeywords.wacc
 

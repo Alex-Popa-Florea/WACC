@@ -47,7 +47,11 @@ object codeGenerator {
         file name.
     */
     def writeToFile(lines: List[Line], fileName: String): Unit = {
-        val fileWriter = new FileWriter(new File(fileName))
+        val file = new File(fileName)
+        if(!file.getParentFile.exists()){
+            file.getParentFile.mkdirs()
+        }
+        val fileWriter = new FileWriter(file)
         val bw = new BufferedWriter(fileWriter)
         lines.map(line => bw.write(line.toString()))
         bw.close()

@@ -1,5 +1,5 @@
-./wacc_example/array/printRef.wacc
-calling the reference compiler on ./wacc_example/array/printRef.wacc
+./wacc_examples/array/printRef.wacc
+calling the reference compiler on ./wacc_examples/array/printRef.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: printRef.wacc
 

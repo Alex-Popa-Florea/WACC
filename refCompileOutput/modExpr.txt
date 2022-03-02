@@ -1,5 +1,5 @@
-./wacc_example/expressions/modExpr.wacc
-calling the reference compiler on ./wacc_example/expressions/modExpr.wacc
+./wacc_examples/expressions/modExpr.wacc
+calling the reference compiler on ./wacc_examples/expressions/modExpr.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: modExpr.wacc
 

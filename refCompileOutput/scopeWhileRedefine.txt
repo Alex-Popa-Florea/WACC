@@ -1,5 +1,5 @@
-./wacc_example/scope/scopeWhileRedefine.wacc
-calling the reference compiler on ./wacc_example/scope/scopeWhileRedefine.wacc
+./wacc_examples/scope/scopeWhileRedefine.wacc
+calling the reference compiler on ./wacc_examples/scope/scopeWhileRedefine.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: scopeWhileRedefine.wacc
 

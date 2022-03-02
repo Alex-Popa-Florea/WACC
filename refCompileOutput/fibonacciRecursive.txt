@@ -1,5 +1,5 @@
-./wacc_example/function/nested_functions/fibonacciRecursive.wacc
-calling the reference compiler on ./wacc_example/function/nested_functions/fibonacciRecursive.wacc
+./wacc_examples/function/nested_functions/fibonacciRecursive.wacc
+calling the reference compiler on ./wacc_examples/function/nested_functions/fibonacciRecursive.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: fibonacciRecursive.wacc
 

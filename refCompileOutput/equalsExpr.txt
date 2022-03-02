@@ -1,5 +1,5 @@
-./wacc_example/expressions/equalsExpr.wacc
-calling the reference compiler on ./wacc_example/expressions/equalsExpr.wacc
+./wacc_examples/expressions/equalsExpr.wacc
+calling the reference compiler on ./wacc_examples/expressions/equalsExpr.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: equalsExpr.wacc
 

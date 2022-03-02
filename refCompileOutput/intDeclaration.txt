@@ -1,5 +1,5 @@
-./wacc_example/variables/intDeclaration.wacc
-calling the reference compiler on ./wacc_example/variables/intDeclaration.wacc
+./wacc_examples/variables/intDeclaration.wacc
+calling the reference compiler on ./wacc_examples/variables/intDeclaration.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: intDeclaration.wacc
 

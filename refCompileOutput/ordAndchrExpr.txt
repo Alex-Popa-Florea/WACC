@@ -1,5 +1,5 @@
-./wacc_example/expressions/ordAndchrExpr.wacc
-calling the reference compiler on ./wacc_example/expressions/ordAndchrExpr.wacc
+./wacc_examples/expressions/ordAndchrExpr.wacc
+calling the reference compiler on ./wacc_examples/expressions/ordAndchrExpr.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: ordAndchrExpr.wacc
 

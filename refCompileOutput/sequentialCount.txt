@@ -1,5 +1,5 @@
-./wacc_example/expressions/sequentialCount.wacc
-calling the reference compiler on ./wacc_example/expressions/sequentialCount.wacc
+./wacc_examples/expressions/sequentialCount.wacc
+calling the reference compiler on ./wacc_examples/expressions/sequentialCount.wacc
 please provide a stdin stream to use when executing the program:
 -- Test: sequentialCount.wacc
 

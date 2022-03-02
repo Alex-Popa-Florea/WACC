@@ -85,91 +85,91 @@ class backend_tests extends AnyFlatSpec{
                                                         .replace("/"+i.getName(),"")
                                                         )))
 
-    "Array" should "give correct out put and error code" in (pending)
+    "Array" should "give correct output and error code" in (pending)
     // {
     //     info("Checking array")
     //     checker(new File("./output/array"))
     // }
-    "Basic" should "give correct out put and error code" in {
+    "Basic" should "give correct output and error code" in {
         info("Checking basic")
         checker(new File("./output/basic"))
     }
-    "Exit" should "give correct out put and error code" in {
+    "Exit" should "give correct output and error code" in {
         info("Checking exit")
         checker(new File("./output/basic/exit"))
     }
-    "Skip" should "give correct out put and error code" in {
+    "Skip" should "give correct output and error code" in {
         info("Checking basic")
         checker(new File("./output/basic/skip"))
     }
 
-    "Expressions" should "give correct out put and error code" in //(pending)
+    "Expressions" should "give correct output and error code" in //(pending)
     {
         info("Checking expressions")
         checker(new File("./output/expressions"))
     }
-    "Nested_functions" should "give correct out put and error code" in //(pending)
+    "Nested_functions" should "give correct output and error code" in //(pending)
     {
         info("Checking nested_functions")
         checker(new File("./output/function/nested_functions"))
     }
-    "Simple_functions" should "give correct out put and error code" in (pending)
+    "Simple_functions" should "give correct output and error code" in (pending)
     // {
     //     info("Checking simple_functions")
     //     checker(new File("./output/function/simple_functions"))
     // }
-    "If" should "give correct out put and error code" in {
+    "If" should "give correct output and error code" in {
         info("Checking if")
         checker(new File("./output/if"))
     }
-    "IO" should "give correct out put and error code" in {
+    "IO" should "give correct output and error code" in {
         info("Checking IO")
         checker(new File("./output/IO"))
     }
-    "Print" should "give correct out put and error code" in {
+    "Print" should "give correct output and error code" in {
         info("Checking print")
         checker(new File("./output/IO/print"))
     }
-    "Read" should "give correct out put and error code" in {
+    "Read" should "give correct output and error code" in {
         info("Checking read")
         checker(new File("./output/IO/read"))
     }
-    "Pairs" should "give correct out put and error code" in (pending)
+    "Pairs" should "give correct output and error code" in (pending)
     // {
     //     info("Checking pairs")
     //     checker(new File("./output/pairs"))
     // }
-    "ArrayOutOfBounds" should "give correct out put and error code" in {
+    "ArrayOutOfBounds" should "give correct output and error code" in {
         info("Checking arrayOutOfBounds")
         checker(new File("./output/runtimeErr/arrayOutOfBounds"))
     }
-    "DivideByZero" should "give correct out put and error code" in {
+    "DivideByZero" should "give correct output and error code" in {
         info("Checking divideByZero")
         checker(new File("./output/runtimeErr/divideByZero"))
     }
-    "IntegerOverflow" should "give correct out put and error code" in //(pending)
+    "IntegerOverflow" should "give correct output and error code" in //(pending)
     {
         info("Checking integerOverflow")
         checker(new File("./output/runtimeErr/integerOverflow"))
     }
-    "NullDereference" should "give correct out put and error code" in {
+    "NullDereference" should "give correct output and error code" in {
         info("Checking nullDereference")
         checker(new File("./output/runtimeErr/nullDereference"))
     }
-    "Scope" should "give correct out put and error code" in (pending)
+    "Scope" should "give correct output and error code" in (pending)
     // {
     //     info("Checking scope")
     //     checker(new File("./output/scope"))
     // }
-    "Sequence" should "give correct out put and error code" in {
+    "Sequence" should "give correct output and error code" in {
         info("Checking sequence")
         checker(new File("./output/sequence"))
     }
-    "Variables" should "give correct out put and error code" in {
+    "Variables" should "give correct output and error code" in {
         info("Checking variables")
         checker(new File("./output/variables"))
     }
-    "While" should "give correct out put and error code" in {
+    "While" should "give correct output and error code" in {
         info("Checking while")
         checker(new File("./output/while"))
     }

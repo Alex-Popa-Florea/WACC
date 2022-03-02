@@ -672,7 +672,7 @@ object codeGenerator {
                                         case CharCheck(_) => textMap(label).addOne(STRB(None, R(register - 1), ZeroOffset(R(register))))
                                         case StrCheck(_) => textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
                                         case PairCheck(_, _, _) => textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
-                                        case EmptyPairCheck() =>
+                                        case EmptyPairCheck() => textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
                                     }
                                     case _ =>
                                 }
@@ -699,7 +699,7 @@ object codeGenerator {
                                         case CharCheck(_) => textMap(label).addOne(STRB(None, R(register - 1), ZeroOffset(R(register))))
                                         case StrCheck(_) => textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
                                         case PairCheck(_, _, _) => textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
-                                        case EmptyPairCheck() =>
+                                        case EmptyPairCheck() => textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
                                     }
                                     case _ =>
                                 }
@@ -780,7 +780,7 @@ object codeGenerator {
                                     case CharCheck(_) => textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
                                     case StrCheck(_) => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
                                     case PairCheck(_, _, _) => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
-                                    case EmptyPairCheck() =>
+                                    case EmptyPairCheck() => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
                                 }
                                 case _ =>
                             }
@@ -804,7 +804,7 @@ object codeGenerator {
                                     case CharCheck(_) => textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
                                     case StrCheck(_) => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
                                     case PairCheck(_, _, _) => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
-                                    case EmptyPairCheck() => 
+                                    case EmptyPairCheck() => textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
                                 }
                                 case _ =>
                             }

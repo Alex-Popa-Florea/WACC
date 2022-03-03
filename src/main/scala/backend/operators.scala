@@ -63,12 +63,6 @@ object operators {
         }
     } 
 
-    sealed trait PreIndexedOffset extends A_mode2
-    case class PrImmediateOffset(rn: Register, immed: Immed) extends PreIndexedOffset
-
-    sealed trait PostIndexedOffset extends A_mode2
-    case class PoImmediateOffset(rn: Register, immed: Immed) extends PostIndexedOffset
-
     sealed trait Cond
     case class EQCOND() extends Cond {
         override def toString() : String = {

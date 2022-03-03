@@ -1,5 +1,4 @@
 package backend_tests
-import frontend.color._
 import org.scalatest.AppendedClues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._

@@ -5,12 +5,12 @@ import lines._
 object data {
 
     /*
-        Trait to represent elements within the data section of the assembly code
+        Trait to represent elements within the data section of the assembly code.
     */
     sealed trait Message extends Line
 
     /*
-        Class that represents a message within the data section of the assembly code
+        Class that represents a message within the data section of the assembly code.
     */
     case class Msg(id: Int, size: Int, text: String) extends Message {
         override def toString() : String = {

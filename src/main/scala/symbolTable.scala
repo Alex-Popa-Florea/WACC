@@ -69,8 +69,8 @@ object symbolTable {
         /*
             The find method finds a variable of a given name in the symbol table,
             searching recursively within the ancestor symbol tables until finding
-            the most inner declaration, or returning false is no variable of that
-            name is found
+            the most inner declaration, or returning None if no variable of that
+            ident is found
         */
         def find(ident: Ident): Option[TypeCheck] = {
             var foundType = variableMap.get(ident.variable)
@@ -85,6 +85,12 @@ object symbolTable {
             }
         }
 
+        /*
+            The findId method finds the stack id of a given ident in the symbol table,
+            searching recursively within the ancestor symbol tables until finding
+            the most inner declaration, or returning None if no variable of that
+            ident is found
+        */
         def findId(ident: Ident): Option[Int] = {
             var foundType = variableMap.get(ident.variable)
             foundType match {
@@ -97,26 +103,31 @@ object symbolTable {
             }
         }
 
-        def getSection(): Section = {
-            section
-        }
-
+        /*
+            Method to return the variable map
+        */
         def getVariableMap(): collection.immutable.Map[String, (TypeCheck, Int)] = {
             variableMap.toMap
         }
 
+        /*
+            Method to return the children symbol tables
+        */
         def getChildren(): List[SymbolTable] = {
             children.toList
         }
 
+        /*
+            Method to return the number of bytes of the assignments in the symbol tables
+        */
         def getSize(): Int = {
             size
         }
-
-        def increaseSize(increment: Int) = {
-            size += increment 
-        }
-
+        
+        /*
+            Method to return the size of the symbol table of an ident, accounting for
+            offsets caused by inner symbol tables
+        */
         def getSizeWithIdent(ident: Ident): Option[Int] = {
             val foundIdent = if (ident.symbolTable == Some(this)) {
                 variableMap.get(ident.variable)
@@ -135,6 +146,9 @@ object symbolTable {
             }
         }
 
+        /*
+            Method to increase the size of a symbol table
+        */
         def updateSize(symbolTable: SymbolTable, incr: Int): Unit = {
             symbolTable.size += incr
         }

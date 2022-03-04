@@ -1,11 +1,20 @@
 package backend
 
 object lines {
+    /*
+        Sealed trait to represent lines of assembly code
+    */
     trait Line
 
-    sealed trait Section extends Line
+    /*
+        Sealed trait to represent sections of the code of assembly code
+    */
+    sealed trait AssemblySection extends Line
 
-    case class Data() extends Section {
+    /*
+        Class to represent the data section of the code
+    */
+    case class Data() extends AssemblySection {
         override def toString() : String = {
             """|.data
                |
@@ -13,7 +22,10 @@ object lines {
         }
     }
 
-    case class Text() extends Section {
+    /*
+        Class to represent the text section of the code
+    */
+    case class Text() extends AssemblySection {
         override def toString() : String = {
             """|
                |.text

@@ -145,7 +145,7 @@ object codeGenerator {
                 val a_mode2 = if (symbolTable.getSizeWithIdent(id).get - id.symbolTable.get.findId(id).get + stackOffset == 0) {
                     ZeroOffset(SP())       
                 } else {
-                    OImmediateOffset(SP(), Immed(symbolTable.getSizeWithIdent(id).get - id.symbolTable.get.findId(id).get + stackOffset))
+                    ImmediateOffset(SP(), Immed(symbolTable.getSizeWithIdent(id).get - id.symbolTable.get.findId(id).get + stackOffset))
                 }
                 val lhsSize = getBytes(id, symbolTable)
                 if (lhsSize == 4) {
@@ -203,7 +203,11 @@ object codeGenerator {
                         case None =>
                     }
                     case ArrayElem(id, exprs) => id.symbolTable.get.find(id) match {
-                        case Some(value) => value match {
+                        case Some(value) => (value: @unchecked) match {
+                            /*
+                                Uses @unchecked to avoid warnings of non exhaustive case matching.
+                                Value will always be an array type after semantic analysis
+                            */
                             case baseTypeCheck: BaseTypeCheck => 
                                 if (baseTypeCheck.nested != exprs.size) {
                                     textMap(label).addOne(BL(None, "p_free_array"))
@@ -218,15 +222,12 @@ object codeGenerator {
                                     textMap(label).addOne(BL(None, "p_free_pair"))
                                     generateFreePair(dataMap, textMap)
                                 }
-
-                            case _ => 
                         }
-                        case None =>
+                        case None => 
                     }
                     case PairLiter() => 
                         textMap(label).addOne(BL(None, "p_free_pair"))
                         generateFreePair(dataMap, textMap)
-                    
                     case _ =>
                 }
 
@@ -253,7 +254,11 @@ object codeGenerator {
                 textMap(label).addOne(MOV(None, false, R(0), R(4)))
                 textMap(label).addOne(print.expr match {
                     case ident: Ident => 
-                        ident.symbolTable.get.find(ident) match {
+                        (ident.symbolTable.get.find(ident): @unchecked) match {
+                            /*
+                                Uses @unchecked to avoid warnings of non exhaustive case matching.
+                                Ident always has a type in the symbol table.
+                            */
                             case Some(typeCheck) => typeCheck match {
                                 case IntCheck(nested) => 
                                     if (nested == 0) {
@@ -299,12 +304,15 @@ object codeGenerator {
 
                                 case EmptyPairCheck() => BL(None, "p_print_reference")
                             }
-                            case None => BL(None, "p_print_reference") // think 
                         }
 
                     case ArrayElem(id, exprs) => 
                         val size = exprs.size
-                        id.symbolTable.get.find(id) match {
+                        (id.symbolTable.get.find(id): @unchecked) match {
+                            /*
+                                Uses @unchecked to avoid warnings of non exhaustive case matching.
+                                Id always has a type in the symbol table.
+                            */
                             case Some(value) => value match {
                                 case IntCheck(nested) => 
                                     if (nested == size) {
@@ -350,7 +358,6 @@ object codeGenerator {
 
                                 case EmptyPairCheck() => BL(None, "p_print_reference")
                             }
-                            case None => BL(None, "p_print_reference") // one day adhithi, she told me, its all wrong
                         }
                     case IntLiter(x) => 
                         generatePrintInt(dataMap, textMap)
@@ -521,7 +528,7 @@ object codeGenerator {
                     val a_mode2 = if (symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset == 0) {
                         ZeroOffset(SP())       
                     } else {
-                        OImmediateOffset(SP(), Immed(symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset))
+                        ImmediateOffset(SP(), Immed(symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset))
                     }
                     val lhsSize = getBytes(ident, symbolTable)
                     if (lhsSize == 4) {
@@ -542,7 +549,11 @@ object codeGenerator {
                         MOV(None, false, R(1), R(register)),
                         BL(None, "p_check_array_bounds"),
                         ADD(None, false, R(register), R(register), Immed(4)),
-                        arrayElem.id.symbolTable.get.find(arrayElem.id) match {
+                        (arrayElem.id.symbolTable.get.find(arrayElem.id): @unchecked) match {
+                            /*
+                                Uses @unchecked to avoid warnings of non exhaustive case matching.
+                                Id always has a type in the symbol table after semantic analysis.
+                            */
                             case Some(value) => value match {
                                 case BoolCheck(nested) => 
                                     if (nested - i == 1) {
@@ -561,8 +572,6 @@ object codeGenerator {
                                 case _ =>
                                     ADD(None, false, R(register), R(register), LogicalShiftLeft(R(register + 1), Immed(2)))
                             }
-                            case None => 
-                                ADD(None, false, R(register), R(register), LogicalShiftLeft(R(register + 1), Immed(2))) //HEYYYY BROTHER MAYBE CHECK THAT THIS IS RIGHTTT OHHH 
                         }
                     ))
                     generateCheckArrayBounds(dataMap, textMap)
@@ -590,7 +599,7 @@ object codeGenerator {
                 generateExpr(expr, symbolTable, functionTable, label, register, dataMap, textMap)
                 textMap(label).addOne(MOV(None, false, R(0), R(register)))
                 textMap(label).addOne(BL(None, "p_check_null_pointer"))
-                textMap(label).addOne(LDR(None, R(register), OImmediateOffset(R(register), Immed(4))))
+                textMap(label).addOne(LDR(None, R(register), ImmediateOffset(R(register), Immed(4))))
                 generateLHSFstAndSnd(read, register, expr, dataMap, textMap, label, true)
         }
     }
@@ -618,9 +627,9 @@ object codeGenerator {
                         generateExpr(expr, symbolTable, functionTable, label, register + 1, dataMap, textMap)
                         textMap(label).addOne(
                             if (elemSize == 4) {
-                                STR(None, R(register + 1), OImmediateOffset(R(register), Immed(i)))
+                                STR(None, R(register + 1), ImmediateOffset(R(register), Immed(i)))
                             } else {
-                                STRB(None, R(register + 1), OImmediateOffset(R(register), Immed(i)))
+                                STRB(None, R(register + 1), ImmediateOffset(R(register), Immed(i)))
                             })
                         i += elemSize
                     })
@@ -651,7 +660,7 @@ object codeGenerator {
                 } else {
                     textMap(label).addOne(STRB(None, R(register + 1), ZeroOffset(R(0))))
                 }
-                textMap(label).addOne(STR(None, R(0), OImmediateOffset(R(register), Immed(4))))
+                textMap(label).addOne(STR(None, R(0), ImmediateOffset(R(register), Immed(4))))
                 
             case Fst(expr) => 
                 generateExpr(expr, symbolTable, functionTable, label, 4, dataMap, textMap)
@@ -664,17 +673,17 @@ object codeGenerator {
                 generateExpr(expr, symbolTable, functionTable, label, 4, dataMap, textMap)
                 textMap(label).addOne(MOV(None, false, R(0), R(register)))
                 textMap(label).addOne(BL(None, "p_check_null_pointer"))
-                textMap(label).addOne(LDR(None, R(register), OImmediateOffset(R(register), Immed(4))))
+                textMap(label).addOne(LDR(None, R(register), ImmediateOffset(R(register), Immed(4))))
                 generateRHSFstAndSnd(expr, register, dataMap, textMap, label, false)
             
             case Call(id, args) => 
                 args.reverse.map(arg => {
                     generateExpr(arg, symbolTable, functionTable, label, 4, dataMap, textMap)
                     if (getBytes(arg, symbolTable) == 1) {
-                        textMap(label).addOne(STRB(None, R(4), RegisterOffset(SP(), Immed(-1))))
+                        textMap(label).addOne(STRB(None, R(4), RegisterWriteBack(SP(), Immed(-1))))
                         stackOffset += 1
                     } else {
-                        textMap(label).addOne(STR(None, R(4), RegisterOffset(SP(), Immed(-4))))
+                        textMap(label).addOne(STR(None, R(4), RegisterWriteBack(SP(), Immed(-4))))
                         stackOffset += 4
                     }
                 })
@@ -743,9 +752,9 @@ object codeGenerator {
                                 4
                             }
                         
-                        case _ => 4 // only comedy, no work: so wake me up when you think of a solution to this
+                        case _ => 4
                     }
-                    case None => 0 // somebody once told me this line is kinda shitty, i aint the sharpst wacc in the computingg, she was looking kinda parsley with her combinators and
+                    case None => 0
                 }
             case ArrayElem(id, exprs) => 
                 val size = exprs.size
@@ -767,7 +776,7 @@ object codeGenerator {
                         
                         case _ => 4
                     }
-                    case None => 0 // one day adhithi, she told me, its all wrong
+                    case None => 0
                 }
             case IntLiter(x) => 4
             
@@ -844,7 +853,7 @@ object codeGenerator {
                 val a_mode2 = if (symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset == 0) {
                     ZeroOffset(SP())
                 } else {
-                    OImmediateOffset(SP(), Immed(symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset))
+                    ImmediateOffset(SP(), Immed(symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset))
                 }
                 val exprSize = getBytes(expr, symbolTable)
                 if (exprSize == 4) {
@@ -874,7 +883,11 @@ object codeGenerator {
                         MOV(None, false, R(1), R(reg1)),
                         BL(None, "p_check_array_bounds"),
                         ADD(None, false, R(reg1), R(reg1), Immed(4)),
-                        arrayElem.id.symbolTable.get.find(arrayElem.id) match {
+                        (arrayElem.id.symbolTable.get.find(arrayElem.id): @unchecked) match {
+                            /*
+                                Uses @unchecked to avoid warnings of non exhaustive case matching.
+                                Id always has a type in the symbol table after semantic analysis.
+                            */
                             case Some(value) => value match {
                                 case BoolCheck(nested) => 
                                     if (nested - i == 1) {
@@ -893,8 +906,6 @@ object codeGenerator {
                                 case _ =>
                                     ADD(None, false, R(register), R(reg1), LogicalShiftLeft(R(reg2), Immed(2)))
                             }
-                            case None => 
-                                ADD(None, false, R(register), R(reg1), LogicalShiftLeft(R(reg2), Immed(2))) //HEYYYY BROTHER MAYBE CHECK THAT THIS IS RIGHTTT OHHH 
                         }
                     ))
                     generateCheckArrayBounds(dataMap, textMap)
@@ -1365,7 +1376,7 @@ object codeGenerator {
                 LDR(None, R(0), ZeroOffset(R(0))),
                 BL(None, "free"),
                 LDR(None, R(0), ZeroOffset(SP())),
-                LDR(None, R(0), OImmediateOffset(R(0), Immed(4))),
+                LDR(None, R(0), ImmediateOffset(R(0), Immed(4))),
                 BL(None, "free"),
                 POP(List(R(0))),
                 BL(None, "free"),
@@ -1425,35 +1436,35 @@ object codeGenerator {
         expr match {
             case ident: Ident => 
                 ident.symbolTable.get.find(ident) match {
-                case Some(typeCheck) => typeCheck match {
-                    case PairCheck(type1, _, _) if (fst) => type1 match {
-                        case IntCheck(_) => 
-                            generateReadInt(dataMap, textMap)
-                            textMap(label).addOne(BL(None, "p_read_int"))
-                                                
-                        case CharCheck(_) =>
-                            generateReadChar(dataMap, textMap)
-                            textMap(label).addOne(BL(None, "p_read_char"))
+                    case Some(typeCheck) => typeCheck match {
+                        case PairCheck(type1, _, _) if (fst) => type1 match {
+                            case IntCheck(_) => 
+                                generateReadInt(dataMap, textMap)
+                                textMap(label).addOne(BL(None, "p_read_int"))
+                                                    
+                            case CharCheck(_) =>
+                                generateReadChar(dataMap, textMap)
+                                textMap(label).addOne(BL(None, "p_read_char"))
+                            
+                            case _ =>
+                        }
+                        
+                        case PairCheck(_, type2, _) if (!fst) => type2 match {
+                            case IntCheck(_) => 
+                                generateReadInt(dataMap, textMap)
+                                textMap(label).addOne(BL(None, "p_read_int"))
+                                                    
+                            case CharCheck(_) =>
+                                generateReadChar(dataMap, textMap)
+                                textMap(label).addOne(BL(None, "p_read_char"))
+                            
+                            case _ =>
+                        }
                         
                         case _ =>
                     }
-                    
-                    case PairCheck(_, type2, _) if (!fst) => type2 match {
-                        case IntCheck(_) => 
-                            generateReadInt(dataMap, textMap)
-                            textMap(label).addOne(BL(None, "p_read_int"))
-                                                
-                        case CharCheck(_) =>
-                            generateReadChar(dataMap, textMap)
-                            textMap(label).addOne(BL(None, "p_read_char"))
-                        
-                        case _ =>
-                    }
-                    
-                    case _ =>
+                    case None => 
                 }
-                case None =>
-            }
             case _ =>
         }
     }
@@ -1481,10 +1492,10 @@ object codeGenerator {
                                     textMap(label).addOne(STRB(None, R(register - 1), ZeroOffset(R(register))))
                                 }
 
-                        case _ =>
-                    }        
-                    case None =>
-                }
+                            case _ =>
+                        }
+                        case None => 
+                    }
                 case _ =>
             }
         }
@@ -1513,10 +1524,10 @@ object codeGenerator {
                                 textMap(label).addOne(LDRSB(None, R(register), ZeroOffset(R(register))))
                             }    
                     
-                    case _ =>
-            }    
-                case None =>
-            }
+                        case _ =>
+                    }
+                    case None => 
+                }
             case _ =>
         }
         generateCheckNullPointer(dataMap, textMap)

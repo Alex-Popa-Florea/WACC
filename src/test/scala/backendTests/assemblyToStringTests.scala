@@ -129,10 +129,10 @@ class AssemblyToStringTest extends AnyFlatSpec with AppendedClues {
         ZeroOffset(R(0)).toString() should equal ("[r0]")
 
         info("with immeadiate offset")
-        OImmediateOffset(R(0), Immed(0)).toString() should equal ("[r0, #0]")
+        ImmediateOffset(R(0), Immed(0)).toString() should equal ("[r0, #0]")
 
-        info("with register offset")
-        RegisterOffset(R(0), Immed(0)).toString() should equal ("[r0, #0]!")
+        info("with register write back")
+        RegisterWriteBack(R(0), Immed(0)).toString() should equal ("[r0, #0]!")
     }
 
 

@@ -44,7 +44,23 @@ class AssemblyGenerationTest extends AnyFlatSpec with AppendedClues {
     "Exit statements" should "produce correct assembly lines" in
     {
         val lines = fileToInstructions("./wacc_examples/basic/exit/exitBasic.wacc")
-        lines should equal (List(Text(), Main(), PUSH(List(LR())), LDR(None, R(4), Immed(7)), MOV(None, false, R(0), R(4)), BL(None, "exit"), LDR(None, R(0), Immed(0)), POP(List(PC())), Ltorg()))
+        lines should equal (List(Text(), Main(), PUSH(List(LR())), LDR(None, R(4), Immed(7)), MOV(None, false, R(0), R(4)), BL(None, "exit"), 
+                            LDR(None, R(0), Immed(0)), POP(List(PC())), Ltorg()))
+    }
+
+    "Print statements" should "produce correct assembly lines" in 
+    {
+        val lines = fileToInstructions("./wacc_examples/IO/print/print.wacc")
+        lines should equal (List(Data(), Msg(0, 13, "Hello World!\n"), Msg(1, 5, "%.*s\\0"), Text(), Main(), PUSH(List(LR())), LDR(None, R(4), Label("msg_0")), MOV(None, false, R(0), R(4)), BL(None, "p_print_string"), 
+                            LDR(None, R(0), Immed(0)), POP(List(PC())), Ltorg(), P("print_string"), PUSH(List(LR())), 
+                LDR(None, R(1), ZeroOffset(R(0))),
+                ADD(None, false, R(2), R(0), Immed(4)),
+                LDR(None, R(0), Label(s"msg_1")),
+                ADD(None, false, R(0), R(0), Immed(4)),
+                BL(None, "printf"),
+                MOV(None, false, R(0), Immed(0)),
+                BL(None, "fflush"),
+                POP(List(PC()))))
     }
 
 

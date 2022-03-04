@@ -126,7 +126,8 @@ object codeGenerator {
             case function: Function =>
                 val funcLabel = F(function.id.variable)
                 textMap(funcLabel) = ListBuffer(PUSH(List(LR())))
-                functionStackSize = function.semanticTable.getOrElse(symbolTable).getSize() - functionTable.getFuncMap()(function.id.variable)._2.foldLeft(0)((x, y) => x + getBytesFromType(y)) - 4 // fills adhithi with antijoy
+                functionStackSize = function.semanticTable.getOrElse(symbolTable).getSize() 
+                                  - functionTable.getFuncMap()(function.id.variable)._2.foldLeft(0)((x, y) => x + getBytesFromType(y)) - 4
                 
                 /*
                     Decrements stack based on input size.

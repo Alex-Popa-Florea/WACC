@@ -10,6 +10,7 @@ import Parsley._
 import ast._
 import types._
 import section._
+import arrayBounds._
 
 object symbolTable {
     /*
@@ -22,7 +23,7 @@ object symbolTable {
         in the function table
     */
     class SymbolTable(private var section: Section, private var parent: Option[SymbolTable]) {
-        private var variableMap: Map[String, (TypeCheck, Int)] = Map.empty
+        private var variableMap: Map[String, (TypeCheck, Int, ArraySize)] = Map.empty
         private var children: ListBuffer[SymbolTable] = ListBuffer.empty
         private var size: Int = 0
 
@@ -56,7 +57,7 @@ object symbolTable {
                             updateSize(this, 4)
                         case _ =>
                         }
-                    variableMap(ident.variable) = (varType, size)
+                    variableMap(ident.variable) = (varType, size, Unknown())
                     true
                 case _ => false
             }
@@ -85,6 +86,18 @@ object symbolTable {
             }
         }
 
+        def findAll(ident: Ident): Option[(Map[String, (TypeCheck, Int, ArraySize)], (TypeCheck, Int, ArraySize))] = {
+            var foundType = variableMap.get(ident.variable)
+            foundType match {
+                case None => parent match {
+                    case None => None
+                    case Some(value) => value.findAll(ident)
+                }
+                case _ => 
+                    Some(variableMap, foundType.get)
+            }
+        }
+
         /*
             The findId method finds the stack id of a given ident in the symbol table,
             searching recursively within the ancestor symbol tables until finding
@@ -106,7 +119,7 @@ object symbolTable {
         /*
             Method to return the variable map
         */
-        def getVariableMap(): collection.immutable.Map[String, (TypeCheck, Int)] = {
+        def getVariableMap(): collection.immutable.Map[String, (TypeCheck, Int, ArraySize)] = {
             variableMap.toMap
         }
 
@@ -152,6 +165,179 @@ object symbolTable {
         def updateSize(symbolTable: SymbolTable, incr: Int): Unit = {
             symbolTable.size += incr
         }
+        
+
+        def setArraySize(arrayIdent: AssignLHS, newArraySize: Int): (Boolean, Boolean) = {
+            arrayIdent match {
+                case ArrayElem(id, exprs) => 
+                    val indexes = exprs.map(expr => expr match {
+                        case IntLiter(x) => Some(x)
+                        case _ => None
+                    })
+                    if (!indexes.contains(None)) {
+                        val checkedBounds = checkBounds(id, indexes.map(optionInt => optionInt.get), None)
+                        if (checkedBounds._1) {
+                            if (checkedBounds._2) {
+                                generateBounds(id, newArraySize, indexes.map(optionInt => optionInt.get), None)
+                            }
+                        }
+                        checkedBounds
+                    } else {
+                        (false, true)
+                    }
+                case ident: Ident =>
+                    findAll(ident) match {
+                        case None => (false, false)
+                        case Some(foundValue) => 
+                            foundValue._1(ident.variable) = (foundValue._2._1, foundValue._2._2, LeafArraySize(newArraySize)) 
+                            (false, true)
+                    }
+                case Fst(expr) => expr match {
+                    case ArrayElem(id, exprs) =>
+                        val indexes = exprs.map(expr => expr match {
+                            case IntLiter(x) => Some(x)
+                            case _ => None
+                        })
+                        if (!indexes.contains(None)) {
+                            val checkedBounds = checkBounds(id, indexes.map(optionInt => optionInt.get), Some(true))
+                            if (checkedBounds._1) {
+                                if (checkedBounds._2) {
+                                    generateBounds(id, newArraySize, indexes.map(optionInt => optionInt.get), Some(true))
+                                }
+                            }
+                            checkedBounds
+                        } else {
+                            (false, true)
+                        }
+                    case ident: Ident =>
+                        findAll(ident) match {
+                        case None => (false, false)
+                            case Some(foundValue) => 
+                                foundValue._2._3 match {
+                                    case NodeArraySize(fstArray, sndArray) =>
+                                        foundValue._1(ident.variable) = (foundValue._2._1, foundValue._2._2, NodeArraySize(LeafArraySize(newArraySize), sndArray)) 
+                                    case _ =>
+                                }
+                                (false, true)
+                        }
+                    case _ => (false, true)
+                }
+                case Snd(expr) => expr match {
+                    case ArrayElem(id, exprs) =>
+                        val indexes = exprs.map(expr => expr match {
+                            case IntLiter(x) => Some(x)
+                            case _ => None
+                        })
+                        if (!indexes.contains(None)) {
+                            val checkedBounds = checkBounds(id, indexes.map(optionInt => optionInt.get), Some(false))
+                            if (checkedBounds._1) {
+                                if (checkedBounds._2) {
+                                    generateBounds(id, newArraySize, indexes.map(optionInt => optionInt.get), Some(false))
+                                }
+                            }
+                            checkedBounds
+                        } else {
+                            (false, true)
+                        }
+                    case ident: Ident =>
+                        findAll(ident) match {
+                        case None => (false, false)
+                            case Some(foundValue) => 
+                                foundValue._2._3 match {
+                                    case NodeArraySize(fstArray, sndArray) =>
+                                        foundValue._1(ident.variable) = (foundValue._2._1, foundValue._2._2, NodeArraySize(fstArray, LeafArraySize(newArraySize))) 
+                                    case _ =>
+                                }
+                                (false, true)
+                        }
+                    case _ => (false, true)
+                }
+            }
+        }
+
+        def checkBounds(ident: Ident, indexes: List[Int], fstSnd: Option[Boolean]): (Boolean, Boolean) = {
+            var foundItemOption = variableMap.get(ident.variable)
+            foundItemOption match {
+                case None => parent match {
+                    case None => (false, false)
+                    case Some(value) => value.checkBounds(ident, indexes, fstSnd)
+                }
+                case Some(foundItem) => 
+                    fstSnd match {
+                        case None => checkBoundsFromType(foundItem._3, indexes)
+                        case Some(fst) =>
+                            
+                            if (fst) {
+                                foundItem._3 match {
+                                    case NodeArraySize(fstArray, sndArray) => checkBoundsFromType(fstArray, indexes)
+                                    case _ => (false, true)
+                                }
+                                
+                            } else {
+                                foundItem._3 match {
+                                    case NodeArraySize(fstArray, sndArray) => checkBoundsFromType(sndArray, indexes)
+                                    case _ => (false, true)
+                                }
+                            }
+                    }
+                    
+            }
+        }
+
+        def checkBoundsFromType(arraySize: ArraySize, indexes: List[Int]): (Boolean, Boolean) = {
+            arraySize match {
+                case LeafArraySize(size) => (true, size > indexes(0) && indexes.size == 1 && indexes(0) >= 0)
+                case NestedArraySize(size, innerNests) => 
+                    if (size > indexes(0) && indexes(0) >= 0) {
+                        checkBoundsFromType(innerNests(indexes(0)), indexes.tail)
+                    } else {
+                        (true, false)
+                    }
+                case _ => (false, true)
+            }
+        }
+
+        def generateBounds(ident: Ident, newArraySize: Int, indexes: List[Int], fstSnd: Option[Boolean]): Unit = {
+            var foundItemOption = variableMap.get(ident.variable)
+            foundItemOption match {
+                case None => parent match {
+                    case None =>
+                    case Some(value) => value.generateBounds(ident, newArraySize, indexes, fstSnd)
+                }
+                case Some(foundItem) => 
+                    fstSnd match {
+                        case None => variableMap(ident.variable) = (foundItem._1, foundItem._2, generateBoundsFromType(foundItem._3, newArraySize, indexes))
+                        case Some(fst) =>
+                            variableMap(ident.variable) = if (fst) {
+                                foundItem._3 match {
+                                    case NodeArraySize(fstArray, sndArray) =>
+                                        (foundItem._1, foundItem._2, NodeArraySize(generateBoundsFromType(fstArray, newArraySize, indexes), sndArray))
+                                    case _ =>
+                                        (foundItem._1, foundItem._2, NodeArraySize(generateBoundsFromType(Unknown(), newArraySize, indexes), Unknown()))
+                                }
+                                
+                            } else {
+                                foundItem._3 match {
+                                    case NodeArraySize(fstArray, sndArray) =>
+                                        (foundItem._1, foundItem._2, NodeArraySize(fstArray, generateBoundsFromType(sndArray, newArraySize, indexes)))
+                                    case _ =>
+                                        (foundItem._1, foundItem._2, NodeArraySize(Unknown(), generateBoundsFromType(foundItem._3, newArraySize, indexes)))
+                                }
+                            }
+                    }
+                    
+            }
+        }
+
+        def generateBoundsFromType(arraySize: ArraySize, newArraySize: Int, indexes: List[Int]): ArraySize = {
+            arraySize match {
+                case LeafArraySize(size) => LeafArraySize(newArraySize)
+                case NestedArraySize(size, innerNests) => 
+                    innerNests(indexes(0)) = generateBoundsFromType(innerNests(indexes(0)), newArraySize, indexes.tail)
+                    NestedArraySize(size, innerNests)
+                case _ => Unknown()
+            }
+        }
 
         /*
             Method that prints the symbol table and its children recursively
@@ -174,7 +360,7 @@ object symbolTable {
             }
             if (st.variableMap.size > 0) {
                 println(s"(ii) Variables:")
-                st.variableMap.zip(0 until st.variableMap.size).foreach { case ((k, (x, _)), i) => 
+                st.variableMap.zip(0 until st.variableMap.size).foreach { case ((k, (x, _, _)), i) => 
                     for (i <- 0 to nest) {
                         print("  ")
                     }

@@ -6,11 +6,13 @@ import wacc.functionTable._
 import wacc.symbolTable._
 import wacc.types._
 import wacc.section._
+import wacc.arrayBounds._
 
 import scala.collection.mutable.ListBuffer
 
 import Parsley._
 import parser._
+import wacc.symbolTable
 
 object semanticAnalyser {
     var errors: ListBuffer[(String, (Int, Int))] = ListBuffer.empty
@@ -20,7 +22,7 @@ object semanticAnalyser {
     val mismatch = "Type mismatch"
     val argsIncorrect = "Wrong number of arguments"
     val ranks = "Incorrect number of ranks in array access: "
-
+    val arrayBoundsFlag = true;
     /*
         Function that takes in a node, symbol table, function table and an optional return type (used
         for checked that return statements within functions return the correct type) as
@@ -106,7 +108,10 @@ object semanticAnalyser {
                 if (!addedVariable) {
                     errors.addOne((s"Variable already declared", node.pos))
                 }
-                val checkedRHS = analyseRHS(rhs, st, ft, extractType(t))
+                val checkedRHS = analyseRHS(rhs, st, ft, extractType(t), id)
+                if (arrayBoundsFlag) {
+                    
+                }
                 (checkedRHS && addedVariable, false)
              /*
                 An Assign node analyses the left hand side of the assignment,
@@ -118,7 +123,12 @@ object semanticAnalyser {
                 val checkedLHS = analyseLHS(lhs, st)
                 checkedLHS._2 match {
                     case None => (false, false)
-                    case Some(foundType) => ((checkedLHS._1 && analyseRHS(rhs, st, ft, foundType)), false)
+                    case Some(foundType) => 
+                        val checkedRHS = analyseRHS(rhs, st, ft, foundType, lhs)
+                        if (arrayBoundsFlag) {
+
+                        }
+                        ((checkedLHS._1 && checkedRHS), false)
                 }
              /*
                 For a Read node we analyse the inner "left hand side" expression
@@ -279,7 +289,7 @@ object semanticAnalyser {
         and the type of the left hand side of the assignment, and returns a boolean if the right
         hand sign is valid semantically and has the same type as the left hand side.
     */
-    def analyseRHS(assignRHS: AssignRHS, st: SymbolTable, ft: FunctionTable, lhsType: TypeCheck): Boolean = {
+    def analyseRHS(assignRHS: AssignRHS, st: SymbolTable, ft: FunctionTable, lhsType: TypeCheck, arrayIdent: AssignLHS): Boolean = {
          /*
             For a expressions, we call analyseExpr, and check the type of 
             that expr is the same as the given left hand side type.
@@ -310,6 +320,26 @@ object semanticAnalyser {
                 hand side type is an array
             */
             case ArrayLiter(elements) => 
+                // if (arrayBoundsFlag) {
+                //     arrayIdent match {
+                //         case ident: Ident => st.setArrayLength(ident, elements.size)
+                //         case ArrayElem(id, exprs) => // TO DO
+                //         case Fst(expr) => expr match {
+                //             case ident: Ident => ident.arraySize match {
+                //                 case NodeArraySize(fstArray, sndArray) => ident.arraySize = NodeArraySize(LeafArraySize(elements.size), sndArray)
+                //                 case _ =>
+                //             }
+                //             case _ =>
+                //         }
+                //         case Snd(expr) => expr match {
+                //             case ident: Ident => ident.arraySize match {
+                //                 case NodeArraySize(fstArray, sndArray) => ident.arraySize = NodeArraySize(fstArray, LeafArraySize(elements.size))
+                //                 case _ =>
+                //             }
+                //             case _ =>
+                //         }
+                //     }
+                // }
                 lhsType match {
                     case baseTypeCheck: BaseTypeCheck =>
                         val correctType = elements.map(x => analyseExpr(x, st) == (true, baseTypeCheck match {

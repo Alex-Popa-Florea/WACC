@@ -170,12 +170,15 @@ object symbolTable {
         def setArraySize(arrayIdent: AssignLHS, newArraySize: Int): (Boolean, Boolean) = {
             arrayIdent match {
                 case ArrayElem(id, exprs) => 
+                    // println("arrayelem")
                     val indexes = exprs.map(expr => expr match {
                         case IntLiter(x) => Some(x)
                         case _ => None
                     })
                     if (!indexes.contains(None)) {
+                        // println("nice")
                         val checkedBounds = checkBounds(id, indexes.map(optionInt => optionInt.get), None)
+                        // println(checkedBounds)
                         if (checkedBounds._1) {
                             if (checkedBounds._2) {
                                 generateBounds(id, newArraySize, indexes.map(optionInt => optionInt.get), None)
@@ -189,7 +192,22 @@ object symbolTable {
                     findAll(ident) match {
                         case None => (false, false)
                         case Some(foundValue) => 
-                            foundValue._1(ident.variable) = (foundValue._2._1, foundValue._2._2, LeafArraySize(newArraySize)) 
+                            foundValue._2._1 match {
+                                case baseTypeCheck: BaseTypeCheck =>
+                                    if (baseTypeCheck.nested == 1) {
+                                        foundValue._1(ident.variable) = (foundValue._2._1, foundValue._2._2, LeafArraySize(newArraySize)) 
+                                    } else {
+                                        foundValue._1(ident.variable) = (foundValue._2._1, foundValue._2._2, NestedArraySize(newArraySize, ListBuffer.fill(newArraySize)(Unknown()))) 
+                                    }
+                                case PairCheck(type1, type2, nested) =>
+                                    if (nested == 1) {
+                                        foundValue._1(ident.variable) = (foundValue._2._1, foundValue._2._2, LeafArraySize(newArraySize)) 
+                                    } else {
+                                        foundValue._1(ident.variable) = (foundValue._2._1, foundValue._2._2, NestedArraySize(newArraySize, ListBuffer.fill(newArraySize)(Unknown()))) 
+                                    }
+                                case _ =>
+                            }
+                            
                             (false, true)
                     }
                 case Fst(expr) => expr match {
@@ -255,6 +273,32 @@ object symbolTable {
             }
         }
 
+        // def setArraySizeWithNest(innerArray: ArraySize, nest: Int): ArraySize = {
+
+        // }
+
+        def updateCheckBounds(arrayElem: ArrayElem): Boolean = {
+            val indexes = arrayElem.exprs.map(expr => expr match {
+                case IntLiter(x) => Some(x)
+                case _ => None
+            })
+            if (!indexes.contains(None)) {
+                val checkedBounds = checkBounds(arrayElem.id, indexes.map(optionInt => optionInt.get), None)
+                if (checkedBounds._1) {
+                    if (checkedBounds._2) {
+                        arrayElem.checked = true
+                        true
+                    } else {
+                        false
+                    }
+                } else {
+                    true
+                }
+            } else {
+                true
+            }
+        }
+
         def checkBounds(ident: Ident, indexes: List[Int], fstSnd: Option[Boolean]): (Boolean, Boolean) = {
             var foundItemOption = variableMap.get(ident.variable)
             foundItemOption match {
@@ -284,21 +328,37 @@ object symbolTable {
             }
         }
 
-        def checkBoundsFromType(arraySize: ArraySize, indexes: List[Int]): (Boolean, Boolean) = {
-            arraySize match {
-                case LeafArraySize(size) => (true, size > indexes(0) && indexes.size == 1 && indexes(0) >= 0)
-                case NestedArraySize(size, innerNests) => 
-                    if (size > indexes(0) && indexes(0) >= 0) {
-                        checkBoundsFromType(innerNests(indexes(0)), indexes.tail)
-                    } else {
-                        (true, false)
-                    }
-                case _ => (false, true)
+        def checkBoundsFromType(arraySize: ArraySize, indexes: List[Int]): (Boolean, Boolean) = { 
+            // println("checkingggg")
+            // print("- ")
+            // println(arraySize)
+            // print("- ")
+            // println(indexes)
+            if (indexes.nonEmpty) {
+                arraySize match {
+                    case LeafArraySize(size) => 
+                        // println("hi1")
+                        (true, size > indexes(0) && indexes.size == 1 && indexes(0) >= 0)
+                    case NestedArraySize(size, innerNests) => 
+                        if (size > indexes(0) && indexes(0) >= 0) {
+                            // println("hi2")
+                            checkBoundsFromType(innerNests(indexes(0)), indexes.tail)
+                        } else {
+                            // println("hi3")
+                            (true, false)
+                        }
+                    case _ => 
+                        // println("hi4")
+                        (false, true)
+                }
+            } else {
+                (true, true)
             }
         }
 
         def generateBounds(ident: Ident, newArraySize: Int, indexes: List[Int], fstSnd: Option[Boolean]): Unit = {
             var foundItemOption = variableMap.get(ident.variable)
+            // print("HELLLOOO")
             foundItemOption match {
                 case None => parent match {
                     case None =>
@@ -306,7 +366,10 @@ object symbolTable {
                 }
                 case Some(foundItem) => 
                     fstSnd match {
-                        case None => variableMap(ident.variable) = (foundItem._1, foundItem._2, generateBoundsFromType(foundItem._3, newArraySize, indexes))
+                        case None => 
+                            // print("HERE HERE:      ")
+                            // println(foundItem._3)
+                            variableMap(ident.variable) = (foundItem._1, foundItem._2, generateBoundsFromType(foundItem._3, newArraySize, indexes))
                         case Some(fst) =>
                             variableMap(ident.variable) = if (fst) {
                                 foundItem._3 match {
@@ -330,12 +393,22 @@ object symbolTable {
         }
 
         def generateBoundsFromType(arraySize: ArraySize, newArraySize: Int, indexes: List[Int]): ArraySize = {
-            arraySize match {
-                case LeafArraySize(size) => LeafArraySize(newArraySize)
-                case NestedArraySize(size, innerNests) => 
-                    innerNests(indexes(0)) = generateBoundsFromType(innerNests(indexes(0)), newArraySize, indexes.tail)
-                    NestedArraySize(size, innerNests)
-                case _ => Unknown()
+            // println("generatinggg")
+            // print("- ")
+            // println(arraySize)
+            // print("- ")
+            // println(newArraySize)
+            // print("- ")
+            // println(indexes)
+            if (indexes.nonEmpty) {
+                arraySize match {
+                    case NestedArraySize(size, innerNests) => 
+                        innerNests(indexes(0)) = generateBoundsFromType(innerNests(indexes(0)), newArraySize, indexes.tail)
+                        NestedArraySize(size, innerNests)
+                    case _ => Unknown()
+                }
+            } else {
+                LeafArraySize(newArraySize)
             }
         }
 
@@ -365,6 +438,36 @@ object symbolTable {
                         print("  ")
                     }
                     println(s" ${i + 1}. \"$k\": \"${typeCheckToString(x)}\"")
+                }
+            }
+            st.children.map(x => {
+                printSymbolTables(x, nest + 1)
+            })
+        }
+
+        def printSymbolTables2(st: SymbolTable, nest: Int): Unit = {
+            for (i <- 0 to nest) {
+                print("  ")
+            }
+            println(s"- Symbol Table ${st.section.toString()} - ${st}")
+            for (i <- 0 to nest) {
+                print("  ")
+            }
+            if (st.parent != None) {
+                println(s" (i) Symbol Table Parent: ${st.parent.get.section.toString()} - ${st.parent.get}")
+            } else {
+                println(s" (i) Symbol Table Parent: ${st.parent}")
+            }
+            for (i <- 0 to nest) {
+                print("  ")
+            }
+            if (st.variableMap.size > 0) {
+                println(s"(ii) Variables:")
+                st.variableMap.zip(0 until st.variableMap.size).foreach { case ((k, (x, _, b)), i) => 
+                    for (i <- 0 to nest) {
+                        print("  ")
+                    }
+                    println(s" ${i + 1}. \"$k\": \"${typeCheckToString(x)}\", ${b}")
                 }
             }
             st.children.map(x => {

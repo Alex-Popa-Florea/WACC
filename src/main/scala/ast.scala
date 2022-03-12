@@ -74,7 +74,9 @@ object ast {
     case class Ident(variable: String)(val pos: (Int, Int)) extends AssignLHS with Expr {
         var symbolTable: Option[SymbolTable] = None
     }
-    case class ArrayElem(id: Ident, exprs: List[Expr])(val pos: (Int, Int)) extends AssignLHS with Expr
+    case class ArrayElem(id: Ident, exprs: List[Expr])(val pos: (Int, Int)) extends AssignLHS with Expr {
+        var checked: Boolean = false
+    }
 
     sealed trait AssignRHS extends Node 
     case class ArrayLiter(array: List[Expr])(val pos: (Int, Int)) extends AssignRHS

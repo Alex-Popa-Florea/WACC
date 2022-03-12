@@ -12,7 +12,6 @@ import scala.collection.mutable.ListBuffer
 
 import Parsley._
 import parser._
-import wacc.symbolTable
 
 object semanticAnalyser {
     var errors: ListBuffer[(String, (Int, Int))] = ListBuffer.empty
@@ -22,7 +21,7 @@ object semanticAnalyser {
     val mismatch = "Type mismatch"
     val argsIncorrect = "Wrong number of arguments"
     val ranks = "Incorrect number of ranks in array access: "
-    val arrayBoundsFlag = true;
+    val arrayBoundsFlag = false
     /*
         Function that takes in a node, symbol table, function table and an optional return type (used
         for checked that return statements within functions return the correct type) as
@@ -109,9 +108,6 @@ object semanticAnalyser {
                     errors.addOne((s"Variable already declared", node.pos))
                 }
                 val checkedRHS = analyseRHS(rhs, st, ft, extractType(t), id)
-                if (arrayBoundsFlag) {
-                    
-                }
                 (checkedRHS && addedVariable, false)
              /*
                 An Assign node analyses the left hand side of the assignment,
@@ -125,9 +121,6 @@ object semanticAnalyser {
                     case None => (false, false)
                     case Some(foundType) => 
                         val checkedRHS = analyseRHS(rhs, st, ft, foundType, lhs)
-                        if (arrayBoundsFlag) {
-
-                        }
                         ((checkedLHS._1 && checkedRHS), false)
                 }
              /*
@@ -320,26 +313,11 @@ object semanticAnalyser {
                 hand side type is an array
             */
             case ArrayLiter(elements) => 
-                // if (arrayBoundsFlag) {
-                //     arrayIdent match {
-                //         case ident: Ident => st.setArrayLength(ident, elements.size)
-                //         case ArrayElem(id, exprs) => // TO DO
-                //         case Fst(expr) => expr match {
-                //             case ident: Ident => ident.arraySize match {
-                //                 case NodeArraySize(fstArray, sndArray) => ident.arraySize = NodeArraySize(LeafArraySize(elements.size), sndArray)
-                //                 case _ =>
-                //             }
-                //             case _ =>
-                //         }
-                //         case Snd(expr) => expr match {
-                //             case ident: Ident => ident.arraySize match {
-                //                 case NodeArraySize(fstArray, sndArray) => ident.arraySize = NodeArraySize(fstArray, LeafArraySize(elements.size))
-                //                 case _ =>
-                //             }
-                //             case _ =>
-                //         }
-                //     }
-                // }
+                if (arrayBoundsFlag) {
+                    // print("i got hereee: ")
+                    // println(arrayIdent)
+                    st.setArraySize(arrayIdent, elements.size)
+                }
                 lhsType match {
                     case baseTypeCheck: BaseTypeCheck =>
                         val correctType = elements.map(x => analyseExpr(x, st) == (true, baseTypeCheck match {
@@ -380,6 +358,11 @@ object semanticAnalyser {
                 left hand side type's inner expressions
             */               
             case NewPair(expr1, expr2) => 
+                // if (arrayBoundsFlag) {
+                //     print("i got hereee: ")
+                //     println(arrayIdent)
+                //     st.setArraySize(arrayIdent, elements.size)
+                // }
                 val checkedExpr1 = analyseExpr(expr1, st)
 				val checkedExpr2 = analyseExpr(expr2, st)
                 if (checkedExpr1._2 != None && checkedExpr2._2 != None) {
@@ -636,38 +619,43 @@ object semanticAnalyser {
                 of indeces is less or equal to the dimension of the array ,
                 returning the type of the element found at those indeces
             */                   
-            case ArrayElem(id, exprs) =>
-                val foundType = st.find(id)
-				foundType match {
-					case None => 
-                        errors.addOne(id.variable + undeclared, expr.pos)
-                        (false, None)
-					case Some(array) =>
-						array match {
-                            case baseTypeCheck: BaseTypeCheck => 
-                                if (baseTypeCheck.nested >= exprs.size) {
-                                    (exprs.map(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))).reduce((x, y) => x && y), baseTypeCheck match {
-                                        case IntCheck(nested) => Some(IntCheck(nested - exprs.size))
-                                        case BoolCheck(nested) => Some(BoolCheck(nested - exprs.size))
-                                        case CharCheck(nested) => Some(CharCheck(nested - exprs.size))
-                                        case StrCheck(nested) => Some(StrCheck(nested - exprs.size))
-                                    })  
-                                } else {
-                                    errors.addOne(s"${id.variable} has type: ${typeCheckToString(array)}, " +
-                                      s"which does not have ${exprs.size} ranks!" , expr.pos)
-                                    (false, None)
-                                }
-							case PairCheck(type1, type2, nested) =>
-								if (nested >= exprs.size) {
-									(exprs.map(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))).reduce((x, y) => x && y), Some(PairCheck(type1, type2, nested - exprs.size)))
-								} else {
-                                    errors.addOne(s"${id.variable} has type: ${typeCheckToString(array)}," +
-                                      s" which does not have ${exprs.size} ranks!" , expr.pos)
-									(false, None)
-								}
-							case _ => (false, None)
-						}					
-				}    
+            case arrayElem: ArrayElem =>
+                if(st.updateCheckBounds(arrayElem)) {
+                    val foundType = st.find(arrayElem.id)
+                    foundType match {
+                        case None => 
+                            errors.addOne((arrayElem.id.variable + undeclared, expr.pos))
+                            (false, None)
+                        case Some(array) =>
+                            array match {
+                                case baseTypeCheck: BaseTypeCheck => 
+                                    if (baseTypeCheck.nested >= arrayElem.exprs.size) {
+                                        (arrayElem.exprs.map(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))).reduce((x, y) => x && y), baseTypeCheck match {
+                                            case IntCheck(nested) => Some(IntCheck(nested - arrayElem.exprs.size))
+                                            case BoolCheck(nested) => Some(BoolCheck(nested - arrayElem.exprs.size))
+                                            case CharCheck(nested) => Some(CharCheck(nested - arrayElem.exprs.size))
+                                            case StrCheck(nested) => Some(StrCheck(nested - arrayElem.exprs.size))
+                                        })  
+                                    } else {
+                                        errors.addOne((s"${arrayElem.id.variable} has type: ${typeCheckToString(array)}, " +
+                                          s"which does not have ${arrayElem.exprs.size} ranks!" , expr.pos))
+                                        (false, None)
+                                    }
+                                case PairCheck(type1, type2, nested) =>
+                                    if (nested >= arrayElem.exprs.size) {
+                                        (arrayElem.exprs.map(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))).reduce((x, y) => x && y), Some(PairCheck(type1, type2, nested - arrayElem.exprs.size)))
+                                    } else {
+                                        errors.addOne((s"${arrayElem.id.variable} has type: ${typeCheckToString(array)}," +
+                                          s" which does not have ${arrayElem.exprs.size} ranks!" , expr.pos))
+                                        (false, None)
+                                    }
+                                case _ => (false, None)
+                            }					
+                    }    
+                } else {
+                    println("BAD ARRAY!")
+                    (false, None)
+                }
              /*
                 For a Not node, we analyse the inner expression and ensure it is
                 a bool, and return a bool

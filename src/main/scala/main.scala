@@ -68,6 +68,7 @@ object main {
         answer.get match {
             case Success(x) => {
                 val (semanticallyValid, hasReturnStatements) = analyse(x, symbolTable, functionTable, None)
+                //symbolTable.printSymbolTables2(symbolTable, 0)
                 if (!hasReturnStatements) {
                     /*
                         Errors relating to missing return statements in functions are found 

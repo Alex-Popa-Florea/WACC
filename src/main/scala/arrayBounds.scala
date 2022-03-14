@@ -4,12 +4,7 @@ import ast._
 import symbolTable._
 import types._
 import scala.collection.mutable.ListBuffer
-import wacc.section.TrueIfSection
-import wacc.section.FunctionSection
-import wacc.section.ProgramSection
-import wacc.section.WhileSection
-import wacc.section.NestedProgramSection
-import wacc.section.FalseIfSection
+import wacc.section._
 
 object arrayBounds {
 
@@ -39,13 +34,14 @@ object arrayBounds {
 
     def updateArrayScope(ident: Ident, st: SymbolTable, newArraySizeOption: Option[ArraySize], set: Boolean): Unit = {
         var setUnknown = false
-        val foundTable = st.findAll(ident, 0)
+        val foundTable = st.findAll(ident, 0, List.empty)
         foundTable match {
             case None => 
             case Some(table) =>
                 val newArraySizeArray = table._2._3
                 var lastIndex = newArraySizeArray.size - 1
-                val index = table._3
+                val index = table._3._1
+                val sections = table._3._2
                 if (lastIndex > index) {
                     newArraySizeArray.remove(index + 1, lastIndex - index)
                     lastIndex = newArraySizeArray.size - 1
@@ -57,15 +53,19 @@ object arrayBounds {
                     newArraySizeArray.remove(lastIndex)
                     lastIndex = newArraySizeArray.size - 1
                 }
+                var j = sections.size - index
                 if (lastIndex < index) {
                     for (i <- (lastIndex + 1) to (index - 1)) {
-                        newArraySizeArray.addOne(newArraySizeArray(lastIndex))
+                        val lastElem = newArraySizeArray(lastIndex)
+                        newArraySizeArray.addOne((sections(j), lastElem._2, lastElem._3))
+                        j -= 1
                     }
                 }
                 newArraySizeOption match {
                     case None => 
                         if (lastIndex < index) {
-                            newArraySizeArray.addOne(newArraySizeArray(lastIndex))
+                            val lastElem = newArraySizeArray(lastIndex)
+                            newArraySizeArray.addOne((sections(j), lastElem._2, lastElem._3))
                         }
                     case Some(newArraySize) =>
                         if (lastIndex < index) {

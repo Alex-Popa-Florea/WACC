@@ -544,10 +544,6 @@ object codeGenerator {
                 textMap(label).addOne(ADD(None, false, R(register), SP(), Immed(symbolTable.getSizeWithIdent(arrayElem.id).get - arrayElem.id.symbolTable.get.findId(arrayElem.id).get + stackOffset)))
                 var i = 0
                 var j = 0
-                // print("lhs: ")
-                // print(arrayElem)
-                // print(",   ")
-                // println(arrayElem.checked)
                 arrayElem.exprs.map(expr => {
                     generateExpr(expr, symbolTable, functionTable, label, register + 1, dataMap, textMap)
                     textMap(label).addAll(List(
@@ -878,10 +874,6 @@ object codeGenerator {
                 textMap(label).addOne(ADD(None, false, R(register), SP(), Immed(symbolTable.getSizeWithIdent(arrayElem.id).get - arrayElem.id.symbolTable.get.findId(arrayElem.id).get + stackOffset)))
                 var i = 0
                 var j = 0
-                // print("expr: ")
-                // print(arrayElem)
-                // print(",   ")
-                // println(arrayElem.checked)
                 arrayElem.exprs.map(expr => {
                     if (register + 1 > 10) {
                         textMap(label).addOne(PUSH(List(R(10))))

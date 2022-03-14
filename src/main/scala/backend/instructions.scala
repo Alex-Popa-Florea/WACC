@@ -5,6 +5,8 @@ import lines._
 
 object instructions {
     
+    val preDefFunc: List[String] = List("max_int", "max_char", "min_int", "min_char")
+
     /*
         Trait to represent elements within the text section of the assembly code.
     */
@@ -38,7 +40,12 @@ object instructions {
     */
     case class F(string: String) extends Scope {
         override def toString() : String = {
-            "f_" + string + ":\n"
+            if (preDefFunc.contains(string)) {
+                "def_" + string + ":\n"
+            }
+            else {
+                "f_" + string + ":\n"
+            }
         }
     }
     

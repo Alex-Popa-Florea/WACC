@@ -16,8 +16,15 @@ object functionTable {
 
         It is a unique global table 
     */
+
     class FunctionTable() {
-        private var funcMap: Map[String, (TypeCheck, List[TypeCheck])] = Map.empty
+        
+        private var funcMap: Map[String, (TypeCheck, List[TypeCheck])] = 
+            Map("max_int" -> (IntCheck(0), List(IntCheck(0), IntCheck(0))),
+                "max_char" -> (CharCheck(0), List(CharCheck(0), CharCheck(0))),
+                "min_int" -> (IntCheck(0), List(IntCheck(0), IntCheck(0))),
+                "min_char" -> (CharCheck(0), List(CharCheck(0), CharCheck(0))))
+
         /*
             The add method adds a function to the function table, returning true
             if the addition succeded, as in there was no function of that

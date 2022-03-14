@@ -46,7 +46,7 @@ object codeGenerator {
     def writeToFile(lines: List[Line], fileName: String, dir: Boolean): Unit = {
         val file = new File(fileName)
         if (dir) {
-            if(!file.getParentFile.exists()){
+            if (!file.getParentFile.exists()){
                 file.getParentFile.mkdirs()
             }
         }
@@ -679,7 +679,7 @@ object codeGenerator {
             
             case Call(id, args) => 
                 args.reverse.map(arg => {
-                    generateExpr(arg, symbolTable, functionTable, label, 4, dataMap, textMap)
+                generateExpr(arg, symbolTable, functionTable, label, 4, dataMap, textMap)
                     if (getBytes(arg, symbolTable) == 1) {
                         textMap(label).addOne(STRB(None, R(4), RegisterWriteBack(SP(), Immed(-1))))
                         stackOffset += 1
@@ -689,10 +689,38 @@ object codeGenerator {
                     }
                 })
                 stackOffset = 0
-                textMap(label).addOne(BL(None, "f_" + id.variable))
+                if (preDefFunc.contains(id.variable)) {
+                    id.variable match {
+                        case "max_int" => 
+                            if (args.length == 2) {
+                                args(0) match {
+                                    case IntLiter(_) => args(1) match {
+                                        case IntLiter(_) =>
+                                            generateMax(textMap, "int")
+                                        case _ => // TODO: WHAT TO DO HERE
+                                    }
+                                    case _ => // TODO: WHAT TO DO HERE
+                                }
+                            }
+                        case "max_char" =>
+                            if (args.length == 2) {
+                                args(0) match {
+                                    case CharLiter(_) => args(1) match {
+                                        case CharLiter(_) =>
+                                            generateMax(textMap, "char")
+                                        case _ => // TODO: WHAT TO DO HERE
+                                    }
+                                    case _ => // TODO: WHAT TO DO HERE
+                                }
+                            }
+                    }
+                    textMap(label).addOne(BL(None, "def_" + id.variable)) 
+                } else {
+                        textMap(label).addOne(BL(None, "f_" + id.variable))
+                }
                 textMap(label).addOne(ADD(None, false, SP(), SP(), Immed(args.foldLeft(0)((arg1, arg2) => arg1 + getBytes(arg2, symbolTable)))))
                 textMap(label).addOne(MOV(None, false, R(4), R(0)))    
-            }
+        }
     }
 
     /*
@@ -1532,5 +1560,52 @@ object codeGenerator {
             case _ =>
         }
         generateCheckNullPointer(dataMap, textMap)
+    }
+
+    def generateMax(textMap: Map[Scope, ListBuffer[Instruction]], argType: String): Unit = {
+        val funcName = "max_" + argType
+        
+        textMap(F(funcName)) = ListBuffer(
+            PUSH(List(LR()))
+        )
+
+        if (argType.equals("char")) {
+            textMap(F(funcName)).addOne(LDRSB(None, R(4), ImmediateOffset(SP(), Immed(4))))
+            textMap(F(funcName)).addOne(LDRSB(None, R(4), ImmediateOffset(SP(), Immed(5))))
+        } else {
+            textMap(F(funcName)).addOne(LDR(None, R(4), ImmediateOffset(SP(), Immed(4))))
+            textMap(F(funcName)).addOne(LDR(None, R(4), ImmediateOffset(SP(), Immed(8))))
+        }
+
+        textMap(F(funcName)).addOne(CMP(None, R(4), R(5)))
+        textMap(F(funcName)).addOne(MOV(Some(GTCOND()), false, R(4), Immed(1)))
+        textMap(F(funcName)).addOne(MOV(Some(LECOND()), false, R(4), Immed(0)))
+        textMap(F(funcName)).addOne(CMP(None, R(4), Immed(0)))
+        textMap(F(funcName)).addOne(B(Some(EQCOND()), s"L${scopeLabels}"))
+
+        if (argType.equals("char")) {
+            textMap(F(funcName)).addOne(LDRSB(None, R(4), ImmediateOffset(SP(), Immed(4))))
+        } else {
+            textMap(F(funcName)).addOne(LDR(None, R(4), ImmediateOffset(SP(), Immed(4))))
+        }
+
+        textMap(F(funcName)).addOne(MOV(None, false, R(0), R(4)))
+        textMap(F(funcName)).addOne(POP(List(PC())))
+        textMap(F(funcName)).addOne(B(None, s"L${scopeLabels + 1}"))
+        textMap(F(funcName)).addOne(L(scopeLabels))
+        
+        if (argType.equals("char")) {
+            textMap(F(funcName)).addOne(LDRSB(None, R(4), ImmediateOffset(SP(), Immed(5))))
+        } else {
+            textMap(F(funcName)).addOne(LDR(None, R(4), ImmediateOffset(SP(), Immed(8))))
+        }
+        
+        textMap(F(funcName)).addOne(MOV(None, false, R(0), R(4)))
+        textMap(F(funcName)).addOne(POP(List(PC())))
+        textMap(F(funcName)).addOne(L(scopeLabels + 1))
+        textMap(F(funcName)).addOne(POP(List(PC())))
+        textMap(F(funcName)).addOne(Ltorg())
+        
+        scopeLabels += 2
     }
 }

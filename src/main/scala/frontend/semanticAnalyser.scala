@@ -232,7 +232,7 @@ object semanticAnalyser {
                 ifStat.falseSemanticTable = Some(falseNst)
 				val conditionCheck = analyseExpr(ifStat.cond, st)
 				val trueStatCheck = ifStat.trueStat.map(x => analyse(x, trueNst, ft, returnType))
-				val falseStatCheck = ifStat.falseStat.map(x => analyse(x, falseNst, ft, returnType))
+                val falseStatCheck = ifStat.falseStat.map(x => analyse(x, falseNst, ft, returnType))
                 val correctType = conditionCheck._2 == Some(BoolCheck(0))
                 if (!correctType && conditionCheck._2 != None) {
                     errors.addOne((s"Expression of type bool expected in if statement condition, " +
@@ -314,8 +314,6 @@ object semanticAnalyser {
             */
             case ArrayLiter(elements) => 
                 if (arrayBoundsFlag) {
-                    // print("i got hereee: ")
-                    // println(arrayIdent)
                     st.setArraySize(arrayIdent, elements.size)
                 }
                 lhsType match {
@@ -620,42 +618,45 @@ object semanticAnalyser {
                 returning the type of the element found at those indeces
             */                   
             case arrayElem: ArrayElem =>
-                if(st.updateCheckBounds(arrayElem)) {
                     val foundType = st.find(arrayElem.id)
                     foundType match {
                         case None => 
                             errors.addOne((arrayElem.id.variable + undeclared, expr.pos))
                             (false, None)
                         case Some(array) =>
-                            array match {
-                                case baseTypeCheck: BaseTypeCheck => 
-                                    if (baseTypeCheck.nested >= arrayElem.exprs.size) {
-                                        (arrayElem.exprs.map(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))).reduce((x, y) => x && y), baseTypeCheck match {
-                                            case IntCheck(nested) => Some(IntCheck(nested - arrayElem.exprs.size))
-                                            case BoolCheck(nested) => Some(BoolCheck(nested - arrayElem.exprs.size))
-                                            case CharCheck(nested) => Some(CharCheck(nested - arrayElem.exprs.size))
-                                            case StrCheck(nested) => Some(StrCheck(nested - arrayElem.exprs.size))
-                                        })  
-                                    } else {
-                                        errors.addOne((s"${arrayElem.id.variable} has type: ${typeCheckToString(array)}, " +
-                                          s"which does not have ${arrayElem.exprs.size} ranks!" , expr.pos))
-                                        (false, None)
-                                    }
-                                case PairCheck(type1, type2, nested) =>
-                                    if (nested >= arrayElem.exprs.size) {
-                                        (arrayElem.exprs.map(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))).reduce((x, y) => x && y), Some(PairCheck(type1, type2, nested - arrayElem.exprs.size)))
-                                    } else {
-                                        errors.addOne((s"${arrayElem.id.variable} has type: ${typeCheckToString(array)}," +
-                                          s" which does not have ${arrayElem.exprs.size} ranks!" , expr.pos))
-                                        (false, None)
-                                    }
-                                case _ => (false, None)
-                            }					
+                            if(!(updateArrayElemCheckedBounds(arrayElem, st).forall(identity))) {
+                                errors.addOne((s"Out of bounds error in ${arrayElem.id.variable}", expr.pos))
+                                                    (false, None)
+                                println("BAD ARRAY!")
+                                (false, None)
+                            } else {
+                                array match {
+                                    case baseTypeCheck: BaseTypeCheck => 
+                                        if (baseTypeCheck.nested >= arrayElem.exprs.size) {
+                                            (arrayElem.exprs.map(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))).reduce((x, y) => x && y), baseTypeCheck match {
+                                                case IntCheck(nested) => Some(IntCheck(nested - arrayElem.exprs.size))
+                                                case BoolCheck(nested) => Some(BoolCheck(nested - arrayElem.exprs.size))
+                                                case CharCheck(nested) => Some(CharCheck(nested - arrayElem.exprs.size))
+                                                case StrCheck(nested) => Some(StrCheck(nested - arrayElem.exprs.size))
+                                            })  
+                                        } else {
+                                            errors.addOne((s"${arrayElem.id.variable} has type: ${typeCheckToString(array)}, " +
+                                              s"which does not have ${arrayElem.exprs.size} ranks!" , expr.pos))
+                                            (false, None)
+                                        }
+                                    case PairCheck(type1, type2, nested) =>
+                                        if (nested >= arrayElem.exprs.size) {
+                                            (arrayElem.exprs.map(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))).reduce((x, y) => x && y), Some(PairCheck(type1, type2, nested - arrayElem.exprs.size)))
+                                        } else {
+                                            errors.addOne((s"${arrayElem.id.variable} has type: ${typeCheckToString(array)}," +
+                                              s" which does not have ${arrayElem.exprs.size} ranks!" , expr.pos))
+                                            (false, None)
+                                        }
+                                    case _ => (false, None)
+                                }					
+                            }
                     }    
-                } else {
-                    println("BAD ARRAY!")
-                    (false, None)
-                }
+                
              /*
                 For a Not node, we analyse the inner expression and ensure it is
                 a bool, and return a bool

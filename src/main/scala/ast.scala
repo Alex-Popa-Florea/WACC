@@ -75,7 +75,7 @@ object ast {
         var symbolTable: Option[SymbolTable] = None
     }
     case class ArrayElem(id: Ident, exprs: List[Expr])(val pos: (Int, Int)) extends AssignLHS with Expr {
-        var checked: Boolean = false
+        var checked: (List[Boolean], List[Boolean]) = (List(false), List(false))
     }
 
     sealed trait AssignRHS extends Node 

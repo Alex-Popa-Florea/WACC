@@ -14,6 +14,7 @@ import wacc.symbolTable._
 import wacc.types._
 import wacc.section._
 import wacc.arrayBounds._
+import wacc.section._
 
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
@@ -28,7 +29,7 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer match {
       case Success(p) => {
         // Check variable map is generated correctly.
-        analyser(p)._1.getVariableMap() should equal (Map("i" -> (IntCheck(0), 4, Unknown()), "b" -> (BoolCheck(0), 5, Unknown()), "c" -> (CharCheck(0), 6, Unknown()), "h" -> (StrCheck(0), 10, Unknown())))
+        analyser(p)._1.getVariableMap() should equal (Map("i" -> ((IntCheck(0), 4, ListBuffer((ProgramSection(),Unknown(),true)))), "b" -> ((BoolCheck(0), 5, ListBuffer((ProgramSection(),Unknown(),true)))), "c" -> ((CharCheck(0), 6, ListBuffer((ProgramSection(),Unknown(),true)))), "h" -> ((StrCheck(0), 10, ListBuffer((ProgramSection(), Unknown(), true))))))
         // Check function table is empty.
         analyser(p)._2.getFuncMap().size should equal (0)
       }

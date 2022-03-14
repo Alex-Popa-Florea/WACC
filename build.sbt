@@ -22,7 +22,7 @@ lazy val root = (project in file("."))
       libraryDependencies += "com.github.j-mie6" %% "parsley" % "3.3.5"
     )
 
-lazy val shell = project
+lazy val shell = (project in file("shell"))
     .settings(
       name := "QWACC",
       organization := "uk.ac.imperial.doc",

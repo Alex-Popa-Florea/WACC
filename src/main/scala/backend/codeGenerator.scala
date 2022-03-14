@@ -713,6 +713,28 @@ object codeGenerator {
                                     case _ => // TODO: WHAT TO DO HERE
                                 }
                             }
+                        case "min_int" => 
+                            if (args.length == 2) {
+                                args(0) match {
+                                    case IntLiter(_) => args(1) match {
+                                        case IntLiter(_) =>
+                                            generateMin(textMap, "int")
+                                        case _ => // TODO: WHAT TO DO HERE
+                                    }
+                                    case _ => // TODO: WHAT TO DO HERE
+                                }
+                            }
+                        case "min_char" =>
+                            if (args.length == 2) {
+                                args(0) match {
+                                    case CharLiter(_) => args(1) match {
+                                        case CharLiter(_) =>
+                                            generateMin(textMap, "char")
+                                        case _ => // TODO: WHAT TO DO HERE
+                                    }
+                                    case _ => // TODO: WHAT TO DO HERE
+                                }
+                            }
                     }
                     textMap(label).addOne(BL(None, "def_" + id.variable)) 
                 } else {
@@ -1580,6 +1602,53 @@ object codeGenerator {
         textMap(F(funcName)).addOne(CMP(None, R(4), R(5)))
         textMap(F(funcName)).addOne(MOV(Some(GTCOND()), false, R(4), Immed(1)))
         textMap(F(funcName)).addOne(MOV(Some(LECOND()), false, R(4), Immed(0)))
+        textMap(F(funcName)).addOne(CMP(None, R(4), Immed(0)))
+        textMap(F(funcName)).addOne(B(Some(EQCOND()), s"L${scopeLabels}"))
+
+        if (argType.equals("char")) {
+            textMap(F(funcName)).addOne(LDRSB(None, R(4), ImmediateOffset(SP(), Immed(4))))
+        } else {
+            textMap(F(funcName)).addOne(LDR(None, R(4), ImmediateOffset(SP(), Immed(4))))
+        }
+
+        textMap(F(funcName)).addOne(MOV(None, false, R(0), R(4)))
+        textMap(F(funcName)).addOne(POP(List(PC())))
+        textMap(F(funcName)).addOne(B(None, s"L${scopeLabels + 1}"))
+        textMap(F(funcName)).addOne(L(scopeLabels))
+        
+        if (argType.equals("char")) {
+            textMap(F(funcName)).addOne(LDRSB(None, R(4), ImmediateOffset(SP(), Immed(5))))
+        } else {
+            textMap(F(funcName)).addOne(LDR(None, R(4), ImmediateOffset(SP(), Immed(8))))
+        }
+        
+        textMap(F(funcName)).addOne(MOV(None, false, R(0), R(4)))
+        textMap(F(funcName)).addOne(POP(List(PC())))
+        textMap(F(funcName)).addOne(L(scopeLabels + 1))
+        textMap(F(funcName)).addOne(POP(List(PC())))
+        textMap(F(funcName)).addOne(Ltorg())
+        
+        scopeLabels += 2
+    }
+
+    def generateMin(textMap: Map[Scope, ListBuffer[Instruction]], argType: String): Unit = {
+        val funcName = "min_" + argType
+        
+        textMap(F(funcName)) = ListBuffer(
+            PUSH(List(LR()))
+        )
+
+        if (argType.equals("char")) {
+            textMap(F(funcName)).addOne(LDRSB(None, R(4), ImmediateOffset(SP(), Immed(4))))
+            textMap(F(funcName)).addOne(LDRSB(None, R(4), ImmediateOffset(SP(), Immed(5))))
+        } else {
+            textMap(F(funcName)).addOne(LDR(None, R(4), ImmediateOffset(SP(), Immed(4))))
+            textMap(F(funcName)).addOne(LDR(None, R(4), ImmediateOffset(SP(), Immed(8))))
+        }
+
+        textMap(F(funcName)).addOne(CMP(None, R(4), R(5)))
+        textMap(F(funcName)).addOne(MOV(Some(LTCOND()), false, R(4), Immed(1)))
+        textMap(F(funcName)).addOne(MOV(Some(GECOND()), false, R(4), Immed(0)))
         textMap(F(funcName)).addOne(CMP(None, R(4), Immed(0)))
         textMap(F(funcName)).addOne(B(Some(EQCOND()), s"L${scopeLabels}"))
 

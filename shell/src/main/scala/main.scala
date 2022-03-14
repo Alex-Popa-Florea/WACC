@@ -24,48 +24,48 @@ object shell{
         bw.write("begin ")
         val lines = validCommands.mkString("; ")
         bw.write(lines)
-        if(validCommands.size == 1){
-            bw.write(s"; $command")
+        if(validCommands.size == 0){
+            bw.write(command)
         }
         else{
-            bw.write(command)
+            bw.write(s"; $command")
         }
         bw.write(" end")
         bw.close()
     }
 
-    def getOutputAndCode(file: File, args: Char):(String,Int) = {
+    def getOutputAndCode(file: File, args: String):(String,Int) = {
         val output = new ByteArrayOutputStream
-        val name  = file.getPath().replace(".wacc",".s")
+        val assemblyfile  = file.getPath().replace(".wacc",".s")
         val exeName = s"./tmp/${file.getName().replace(".wacc","")}"
-        s"arm-linux-gnueabi-gcc -o $exeName -mcpu=arm1176jzf-s -mtune=arm1176jzf-s $name".!
+        s"arm-linux-gnueabi-gcc -o $exeName -mcpu=arm1176jzf-s -mtune=arm1176jzf-s $assemblyfile".!
         val exitCode = (s"echo $args" #| s"qemu-arm -L /usr/arm-linux-gnueabi/ $exeName" #> output).!
+        s"rm $exeName $assemblyfile"
         (output.toString("UTF-8"),exitCode)
     }
 
     val varMap: Map[String,String] = Map()
 
-    def addValidCommand(command: String, buffer: ListBuffer[String], input: Char) = {
+    def addValidCommand(command: String, buffer: ListBuffer[String], input: String) = {
         val seperate = command.filterNot(_.isWhitespace)
-        println(seperate.substring(0,3))
         //Variables 
         if (seperate.contains("=")){
             var variable = seperate.substring(3,seperate.indexOf("="))
+            val noVariable = variable == ""
             (seperate.substring(0,3):  @unchecked) match {
-            case i@"int" => varMap.addOne(variable,i); buffer.addOne(command)
-            case c@"chr" => varMap.addOne(variable,c); buffer.addOne(command)
+            case i@"int" if !noVariable => varMap.addOne(variable,i); buffer.addOne(command)
+            case c@"chr" if !noVariable => varMap.addOne(variable,c); buffer.addOne(command)
             case _ => None
             }
         }
-        println(seperate.substring(4).trim().strip())
         (seperate.substring(0,4):  @unchecked) match {
             case b@"bool" => varMap.addOne(seperate.substring(4,seperate.indexOf("=")),b); buffer.addOne(command)
             case r@"read" => {
-                val read_variable = seperate.substring(4)
-                if(varMap(read_variable) == "int" && input.isLetter){
-                    buffer.addOne((s"$read_variable = 1;"))
+                val readVariable = seperate.substring(4)
+                if(varMap(readVariable) == "int" && input.charAt(0).isLetter){
+                    buffer.addOne((s"$readVariable = 1;"))
                 }else{
-                    buffer.addOne((s"$read_variable = $input"))
+                    buffer.addOne((s"$readVariable = $input"))
                 }
             }
             case p@"print" => None
@@ -83,7 +83,6 @@ object shell{
     }
 
     def main(args: Array[String]) = {
-        println("Ensure all statements end with a ;")
 
         var command = ""
         val dir = new File("./tmp/")
@@ -96,34 +95,34 @@ object shell{
             while (command != "exit"){
             
                 command = readLine(">>> ")
-
-                val p = file.getPath()
-
-                //TODO RESTRUCTURE FOR NEW SEMI COLON RULES, SHOULD LOOK CLEANER
+                val path = file.getPath()
 
                 if(command == "exit") break()
-                var args: Char = 'a'
+                var args = ""
                 command = command.trim().strip()
                 if(command.substring(0,4) == "read"){
-                    args = readLine().charAt(0)
+                    val input = readLine()
                 }
                 
                 insert(file,command,validCommands)
-                wacc.main.main(Array(p,"tmp"))
+                wacc.main.main(Array(path,"tmp"))
                 if(new File(file.getPath().replace(".wacc",".s")).exists){
                     val (output, exitCode) = getOutputAndCode(file,args)
-                    println(output)
+                    //println(output)
                     addValidCommand(command,validCommands,args)
                 }
-                println(validCommands)
-                println(p)
+                // println(validCommands)
+                // println(p)
             }
         }
-        
-        
-        //val content = fromFile(file).mkString
-        
-        
         //delete tmp file and folder
-    }
+
+        // if(!file.delete()){
+        //     println("ERROR tmp file not deleted")
+        // }
+        // if(!dir.delete()){
+        //     val exit = "rm -drf tmp/".!
+        //     println("tmp Directory force deleted")
+        // }
+    }   
 }

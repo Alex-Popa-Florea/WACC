@@ -309,9 +309,9 @@ object semanticAnalyser {
                 if (arrayBoundsFlag) {
                     expr match {
                         case arrayElem: ArrayElem => 
-                            st.setArraySize(arrayIdent, st.getArraySize(arrayElem))
+                            setArraySize(arrayIdent, st, getArraySize(arrayElem, st))
                         case ident: Ident =>
-                            st.setArraySize(arrayIdent, st.getArraySize(ident))
+                            setArraySize(arrayIdent, st, getArraySize(ident, st))
                         case _ =>
                     }
                 }
@@ -327,14 +327,14 @@ object semanticAnalyser {
                     case baseTypeCheck: BaseTypeCheck =>
                         if (arrayBoundsFlag) {
                             if (baseTypeCheck.nested == 1) {
-                                st.setArraySize(arrayIdent, LeafArraySize(elements.size))
+                                setArraySize(arrayIdent, st, LeafArraySize(elements.size))
                             } else {
                                 val sizes = elements.map(expr => expr match {
-                                    case ident: Ident => st.getArraySize(ident)
-                                    case arrayElem: ArrayElem => st.getArraySize(arrayElem)
+                                    case ident: Ident => getArraySize(ident, st)
+                                    case arrayElem: ArrayElem => getArraySize(arrayElem, st)
                                     case _ => Unknown()
                                 })
-                                st.setArraySize(arrayIdent, NestedArraySize(elements.size, sizes))
+                                setArraySize(arrayIdent, st, NestedArraySize(elements.size, sizes))
                             }
                         }
                         val correctType = elements.map(x => analyseExpr(x, st) == (true, baseTypeCheck match {
@@ -355,11 +355,11 @@ object semanticAnalyser {
 					case PairCheck(type1, type2, nested) => 
                         if (arrayBoundsFlag) {
                             val sizes = elements.map(expr => expr match {
-                                case ident: Ident => st.getArraySize(ident)
-                                case arrayElem: ArrayElem => st.getArraySize(arrayElem)
+                                case ident: Ident => getArraySize(ident, st)
+                                case arrayElem: ArrayElem => getArraySize(arrayElem, st)
                                 case _ => Unknown()
                             })
-                            st.setArraySize(arrayIdent, NestedArraySize(elements.size, sizes))
+                            setArraySize(arrayIdent, st, NestedArraySize(elements.size, sizes))
                         }
 						val correctType = elements.map(x => {
 							val checkedExpr = analyseExpr(x, st)
@@ -386,21 +386,21 @@ object semanticAnalyser {
                 if (arrayBoundsFlag) {
                     val expr1Size = expr1 match {
                         case arrayElem: ArrayElem => 
-                            st.getArraySize(arrayElem)
+                            getArraySize(arrayElem, st)
                         case ident: Ident =>
-                            st.getArraySize(ident)
+                            getArraySize(ident, st)
                         case _ =>
                             Unknown()
                     }
                     val expr2Size = expr2 match {
                         case arrayElem: ArrayElem => 
-                            st.getArraySize(arrayElem)
+                            getArraySize(arrayElem, st)
                         case ident: Ident =>
-                            st.getArraySize(ident)
+                            getArraySize(ident, st)
                         case _ =>
                             Unknown()
                     }
-                    st.setArraySize(arrayIdent, NodeArraySize(expr1Size, expr2Size))
+                    setArraySize(arrayIdent, st, NodeArraySize(expr1Size, expr2Size))
                 }
                 val checkedExpr1 = analyseExpr(expr1, st)
 				val checkedExpr2 = analyseExpr(expr2, st)
@@ -443,15 +443,15 @@ object semanticAnalyser {
                 if (arrayBoundsFlag) {
                     val exprSize = expr match {
                         case arrayElem: ArrayElem => 
-                            st.getArraySize(arrayElem)
+                            getArraySize(arrayElem, st)
                         case ident: Ident =>
-                            st.getArraySize(ident)
+                            getArraySize(ident, st)
                         case _ =>
                             Unknown()
                     }
                     exprSize match {
                         case NodeArraySize(fstArray, sndArray) =>
-                            st.setArraySize(arrayIdent, fstArray)
+                            setArraySize(arrayIdent, st, fstArray)
                         case _ => Unknown()
                     }
                 }
@@ -490,15 +490,15 @@ object semanticAnalyser {
                 if (arrayBoundsFlag) {
                     val exprSize = expr match {
                         case arrayElem: ArrayElem => 
-                            st.getArraySize(arrayElem)
+                            getArraySize(arrayElem, st)
                         case ident: Ident =>
-                            st.getArraySize(ident)
+                            getArraySize(ident, st)
                         case _ =>
                             Unknown()
                     }
                     exprSize match {
                         case NodeArraySize(fstArray, sndArray) =>
-                            st.setArraySize(arrayIdent, sndArray)
+                            setArraySize(arrayIdent, st, sndArray)
                         case _ => Unknown()
                     }
                 }

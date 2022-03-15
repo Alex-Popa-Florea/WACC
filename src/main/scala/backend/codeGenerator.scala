@@ -46,7 +46,7 @@ object codeGenerator {
     def writeToFile(lines: List[Line], fileName: String, dir: Boolean): Unit = {
         val file = new File(fileName)
         if (dir) {
-            if (!file.getParentFile.exists()){
+            if(!file.getParentFile.exists()){
                 file.getParentFile.mkdirs()
             }
         }
@@ -126,8 +126,8 @@ object codeGenerator {
             case function: Function =>
                 val funcLabel = F(function.id.variable)
                 textMap(funcLabel) = ListBuffer(PUSH(List(LR())))
-                functionStackSize = function.semanticTable.getOrElse(symbolTable).getSize() 
-                                  - functionTable.getFuncMap()(function.id.variable)._2.foldLeft(0)((x, y) => x + getBytesFromType(y)) - 4
+                functionStackSize = function.semanticTable.getOrElse(symbolTable).getSize() - 
+                    functionTable.getFuncMap()(function.id.variable)._2.foldLeft(0)((x, y) => x + getBytesFromType(y)) - 4
                 
                 /*
                     Decrements stack based on input size.
@@ -741,8 +741,9 @@ object codeGenerator {
                         textMap(label).addOne(BL(None, "f_" + id.variable))
                 }
                 textMap(label).addOne(ADD(None, false, SP(), SP(), Immed(args.foldLeft(0)((arg1, arg2) => arg1 + getBytes(arg2, symbolTable)))))
-                textMap(label).addOne(MOV(None, false, R(4), R(0)))    
-        }
+                textMap(label).addOne(MOV(None, false, R(4), R(0)))
+   
+            }
     }
 
     /*

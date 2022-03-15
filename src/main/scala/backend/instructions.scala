@@ -5,7 +5,7 @@ import lines._
 
 object instructions {
     
-    val preDefFunc: List[String] = List("max_int", "max_char", "min_int", "min_char")
+    val preDefFunc: List[String] = List("max_int", "max_char", "min_int", "min_char", "abs")
 
     /*
         Trait to represent elements within the text section of the assembly code.

@@ -735,6 +735,13 @@ object codeGenerator {
                                     case _ => // TODO: WHAT TO DO HERE
                                 }
                             }
+                        case "abs" =>
+                            if (args.length == 1) {
+                                args(0) match {
+                                    case IntLiter(_) =>
+                                        generateAbs(dataMap, textMap)
+                                }
+                            }
                     }
                     textMap(label).addOne(BL(None, "def_" + id.variable)) 
                 } else {
@@ -1676,6 +1683,38 @@ object codeGenerator {
         textMap(F(funcName)).addOne(POP(List(PC())))
         textMap(F(funcName)).addOne(Ltorg())
         
+        scopeLabels += 2
+    }
+
+    def generateAbs(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
+        val funcName = "abs"
+
+        generateOverflow(dataMap, textMap)
+        generatePrintString(dataMap, textMap)
+
+        textMap(F(funcName)) = ListBuffer(
+            PUSH(List(LR())),
+            LDR(None, R(4), ImmediateOffset(SP(), Immed(4))),
+            LDR(None, R(5), Immed(0)),
+            CMP(None, R(4), R(5)),
+            MOV(Some(LTCOND()), false, R(4), Immed(1)),
+            MOV(Some(GECOND()), false, R(4), Immed(0)),
+            CMP(None, R(4), Immed(0)),
+            B(Some(EQCOND()), s"L${scopeLabels}"),
+            LDR(None, R(4), ImmediateOffset(SP(), Immed(4))),
+            RSB(None, true, R(4), R(4), Immed(0)),
+            BL(Some(VSCOND()), "p_throw_overflow_error"),
+            MOV(None, false, R(0), R(4)),
+            POP(List(PC())),
+            B(None, s"L${scopeLabels + 1}"),
+            L(scopeLabels),
+            LDR(None, R(4), ImmediateOffset(SP(), Immed(4))),
+            MOV(None, false, R(0), R(4)),
+            POP(List(PC())),
+            L(scopeLabels + 1),
+            POP(List(PC())),
+            Ltorg()
+        )
         scopeLabels += 2
     }
 }

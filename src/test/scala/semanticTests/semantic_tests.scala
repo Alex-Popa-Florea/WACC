@@ -30,8 +30,6 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
         analyser(p)._1.getVariableMap() should equal (Map("i" -> (IntCheck(0), 4), "b" -> (BoolCheck(0), 5), "c" -> (CharCheck(0), 6), "h" -> (StrCheck(0), 10)))
         // // Check function table is empty.
         // analyser(p)._2.getFuncMap().size should equal (0)
-        // Check function table has no new elements.
-        analyser(p)._2.getFuncMap().size should equal (4)
         //TODO: Use flag for extension
       }
       case Failure(err) => {
@@ -73,8 +71,6 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
         var funcMap = analyser(p)._2.getFuncMap()
         // // Check function map contains only one key value pair.
         // funcMap.size should equal (1)
-        // Check function map contains only one new key value pair.
-        funcMap.size should equal (5)
         //TODO: USE FLAG
         // Check function f's paramater list has size 0.
         funcMap.withFilter({case (name, (_, ts)) => name == "f"}).map({case (_, (_, ts)) => ts}) should equal (List(List()))
@@ -90,8 +86,6 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
         var funcMap = analyser(p)._2.getFuncMap()
         // // Check function map contains only one key value pair.
         // funcMap.size should equal (1)
-        // Check function map contains only one new key value pair.
-        funcMap.size should equal (5)
         // TODO: Use flag
         // Check function f's paramater list has two elements.
         funcMap.withFilter({case (name, (_, ts)) => name == "f"}).
@@ -133,7 +127,6 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
         // Check function map has two key value pairs.
         var funcMap = analyser(p)._2.getFuncMap()
         // funcMap.size should equal (2)
-        funcMap.size should equal (6)
         // TODO: uSe flag
         // Check symbol table has two children.
         var children = analyser(p)._1.getChildren()

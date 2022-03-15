@@ -25,8 +25,12 @@ object functionTable {
                 "min_int" -> (IntCheck(0), List(IntCheck(0), IntCheck(0))),
                 "min_char" -> (CharCheck(0), List(CharCheck(0), CharCheck(0))),
                 "abs" -> (IntCheck(0), List(IntCheck(0))),
-                "pow" -> (IntCheck(0), List(IntCheck(0), IntCheck(0)))
-                )
+                "pow" -> (IntCheck(0), List(IntCheck(0), IntCheck(0))),
+                "is_upper_string" -> (BoolCheck(0), List(CharCheck(1))),
+                "is_upper_char" -> (BoolCheck(0), List(CharCheck(0))),
+                "is_lower_string" -> (BoolCheck(0), List(CharCheck(1))),
+                "is_lower_char" -> (BoolCheck(0), List(CharCheck(0)))
+            )
 
         /*
             The add method adds a function to the function table, returning true

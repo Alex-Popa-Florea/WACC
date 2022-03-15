@@ -692,67 +692,25 @@ object codeGenerator {
                 if (preDefFunc.contains(id.variable)) {
                     id.variable match {
                         case "max_int" => 
-                            if (args.length == 2) {
-                                args(0) match {
-                                    case IntLiter(_) => args(1) match {
-                                        case IntLiter(_) =>
-                                            generateMax(textMap, "int")
-                                        case _ => // TODO: WHAT TO DO HERE
-                                    }
-                                    case _ => // TODO: WHAT TO DO HERE
-                                }
-                            }
+                            generateMax(textMap, "int")
                         case "max_char" =>
-                            if (args.length == 2) {
-                                args(0) match {
-                                    case CharLiter(_) => args(1) match {
-                                        case CharLiter(_) =>
-                                            generateMax(textMap, "char")
-                                        case _ => // TODO: WHAT TO DO HERE
-                                    }
-                                    case _ => // TODO: WHAT TO DO HERE
-                                }
-                            }
+                            generateMax(textMap, "char")
                         case "min_int" => 
-                            if (args.length == 2) {
-                                args(0) match {
-                                    case IntLiter(_) => args(1) match {
-                                        case IntLiter(_) =>
-                                            generateMin(textMap, "int")
-                                        case _ => // TODO: WHAT TO DO HERE
-                                    }
-                                    case _ => // TODO: WHAT TO DO HERE
-                                }
-                            }
+                            generateMin(textMap, "int")
                         case "min_char" =>
-                            if (args.length == 2) {
-                                args(0) match {
-                                    case CharLiter(_) => args(1) match {
-                                        case CharLiter(_) =>
-                                            generateMin(textMap, "char")
-                                        case _ => // TODO: WHAT TO DO HERE
-                                    }
-                                    case _ => // TODO: WHAT TO DO HERE
-                                }
-                            }
+                            generateMin(textMap, "char")
                         case "abs" =>
-                            if (args.length == 1) {
-                                args(0) match {
-                                    case IntLiter(_) =>
-                                        generateAbs(dataMap, textMap)
-                                }
-                            }
+                            generateAbs(dataMap, textMap)
                         case "pow" =>
-                            if (args.length == 2) {
-                                args(0) match {
-                                    case IntLiter(_) => args(1) match {
-                                        case IntLiter(_) =>
-                                            generatePow(dataMap, textMap)
-                                        case _ => // TODO: WHAT TO DO HERE
-                                    }
-                                    case _ => // TODO: WHAT TO DO HERE
-                                }
-                            }
+                           generatePow(dataMap, textMap)
+                        case "is_upper_string" =>
+                            generateIsUpperAndLowerString(dataMap, textMap, "upper")
+                        case "is_upper_char" =>
+                            generateIsUpperAndLowerChar(textMap, "upper")
+                        case "is_lower_string" =>
+                            generateIsUpperAndLowerString(dataMap, textMap, "lower")
+                        case "is_lower_char" =>
+                            generateIsUpperAndLowerChar(textMap, "lower")
                     }
                     textMap(label).addOne(BL(None, "def_" + id.variable)) 
                 } else {
@@ -1768,5 +1726,126 @@ object codeGenerator {
             POP(List(PC())),
             Ltorg()
         )
+        scopeLabels += 2
+    }
+
+    def generateIsUpperAndLowerString(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]], caseType: String): Unit = {
+        val funcName = "is_" + caseType + "_string"
+
+        generateCheckArrayBounds(dataMap, textMap)
+        generateOverflow(dataMap, textMap)
+        generatePrintString(dataMap, textMap)
+
+        textMap(F(funcName)) = ListBuffer(
+            PUSH(List(LR())),
+            SUB(None, false, SP(), SP(), Immed(4)),
+            LDR(None, R(4), Immed(0)),
+            STR(None, R(4), ZeroOffset(SP())),
+            B(None, s"L${scopeLabels}"),
+            L(scopeLabels + 1),
+            ADD(None, false, R(4), SP(), Immed(8)),
+            LDR(None, R(5), ZeroOffset(SP())),
+            LDR(None, R(4), ZeroOffset(R(4))),
+            MOV(None, false, R(0), R(5)),
+            MOV(None, false, R(1), R(4)),
+            BL(None, "p_check_array_bounds"),
+            ADD(None, false, R(4), R(4), Immed(4)),
+            ADD(None, false, R(4), R(4), R(5)),
+            LDRSB(None, R(4), ZeroOffset(R(4)))
+        )
+
+        if (caseType.equals("upper")) {
+            textMap(F(funcName)).addOne(MOV(None, false, R(5), Immed('A')))
+        } else {
+            textMap(F(funcName)).addOne(MOV(None, false, R(5), Immed('a')))
+        }
+        
+        textMap(F(funcName)).addOne(CMP(None, R(4), R(5)))
+        textMap(F(funcName)).addOne(MOV(Some(LTCOND()), false, R(4), Immed(1)))
+        textMap(F(funcName)).addOne(MOV(Some(GECOND()), false, R(4), Immed(0)))
+        textMap(F(funcName)).addOne(ADD(None, false, R(5), SP(), Immed(8)))
+        textMap(F(funcName)).addOne(LDR(None, R(6), ZeroOffset(SP())))
+        textMap(F(funcName)).addOne(LDR(None, R(5), ZeroOffset(R(5))))
+        textMap(F(funcName)).addOne(MOV(None, false, R(0), R(6)))
+        textMap(F(funcName)).addOne(MOV(None, false, R(1), R(5)))
+        textMap(F(funcName)).addOne(BL(None, "p_check_array_bounds"))
+        textMap(F(funcName)).addOne(ADD(None, false, R(5), R(5), Immed(4)))
+        textMap(F(funcName)).addOne(ADD(None, false, R(5), R(5), R(6)))
+        textMap(F(funcName)).addOne(LDRSB(None, R(5), ZeroOffset(R(5))))
+
+        if (caseType.equals("upper")) {
+            textMap(F(funcName)).addOne(MOV(None, false, R(6), Immed('Z')))
+        } else {
+            textMap(F(funcName)).addOne(MOV(None, false, R(6), Immed('z')))
+        }
+
+        textMap(F(funcName)).addOne(CMP(None, R(5), R(6)))
+        textMap(F(funcName)).addOne(MOV(Some(GTCOND()), false, R(5), Immed(1)))
+        textMap(F(funcName)).addOne(MOV(Some(LECOND()), false, R(5), Immed(0)))
+        textMap(F(funcName)).addOne(ORR(None, false, R(4), R(4), R(5)))
+        textMap(F(funcName)).addOne(CMP(None, R(4), Immed(0)))
+        textMap(F(funcName)).addOne(B(Some(EQCOND()), s"L${scopeLabels + 2}"))
+        textMap(F(funcName)).addOne(MOV(None, false, R(4), Immed(0)))
+        textMap(F(funcName)).addOne(MOV(None, false, R(0), R(4)))
+        textMap(F(funcName)).addOne(ADD(None, false, SP(), SP(), Immed(4)))
+        textMap(F(funcName)).addOne(POP(List(PC())))
+        textMap(F(funcName)).addOne(B(None, s"L${scopeLabels + 3}"))
+        textMap(F(funcName)).addOne(L(scopeLabels + 2))
+        textMap(F(funcName)).addOne(LDR(None, R(4), ZeroOffset(SP())))
+        textMap(F(funcName)).addOne(LDR(None, R(5), Immed(1)))
+        textMap(F(funcName)).addOne(ADD(None, true, R(4), R(4), R(5)))
+        textMap(F(funcName)).addOne(BL(Some(VSCOND()), "p_throw_overflow_error"))
+        textMap(F(funcName)).addOne(STR(None, R(4), ZeroOffset(SP())))
+        textMap(F(funcName)).addOne(L(scopeLabels + 3))
+        textMap(F(funcName)).addOne(L(scopeLabels))
+        textMap(F(funcName)).addOne(LDR(None, R(4), ZeroOffset(SP())))
+        textMap(F(funcName)).addOne(LDR(None, R(5), ImmediateOffset(SP(), Immed(8))))
+        textMap(F(funcName)).addOne(LDR(None, R(5), ZeroOffset(R(5))))
+        textMap(F(funcName)).addOne(CMP(None, R(4), R(5)))
+        textMap(F(funcName)).addOne(MOV(Some(LTCOND()), false, R(4), Immed(1)))
+        textMap(F(funcName)).addOne(MOV(Some(GECOND()), false, R(4), Immed(0)))
+        textMap(F(funcName)).addOne(CMP(None, R(4), Immed(1)))
+        textMap(F(funcName)).addOne(B(Some(EQCOND()), s"L${scopeLabels + 1}"))
+        textMap(F(funcName)).addOne(MOV(None, false, R(4), Immed(1)))
+        textMap(F(funcName)).addOne(MOV(None, false, R(0), R(4)))
+        textMap(F(funcName)).addOne(ADD(None, false, SP(), SP(), Immed(4)))
+        textMap(F(funcName)).addOne(POP(List(PC())))
+        textMap(F(funcName)).addOne(POP(List(PC())))
+        textMap(F(funcName)).addOne(Ltorg())
+    }
+
+    def generateIsUpperAndLowerChar(textMap: Map[Scope, ListBuffer[Instruction]], caseType: String): Unit = {
+        val funcName = "is_" + caseType + "_char"
+
+        textMap(F(funcName)) = ListBuffer(
+            PUSH(List(LR())),
+            LDRSB(None, R(4), ImmediateOffset(SP(), Immed(4)))
+        )
+
+        if (caseType.equals("upper")) {
+            textMap(F(funcName)).addOne(MOV(None, false, R(5), Immed('A')))
+        } else {
+            textMap(F(funcName)).addOne(MOV(None, false, R(5), Immed('a')))
+        }
+        
+        textMap(F(funcName)).addOne(CMP(None, R(4), R(5)))
+        textMap(F(funcName)).addOne(MOV(Some(GECOND()), false, R(4), Immed(1)))
+        textMap(F(funcName)).addOne(MOV(Some(LTCOND()), false, R(4), Immed(0)))
+        textMap(F(funcName)).addOne(LDRSB(None, R(5), ImmediateOffset(SP(), Immed(4))))
+        
+        if (caseType.equals("upper")) {
+            textMap(F(funcName)).addOne(MOV(None, false, R(6), Immed('Z')))
+        } else {
+            textMap(F(funcName)).addOne(MOV(None, false, R(6), Immed('z')))
+        }
+        
+        textMap(F(funcName)).addOne(CMP(None, R(5), R(6)))
+        textMap(F(funcName)).addOne(MOV(Some(LECOND()), false, R(5), Immed(1)))
+        textMap(F(funcName)).addOne(MOV(Some(GTCOND()), false, R(5), Immed(0)))
+        textMap(F(funcName)).addOne(AND(None, false, R(4), R(4), R(5)))
+        textMap(F(funcName)).addOne(MOV(None, false, R(0), R(4)))
+        textMap(F(funcName)).addOne(POP(List(PC())))
+        textMap(F(funcName)).addOne(POP(List(PC())))
+        textMap(F(funcName)).addOne(Ltorg())
     }
 }

@@ -252,7 +252,7 @@ object symbolTable {
                 }
             }
             st.children.map(x => {
-                printSymbolTables(x, nest + 1)
+                printSymbolTables2(x, nest + 1)
             })
         }
     }

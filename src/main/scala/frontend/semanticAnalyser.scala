@@ -535,74 +535,81 @@ object semanticAnalyser {
                 for that function in its function table
             */
             case Call(id, args) => 
+                if (arrayBoundsFlag) {
+                    setArraySize(arrayIdent, st, Unknown())
+                }
                 val checkedArgs = args.map(x => analyseExpr(x, st))
-				ft.getFunction(id.variable) match {
-					case Some(foundFuncType) =>
-                        if (lhsType == EmptyPairCheck()) {
-                            foundFuncType._1 match {
-									case PairCheck(type1, type2, nested) => 
-                                        val checkedNumArgs = ft.checkLength(id.variable, checkedArgs.map(x => x._2.get))
-                                        if (!checkedNumArgs) {
-                                            errors.addOne((s"Wrong number of arguments in call to function ${id.variable}!", assignRHS.pos))
-                                        }
-                                        val checkArgs = ft.check(id.variable, checkedArgs.map(x => x._2.get))
-                                        if (checkedNumArgs && !checkArgs) {
-                                            errors.addOne((s"Expected argument types: ${foundFuncType._2.map(x=> typeCheckToString(x))}, " +
-                                              s"but found: ${checkedArgs.map(x => typeCheckToString(x._2.get))}in call to function ${id.variable}!", assignRHS.pos))
-                                        }
-                                        val checkedArgsResult = checkedArgs.map(x => x._1).reduceOption((x, y) => x && y)
-                                        checkedArgsResult match {
-                                            case Some(value) => value && ft.check(id.variable, checkedArgs.map(x => x._2.get))	
-                                            case None => ft.check(id.variable, checkedArgs.map(x => x._2.get))
-                                        }
-                                        
-									case _ =>
-                                        val correctType = foundFuncType._1 == lhsType
-                                        if (!correctType) {
-                                            errors.addOne((s"Expected type: ${typeCheckToString(lhsType)}, " +
-                                              s"actual type of function return: ${typeCheckToString(foundFuncType._1)}!", assignRHS.pos))
-                                        }
-                                        val checkedNumArgs = ft.checkLength(id.variable, checkedArgs.map(x => x._2.get))
-                                        if (!checkedNumArgs) {
-                                            errors.addOne((s"Wrong number of arguments in call to function ${id.variable}!", assignRHS.pos))
-                                        }
-                                        val checkArgs = ft.check(id.variable, checkedArgs.map(x => x._2.get))
-                                        if (checkedNumArgs && !checkArgs) {
-                                            errors.addOne((s"Expected argument types: ${foundFuncType._2.map(x=> typeCheckToString(x))}, " +
-                                              s"but found: ${checkedArgs.map(x => typeCheckToString(x._2.get))}in call to function ${id.variable}!", assignRHS.pos))
+                if (checkedArgs.forall(x => x._1)) {
+                    ft.getFunction(id.variable) match {
+                        case Some(foundFuncType) =>
+                            if (lhsType == EmptyPairCheck()) {
+                                foundFuncType._1 match {
+                                        case PairCheck(type1, type2, nested) => 
+                                            val checkedNumArgs = ft.checkLength(id.variable, checkedArgs.map(x => x._2.get))
+                                            if (!checkedNumArgs) {
+                                                errors.addOne((s"Wrong number of arguments in call to function ${id.variable}!", assignRHS.pos))
+                                            }
+                                            val checkArgs = ft.check(id.variable, checkedArgs.map(x => x._2.get))
+                                            if (checkedNumArgs && !checkArgs) {
+                                                errors.addOne((s"Expected argument types: ${foundFuncType._2.map(x=> typeCheckToString(x))}, " +
+                                                s"but found: ${checkedArgs.map(x => typeCheckToString(x._2.get))}in call to function ${id.variable}!", assignRHS.pos))
+                                            }
+                                            val checkedArgsResult = checkedArgs.map(x => x._1).reduceOption((x, y) => x && y)
+                                            checkedArgsResult match {
+                                                case Some(value) => value && ft.check(id.variable, checkedArgs.map(x => x._2.get))	
+                                                case None => ft.check(id.variable, checkedArgs.map(x => x._2.get))
+                                            }
                                             
-                                        }
-                                        val checkedArgsResult = checkedArgs.map(x => x._1).reduceOption((x, y) => x && y)
-                                        checkedArgsResult match {
-                                            case Some(value) => correctType && value && ft.check(id.variable, checkedArgs.map(x => x._2.get))	
-                                            case None => correctType && ft.check(id.variable, checkedArgs.map(x => x._2.get))
-                                        }
-							}
-                        } else {
-                            val correctType = foundFuncType._1 == lhsType
-                            if (!correctType) {
-                                errors.addOne((s"Expected type: ${typeCheckToString(lhsType)}, " +
-                                  s"actual type of function return: ${typeCheckToString(foundFuncType._1)}!", assignRHS.pos))
+                                        case _ =>
+                                            val correctType = foundFuncType._1 == lhsType
+                                            if (!correctType) {
+                                                errors.addOne((s"Expected type: ${typeCheckToString(lhsType)}, " +
+                                                s"actual type of function return: ${typeCheckToString(foundFuncType._1)}!", assignRHS.pos))
+                                            }
+                                            val checkedNumArgs = ft.checkLength(id.variable, checkedArgs.map(x => x._2.get))
+                                            if (!checkedNumArgs) {
+                                                errors.addOne((s"Wrong number of arguments in call to function ${id.variable}!", assignRHS.pos))
+                                            }
+                                            val checkArgs = ft.check(id.variable, checkedArgs.map(x => x._2.get))
+                                            if (checkedNumArgs && !checkArgs) {
+                                                errors.addOne((s"Expected argument types: ${foundFuncType._2.map(x=> typeCheckToString(x))}, " +
+                                                s"but found: ${checkedArgs.map(x => typeCheckToString(x._2.get))}in call to function ${id.variable}!", assignRHS.pos))
+                                                
+                                            }
+                                            val checkedArgsResult = checkedArgs.map(x => x._1).reduceOption((x, y) => x && y)
+                                            checkedArgsResult match {
+                                                case Some(value) => correctType && value && ft.check(id.variable, checkedArgs.map(x => x._2.get))	
+                                                case None => correctType && ft.check(id.variable, checkedArgs.map(x => x._2.get))
+                                            }
+                                }
+                            } else {
+                                val correctType = foundFuncType._1 == lhsType
+                                if (!correctType) {
+                                    errors.addOne((s"Expected type: ${typeCheckToString(lhsType)}, " +
+                                    s"actual type of function return: ${typeCheckToString(foundFuncType._1)}!", assignRHS.pos))
+                                }
+                                val checkedNumArgs = ft.checkLength(id.variable, checkedArgs.map(x => x._2.get))
+                                if (!checkedNumArgs) {
+                                    errors.addOne((s"Wrong number of arguments in call to function ${id.variable}!", assignRHS.pos))
+                                }
+                                val checkArgs = ft.check(id.variable, checkedArgs.map(x => x._2.get))
+                                if (checkedNumArgs && !checkArgs) {
+                                    errors.addOne((s"Expected argument types: ${foundFuncType._2.map(x=> typeCheckToString(x))}, " +
+                                    s"but found: ${checkedArgs.map(x => typeCheckToString(x._2.get))}in call to function ${id.variable}!", assignRHS.pos))
+                                }
+                                val checkedArgsResult = checkedArgs.map(x => x._1).reduceOption((x, y) => x && y)
+                                checkedArgsResult match {
+                                    case Some(value) => correctType && value && checkArgs	
+                                    case None => correctType && checkArgs
+                                }
                             }
-                            val checkedNumArgs = ft.checkLength(id.variable, checkedArgs.map(x => x._2.get))
-                            if (!checkedNumArgs) {
-                                errors.addOne((s"Wrong number of arguments in call to function ${id.variable}!", assignRHS.pos))
-                            }
-                            val checkArgs = ft.check(id.variable, checkedArgs.map(x => x._2.get))
-                            if (checkedNumArgs && !checkArgs) {
-                                errors.addOne((s"Expected argument types: ${foundFuncType._2.map(x=> typeCheckToString(x))}, " +
-                                  s"but found: ${checkedArgs.map(x => typeCheckToString(x._2.get))}in call to function ${id.variable}!", assignRHS.pos))
-                            }
-                            val checkedArgsResult = checkedArgs.map(x => x._1).reduceOption((x, y) => x && y)
-                            checkedArgsResult match {
-                                case Some(value) => correctType && value && checkArgs	
-                                case None => correctType && checkArgs
-                            }
-                        }
-					case None => 
-                        errors.addOne((s"Function ${id.variable} not declared!", assignRHS.pos))
-                        false
-				}
+                        case None => 
+                            errors.addOne((s"Function ${id.variable} not declared!", assignRHS.pos))
+                            false
+                    }
+                } else {
+                    false
+                }
         }
     }
 

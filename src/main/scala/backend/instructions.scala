@@ -9,7 +9,8 @@ object instructions {
         "max_int", "max_char", "min_int", "min_char",
         "abs", "pow",
         "is_upper_string", "is_upper_char", "is_lower_string", "is_lower_char",
-        "to_upper_string", "to_lower_string")
+        "contains_int", "contains_char"
+        )
 
     /*
         Trait to represent elements within the text section of the assembly code.

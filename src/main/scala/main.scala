@@ -27,6 +27,9 @@ import section._
 object main {
 
     def main(args: Array[String]) = {
+        
+        var STANDARD_LIBRARY = 0
+
         /* 
             Assert that an input file has been provided for compilation
         */
@@ -38,7 +41,6 @@ object main {
             else{
                 ""
             }
-        
 
         /*
             Create a new symbol table and function table

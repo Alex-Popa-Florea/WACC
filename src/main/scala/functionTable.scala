@@ -29,7 +29,9 @@ object functionTable {
                 "is_upper_string" -> (BoolCheck(0), List(CharCheck(1))),
                 "is_upper_char" -> (BoolCheck(0), List(CharCheck(0))),
                 "is_lower_string" -> (BoolCheck(0), List(CharCheck(1))),
-                "is_lower_char" -> (BoolCheck(0), List(CharCheck(0)))
+                "is_lower_char" -> (BoolCheck(0), List(CharCheck(0))),
+                "contains_int" -> (BoolCheck(0), List(IntCheck(1), IntCheck(0))),
+                "contains_char" -> (BoolCheck(0), List(CharCheck(1), CharCheck(0)))
             )
 
         /*

@@ -14,6 +14,7 @@ import parsley.Success
 import wacc.ast._
 import wacc.functionTable._
 import wacc.symbolTable._
+import wacc.classTable._
 import wacc.types._
 import wacc.section._
 
@@ -141,7 +142,8 @@ class AssemblyToStringTest extends AnyFlatSpec with AppendedClues {
             Create a new symbol table and function table
         */
         val symbolTable = new SymbolTable(ProgramSection(), None)
-        val functionTable = new FunctionTable()
+        val functionTable = new FunctionTable(ProgramSection(), None)
+        val classTable = new ClassTable()
 
         /*
             Parse the input file    
@@ -153,7 +155,7 @@ class AssemblyToStringTest extends AnyFlatSpec with AppendedClues {
         */
         answer.get match {
             case Success(x) => 
-                val (semanticallyValid, hasReturnStatements) = analyse(x, symbolTable, functionTable, None)
+                val (semanticallyValid, hasReturnStatements) = analyse(x, symbolTable, functionTable, classTable, None)
                 generate(x, symbolTable, functionTable)
             case _ => List.empty
         }

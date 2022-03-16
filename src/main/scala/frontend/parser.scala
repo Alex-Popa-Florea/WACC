@@ -19,7 +19,15 @@ object parser {
     /* 
         Parsers for literals and identifiers, used to construct the apporopriate AST nodes 
     */
-    private lazy val ident = Ident(VARIABLE).label("Variable").explain("Use to name expression")
+    private lazy val varIdent: Parsley[VarIdent] = VarIdent(VARIABLE).label("Variable").explain("Use to name expression")
+    private lazy val classIdent: Parsley[ClassAccess] = ClassAccess(attempt(varIdent <~ "."), varIdent)
+    private lazy val ident = if (classFlag) { 
+        classIdent <|> varIdent
+    } else {
+        varIdent
+    }
+    
+    
 
     private lazy val charLiter = CharLiter(CHAR)
     private lazy val intLiter = IntLiter(INTEGER)
@@ -56,6 +64,7 @@ object parser {
       s" are contrusted using newpair: ${makeGreen("newpair (<expression>, <expression>)")}\n")
 
 
+    private lazy val newInstance: Parsley[NewInstance]= NewInstance("newinstance" ~> VarIdent(VARIABLE),"(" ~> arglist <~ ")")
     /*
         The following parsers parse the type keywords and construct the appropriate AST node.
         Base types and pair types can't be followed by square brackets, as these are parsed
@@ -64,8 +73,14 @@ object parser {
 
     lazy val types: Parsley[Type] = (attempt((baseType <|> pairType) <~ notFollowedBy("[")) <|> arrayType)
 
-    private lazy val baseType: Parsley[BaseType] = ((IntType <# "int") <|> (StrType <# "string") <|> (BoolType <# "bool") 
-                                                <|> (CharType <# "char"))
+    private lazy val baseTypeNoClass: Parsley[BaseType] = ((IntType <# "int") <|> (StrType <# "string") <|> (BoolType <# "bool") 
+                                                        <|> (CharType <# "char"))
+
+    private lazy val baseType: Parsley[BaseType] =  if (classFlag) {
+        (baseTypeNoClass <|> (ClassType("class" ~> varIdent)))
+    } else {
+        baseTypeNoClass
+    }
     /* 
         Constructing the ArrayType node using the count parser to store how nested the array is 
     */
@@ -92,14 +107,32 @@ object parser {
         Function parameters are made up of their type and their identifier, and 
         comma seperated in the function declaration 
     */
-    private lazy val param = Parameter(types, Ident(VARIABLE))
+    private lazy val param = Parameter(types, VarIdent(VARIABLE))
     private lazy val params = sepBy(param, ",")
 
     /* 
         A function starts with a name and parameters, and contains statements, and ends with the end keyword 
     */
-    private lazy val function = Function(attempt(types <~> Ident(VARIABLE) <~ "("), params <~ ")", "is" ~> nestedStatement <~ "end")
+    private lazy val function = Function(attempt(types <~> VarIdent(VARIABLE) <~ "("), params <~ ")", "is" ~> nestedStatement <~ "end")
     lazy val functions = many(function)
+
+    private lazy val method = Method(visibility, function)
+    lazy val methods = many(method)
+
+    // put if here:
+
+    private lazy val visibility: Parsley[Visibility] =  (Private <# "private") <|> (Public <# "public")
+    
+    private lazy val assignField: Parsley[AssignField] = AssignField(visibility, AssignType(types, varIdent, "=" ~> assignRHS))
+    private lazy val assignFields = sepBy(assignField, ";")
+
+    private lazy val singleClass: Parsley[Class] = Class("class" ~> VarIdent(VARIABLE), "(" ~> params <~ ")", option("extends" ~> VarIdent(VARIABLE)), "has" ~> assignFields, methods <~ "ssalc" ) //might need word for end of field assignments
+    private lazy val classes: Parsley[List[Class]] = if (classFlag) {
+        many(singleClass)
+    } else {
+        pure(List.empty)
+    }
+
 
     /* 
         Parses a function call and creates an AST node for it, which stores the name 
@@ -112,7 +145,12 @@ object parser {
         Parsers for the left and right hand of an assignment statement 
     */
     private lazy val assignLHS: Parsley[AssignLHS] = (attempt(arrayElem) <|> ident <|> pairElem)
-    private lazy val assignRHS = expr.explain(explainExpr) <|> arrayLiter <|> newPair <|> pairElem.explain(explainPairElem) <|> call
+    private lazy val assignRHSNoClass = expr.explain(explainExpr) <|> arrayLiter <|> newPair <|> pairElem.explain(explainPairElem) <|> call
+    private lazy val assignRHS = if (classFlag) {
+        assignRHSNoClass <|> newInstance
+    } else {
+        assignRHSNoClass
+    }
     
     /*
         Parsers for statements
@@ -121,7 +159,7 @@ object parser {
     private lazy val nestedStatement = sepBy1(statement, ";")
     lazy val statement: Parsley[Statement] = 
         ((Skip <# "skip") <|> 
-        AssignType(types, ident, "=" ~> assignRHS) <|> 
+        AssignType(types, varIdent, "=" ~> assignRHS) <|> 
         Assign(assignLHS.explain(explainLHS), "=" ~> assignRHS) <|>
         Read("read" ~> assignLHS.explain("Read stores user input into a variable/array/pair\n")) <|>
         Free("free" ~> expr.explain("Free takes in an array/pair")) <|>
@@ -137,7 +175,7 @@ object parser {
     /* 
         Programs must start with a begin, any functions are defined next, followed by statements and the end keyword 
     */
-    lazy val program = "begin" ~> (Begin(functions, nestedStatement)) <~ "end"
+    lazy val program = "begin" ~> (Begin(classes, functions, nestedStatement)) <~ "end"
 
     /* 
         Expressions in brackets are treated like atoms 

@@ -6,6 +6,7 @@ import parsley.errors.combinator._
 import parsley.implicits.zipped.Zipped2
 import parsley.implicits.zipped.Zipped3
 import parsley.implicits.zipped.Zipped4
+import parsley.implicits.zipped.Zipped5
 import parsley.lift.lift1
 import wacc.symbolTable._
 
@@ -38,16 +39,28 @@ object ast {
     
     sealed trait Program extends Node
 
-    case class Begin(func: List[Function], stat: List[Statement])(val pos: (Int, Int)) extends Program 
+    case class Begin(classList: List[Class], func: List[Function], stat: List[Statement])(val pos: (Int, Int)) extends Program 
 
-    case class Function(t: Type, id: Ident, vars: List[Parameter], stat: List[Statement])(val pos: (Int, Int)) extends Node{
-        var semanticTable: Option[SymbolTable] = None
+    case class Class(id: VarIdent, vars: List[Parameter], parent: Option[VarIdent], fields: List[AssignField], methods: List[Method])(val pos: (Int, Int)) extends Node 
+
+    case class AssignField(visiblity: Visibility, assign: AssignType)(val pos: (Int, Int)) extends Node
+
+    case class Method(visibility: Visibility, func: Function)(val pos: (Int, Int)) extends Node
+
+    sealed trait Visibility extends Node
+
+    case class Public()(val pos: (Int, Int)) extends Visibility
+
+    case class Private()(val pos: (Int, Int)) extends Visibility
+
+    case class Function(t: Type, id: VarIdent, vars: List[Parameter], stat: List[Statement])(val pos: (Int, Int)) extends Node{
+        var semanticTable: Option[SymbolTable] = None //wll need to add function table to all of these semantic table links (and add parent to funct table)
     }
-    case class Parameter(t: Type, id: Ident)(val pos: (Int, Int)) extends Node
+    case class Parameter(t: Type, id: VarIdent)(val pos: (Int, Int)) extends Node
 
     sealed trait Statement extends Node
     case class Skip()(val pos: (Int, Int)) extends Statement
-    case class AssignType(t: Type, id: Ident, rhs: AssignRHS)(val pos: (Int, Int)) extends Statement
+    case class AssignType(t: Type, id: VarIdent, rhs: AssignRHS)(val pos: (Int, Int)) extends Statement
     case class Assign(lhs: AssignLHS, rhs: AssignRHS)(val pos: (Int, Int)) extends Statement
     case class Read(lhs: AssignLHS)(val pos: (Int, Int)) extends Statement
     case class Free(expr: Expr)(val pos: (Int, Int)) extends Statement
@@ -71,14 +84,27 @@ object ast {
     }
 
     sealed trait AssignLHS extends Node
-    case class Ident(variable: String)(val pos: (Int, Int)) extends AssignLHS with Expr {
-        var symbolTable: Option[SymbolTable] = None
+
+    sealed trait Ident extends AssignLHS with Expr {
+        val variable: String //get rid we dont need this
+        var symbolTable: Option[SymbolTable]
+        var originClass: Option[String]
     }
-    case class ArrayElem(id: Ident, exprs: List[Expr])(val pos: (Int, Int)) extends AssignLHS with Expr
+    case class VarIdent(variable: String)(val pos: (Int, Int)) extends Ident {
+        var symbolTable: Option[SymbolTable] = None
+        var originClass: Option[String] = None
+    }
+    case class ClassAccess(classIdent: VarIdent, memberIdent: VarIdent)(val pos: (Int, Int)) extends Ident { //AHHHHHHH REMOVE VARIABLE WHEN YOU PATTERN MATCH ON IDENT IN SEMANTIC AND CODEGEN
+        var symbolTable: Option[SymbolTable] = None
+        val variable: String = s"${classIdent.variable}.${memberIdent.variable}"
+        var originClass: Option[String] = None
+    }
+    case class ArrayElem(id: Ident, exprs: List[Expr])(val pos: (Int, Int)) extends AssignLHS with Expr //ident or varident
 
     sealed trait AssignRHS extends Node 
     case class ArrayLiter(array: List[Expr])(val pos: (Int, Int)) extends AssignRHS
     case class NewPair(expr1: Expr, expr2: Expr)(val pos: (Int, Int)) extends AssignRHS
+    case class NewInstance(className: VarIdent, args: List[Expr])(val pos: (Int, Int))  extends AssignRHS
     case class Call(id: Ident, args: List[Expr])(val pos: (Int, Int)) extends AssignRHS
 
     sealed trait PairElem extends AssignLHS with AssignRHS
@@ -92,6 +118,7 @@ object ast {
     case class BoolType()(val pos: (Int, Int)) extends BaseType
     case class CharType()(val pos: (Int, Int)) extends BaseType
     case class StrType()(val pos: (Int, Int)) extends BaseType
+    case class ClassType(className: VarIdent)(val pos: (Int, Int)) extends BaseType
     case class PairType(elemtype1: PairElemType, elemtype2: PairElemType)(val pos: (Int, Int)) extends Type
 
     sealed trait PairElemType extends Type
@@ -188,22 +215,40 @@ object ast {
     */
         
     object Begin {
-        def apply(func: => Parsley[List[Function]], stat: => Parsley[List[Statement]]): Parsley[Begin] = 
-            pos <**> (func, stat).zipped(Begin(_, _) _)
+        def apply(classList: => Parsley[List[Class]], func: => Parsley[List[Function]], stat: => Parsley[List[Statement]]): Parsley[Begin] = 
+            pos <**> (classList, func, stat).zipped(Begin(_, _, _) _)
     }
+
+    object Class {
+        def apply(id: => Parsley[VarIdent], vars: => Parsley[List[Parameter]], parent: => Parsley[Option[VarIdent]], fields: => Parsley[List[AssignField]], methods: => Parsley[List[Method]]): Parsley[Class] =
+            pos <**> (id, vars, parent, fields, methods).zipped(Class(_, _, _, _, _) _)
+    }
+
+    object AssignField {
+        def apply(visiblity: => Parsley[Visibility], assign: Parsley[AssignType]): Parsley[AssignField] =
+            pos <**> (visiblity, assign).zipped(AssignField(_, _) _)
+    }
+
+    object Method {
+        def apply(visiblity: => Parsley[Visibility], func: Parsley[Function]): Parsley[Method] =
+            pos <**> (visiblity, func).zipped(Method(_, _) _)
+    }
+    object Public extends ParserBuilderPos0[Public]
+
+    object Private extends ParserBuilderPos0[Private]
 
     /* 
         Function node builders 
     */
             
     object Function {
-        def apply(pair: => Parsley[(Type,Ident)], vars: => Parsley[List[Parameter]], st: Parsley[List[Statement]]): Parsley[Function] = {
+        def apply(pair: => Parsley[(Type,VarIdent)], vars: => Parsley[List[Parameter]], st: Parsley[List[Statement]]): Parsley[Function] = {
             pos <**> (pair, vars, st).zipped((x, y, z) => Function(x._1, x._2, y, z) _)
         }
     }
 
     object Parameter {
-        def apply(t: => Parsley[Type], id: =>Parsley[Ident]): Parsley[Parameter] =
+        def apply(t: => Parsley[Type], id: =>Parsley[VarIdent]): Parsley[Parameter] =
             pos <**> (t, id).zipped(Parameter(_,_) _)
     }
 
@@ -224,7 +269,7 @@ object ast {
     object Skip extends ParserBuilderPos0[Skip]
 
     object AssignType {
-        def apply(t: => Parsley[Type], id: => Parsley[Ident], rhs: Parsley[AssignRHS]): Parsley[AssignType] =
+        def apply(t: => Parsley[Type], id: => Parsley[VarIdent], rhs: Parsley[AssignRHS]): Parsley[AssignType] =
             pos <**> (t, id, rhs).zipped(AssignType(_, _, _) _)
     }
 
@@ -288,6 +333,12 @@ object ast {
     object BoolType extends ParserBuilderPos0[BoolType]
     object CharType extends ParserBuilderPos0[CharType]
 
+    
+    object ClassType {
+        def apply(className: =>Parsley[VarIdent]): Parsley[ClassType] = 
+            pos <**> className.map(ClassType(_) _)
+    }
+
     object ArrayType {
         def apply(t: =>Parsley[Type], count: Parsley[Int]): Parsley[ArrayType] = 
             pos <**> (t, count).zipped(ArrayType(_, _) _)
@@ -346,8 +397,13 @@ object ast {
     }
 
     object NewPair {
-        def apply(expr1: => Parsley[Expr], expr2: Parsley[Expr]): Parsley[NewPair] =
+        def apply(expr1: => Parsley[Expr], expr2: => Parsley[Expr]): Parsley[NewPair] =
             pos <**> (expr1, expr2).zipped(NewPair(_, _) _)
+    }
+
+    object NewInstance {
+        def apply(className: => Parsley[VarIdent], args: => Parsley[List[Expr]]): Parsley[NewInstance] = 
+            pos <**> (className, args).zipped(NewInstance(_, _) _)
     }
 
 
@@ -355,9 +411,16 @@ object ast {
         Identifier node builder 
     */
     
-    object Ident {
-        def apply(variable: =>Parsley[String]): Parsley[Ident] = 
-            pos <**> variable.map(Ident(_) _)
+    object VarIdent {
+        def apply(variable: =>Parsley[String]): Parsley[VarIdent] = 
+            pos <**> variable.map(VarIdent(_) _)
+    }
+
+
+    object ClassAccess {
+        def apply(classIdent: =>Parsley[VarIdent], memberIdent: => Parsley[VarIdent]): Parsley[ClassAccess] = {
+            pos <**> (classIdent, memberIdent).zipped(ClassAccess(_, _) _)
+        }
     }
 
     /* 

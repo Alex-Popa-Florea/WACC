@@ -21,13 +21,13 @@ class ProgramParserTest extends AnyFlatSpec with AppendedClues
     fully(program).parse("begin skip end") should matchPattern {
     case Success
     (
-      Begin(List(), List(Skip()))
+      Begin(List(), List(), List(Skip()))
     ) =>} withClue(" Success(Begin(List(), List(Skip())))")
     info("with exit statement")
     fully(program).parse("begin exit 7 end") should matchPattern {
     case Success
     (
-      Begin(List(), List(Exit(IntLiter(7))))
+      Begin(List(), List(), List(Exit(IntLiter(7))))
     ) =>} withClue( "Success(Begin(List(), List(Exit(IntLiter(7)))))")
     info("with basic if statement")
     fully(program).parse("begin if true then skip else skip fi end") should matchPattern {
@@ -35,6 +35,7 @@ class ProgramParserTest extends AnyFlatSpec with AppendedClues
     (
       Begin
       (
+        List(),
         List(),
         List
         (
@@ -49,6 +50,7 @@ class ProgramParserTest extends AnyFlatSpec with AppendedClues
       Begin
       (
         List(),
+        List(),
         List(Print(IntLiter(1)), Println(CharLiter('a')))
       )
     ) =>} withClue( "Success(Begin(List(), List(Print(IntLiter(1)), Println(CharLiter('a')))))")
@@ -59,13 +61,14 @@ class ProgramParserTest extends AnyFlatSpec with AppendedClues
       Begin
       (
         List(),
+        List(),
         List
         (
-          AssignType(StrType(), Ident("s"), StrLiter("hello world!")),
-          Println(Ident("s"))
+          AssignType(StrType(), VarIdent("s"), StrLiter("hello world!")),
+          Println(VarIdent("s"))
         )
       )
-    ) =>} withClue("Success(Begin(List(), List(AssignType(StrType(), Ident(\"s\"), StrLiter(\"hello world!\")), Println(Ident(\"s\")))))")
+    ) =>} withClue("Success(Begin(List(), List(AssignType(StrType(), VarIdent(\"s\"), StrLiter(\"hello world!\")), Println(VarIdent(\"s\")))))")
   }
 
   "Nested Begins" should "parse successfully and produce correct AST" in
@@ -76,6 +79,7 @@ class ProgramParserTest extends AnyFlatSpec with AppendedClues
     (
       Begin
       (
+        List(), 
         List(),
         List
         (
@@ -94,12 +98,13 @@ class ProgramParserTest extends AnyFlatSpec with AppendedClues
     (
       Begin
       (
+        List(),
         List
         (
           Function
           (
             IntType(),
-            Ident("f"),
+            VarIdent("f"),
             List(),
             List
             (
@@ -109,23 +114,24 @@ class ProgramParserTest extends AnyFlatSpec with AppendedClues
         ),
         List
         (
-          AssignType(IntType(), Ident("x"), Call(Ident("f"), List())),
-          Println(Ident("x"))
+          AssignType(IntType(), VarIdent("x"), Call(VarIdent("f"), List())),
+          Println(VarIdent("x"))
         )
       )
-    ) =>} withClue("Success(Begin(List(Function(IntType(), Ident(\"f\"), List(), List(Return(IntLiter(0))))), List(AssignType(IntType(), Ident(\"x\"), Call(Ident(\"f\"), List())), Println(Ident(\"x\")))))")
+    ) =>} withClue("Success(Begin(List(Function(IntType(), VarIdent(\"f\"), List(), List(Return(IntLiter(0))))), List(AssignType(IntType(), VarIdent(\"x\"), Call(VarIdent(\"f\"), List())), Println(VarIdent(\"x\")))))")
     info("with two function definitions")
     fully(program).parse("begin int f() is return 2 end int g() is int x = call f(); return x * 2 end int y = call g(); println y end") should matchPattern {
     case Success
     (
       Begin
       (
+        List(),
         List
         (
           Function
           (
             IntType(),
-            Ident("f"),
+            VarIdent("f"),
             List(),
             List
             (
@@ -135,21 +141,21 @@ class ProgramParserTest extends AnyFlatSpec with AppendedClues
           Function
           (
             IntType(),
-            Ident("g"),
+            VarIdent("g"),
             List(),
             List
             (
-              AssignType(IntType(), Ident("x"), Call(Ident("f"), List())),
-              Return(Mul(Ident("x"), IntLiter(2)))
+              AssignType(IntType(), VarIdent("x"), Call(VarIdent("f"), List())),
+              Return(Mul(VarIdent("x"), IntLiter(2)))
             )
           )
         ),
         List
         (
-          AssignType(IntType(), Ident("y"), Call(Ident("g"), List())),
-          Println(Ident("y"))
+          AssignType(IntType(), VarIdent("y"), Call(VarIdent("g"), List())),
+          Println(VarIdent("y"))
         )
       )
-    ) =>} withClue("Success(Begin(List(Function(IntType(), Ident(\"f\"), List(),List(Return(IntLiter(2)))), Function(IntType(), Ident(\"g\"), List(), List(AssignType(IntType(), Ident(\"x\"), Call(Ident(\"f\"), List())), Return(Mul(Ident(\"x\"), IntLiter(2)))))), List(AssignType(IntType(), Ident(\"y\"), Call(Ident(\"g\"), List())), Println(Ident(\"y\")))))")
+    ) =>} withClue("Success(Begin(List(Function(IntType(), VarIdent(\"f\"), List(),List(Return(IntLiter(2)))), Function(IntType(), VarIdent(\"g\"), List(), List(AssignType(IntType(), VarIdent(\"x\"), Call(VarIdent(\"f\"), List())), Return(Mul(VarIdent(\"x\"), IntLiter(2)))))), List(AssignType(IntType(), VarIdent(\"y\"), Call(VarIdent(\"g\"), List())), Println(VarIdent(\"y\")))))")
   }
 }

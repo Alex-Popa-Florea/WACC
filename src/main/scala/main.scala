@@ -20,8 +20,8 @@ import scala.io.Source
 import ast._
 import types._
 import symbolTable._
-import symbolTable._
 import functionTable._
+import wacc.classTable._
 import section._
 
 object main {
@@ -44,7 +44,8 @@ object main {
             Create a new symbol table and function table
         */
         val symbolTable = new SymbolTable(ProgramSection(), None)
-        val functionTable = new FunctionTable()
+        val functionTable = new FunctionTable(ProgramSection(), None)
+        val classTable = new ClassTable()
 
         /* 
             Create error builderto be used to format syntax errors
@@ -67,7 +68,7 @@ object main {
         */
         answer.get match {
             case Success(x) => {
-                val (semanticallyValid, hasReturnStatements) = analyse(x, symbolTable, functionTable, None)
+                val (semanticallyValid, hasReturnStatements) = analyse(x, symbolTable, functionTable, classTable, None)
                 if (!hasReturnStatements) {
                     /*
                         Errors relating to missing return statements in functions are found 

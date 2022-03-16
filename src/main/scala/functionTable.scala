@@ -8,6 +8,7 @@ import scala.collection.mutable.Map
 import Parsley._
 import ast._
 import types._
+import section._
 
 object functionTable {
     /*
@@ -16,8 +17,9 @@ object functionTable {
 
         It is a unique global table 
     */
-    class FunctionTable() {
+    class FunctionTable(private var section: Section, private var parent: Option[FunctionTable]) {
         private var funcMap: Map[String, (TypeCheck, List[TypeCheck])] = Map.empty
+        private var children: ListBuffer[FunctionTable] = ListBuffer.empty
         /*
             The add method adds a function to the function table, returning true
             if the addition succeded, as in there was no function of that
@@ -33,7 +35,15 @@ object functionTable {
         }
 
         def getFunction(variable: String): Option[(TypeCheck, List[TypeCheck])] = {
-            funcMap.get(variable)
+            var foundFunction = funcMap.get(variable)
+            foundFunction match {
+                case None => parent match {
+                    case None => None
+                    case Some(value) => value.getFunction(variable)
+                }
+                case _ => 
+                    foundFunction
+            }
         }
 
         def getFuncMap(): Map[String, (TypeCheck, List[TypeCheck])] = {
@@ -46,7 +56,10 @@ object functionTable {
         */
         def checkLength(funcName: String, argTypes: List[TypeCheck]): Boolean = {
             funcMap.get(funcName) match {
-                case None => false
+                case None => parent match {
+                    case None => false
+                    case Some(parentFt) => parentFt.checkLength(funcName, argTypes)
+                }
                 case Some(foundArgs) => (foundArgs._2.length == argTypes.length)
             }
         }
@@ -56,7 +69,10 @@ object functionTable {
         */
         def check(funcName: String, argTypes: List[TypeCheck]): Boolean = {
             funcMap.get(funcName) match {
-                case None => false
+                case None => parent match {
+                    case Some(parentFt) => parentFt.check(funcName, argTypes)
+                    case None => false
+                }
                 case Some(foundArgs) =>
                     var equality = true
                     if (foundArgs._2.length != argTypes.length) {
@@ -75,6 +91,15 @@ object functionTable {
                     equality
             }
         }
+
+        def addChildFt(ft: FunctionTable) = {
+            children.addOne(ft)
+        }
+
+        def getChildren(): List[FunctionTable] = {
+            children.toList
+        }
+
         /*
             Method that prints the function table
         */
@@ -90,6 +115,36 @@ object functionTable {
                     println(s"\t - ${x}")    
                 )
                 println("")
+            })
+        }
+
+        def printFunctionTables2(ft: FunctionTable, nest: Int): Unit = {
+            for (i <- 0 to nest) {
+                print("                    ")
+            }
+            println(s"- Function Table ${ft.section.toString()} - ${ft}")
+            for (i <- 0 to nest) {
+                print("                    ")
+            }
+            if (ft.parent != None) {
+                println(s" (i) Symbol Table Parent: ${ft.parent.get.section.toString()} - ${ft.parent.get}")
+            } else {
+                println(s" (i) Symbol Table Parent: ${ft.parent}")
+            }
+            for (i <- 0 to nest) {
+                print("                    ")
+            }
+            if (ft.funcMap.size > 0) {
+                println(s"(ii) Functions:")
+                ft.funcMap.zip(0 until ft.funcMap.size).foreach { case ((k, x), i) => 
+                    for (i <- 0 to nest) {
+                        print("                    ")
+                    }
+                    println(s" ${i + 1}. \"$k\": \"${x}\"")
+                }
+            }
+            ft.children.map(x => {
+                printFunctionTables2(x, nest + 1)
             })
         }
     }

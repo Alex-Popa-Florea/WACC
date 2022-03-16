@@ -54,9 +54,20 @@ object symbolTable {
                             updateSize(this, 4)
                         case PairCheck(type1, type2, nested) => 
                             updateSize(this, 4)
+                        case ClassCheck(name, nested) => 
+                            updateSize(this, 4)
                         case _ =>
-                        }
+                    }
                     variableMap(ident.variable) = (varType, size)
+                    true
+                case _ => false
+            }
+        }
+
+        def addClassMember(member: String, varType: TypeCheck): Boolean = {
+            variableMap.get(member) match {
+                case None => 
+                    variableMap(member) = (varType, size)
                     true
                 case _ => false
             }
@@ -79,9 +90,9 @@ object symbolTable {
                     case None => None
                     case Some(value) => value.find(ident)
                 }
-                case _ => 
+                case Some(extractedType) => 
                     ident.symbolTable = Some(this)
-                    Some(foundType.get._1)
+                    Some(extractedType._1)
             }
         }
 
@@ -98,8 +109,8 @@ object symbolTable {
                     case None => None
                     case Some(value) => value.findId(ident)
                 }
-                case _ => 
-                    Some(foundType.get._2)
+                case Some(extractedType) => 
+                    Some(extractedType._2)
             }
         }
 

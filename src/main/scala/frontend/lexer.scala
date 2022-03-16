@@ -3,6 +3,7 @@ package frontend
 import parsley.Parsley
 
 import Parsley._
+import scala.collection.mutable.ListBuffer
 
 object lexer {
     import parsley.token.{Lexer, Predicate, LanguageDef}
@@ -12,16 +13,25 @@ object lexer {
     import parsley.implicits.zipped.Zipped3
     import parsley.errors.combinator.ErrorMethods
 
+    val classFlag = true
+    val basicKeywords = ListBuffer("begin", "end", "is", "skip", "read", "free", "return", 
+                                    "exit", "print", "println", "if", "then", "else", "fi", 
+                                    "while", "do", "done", "newpair", "call", "fst", "snd", 
+                                    "pair", "true", "false", "null", "int", "bool", "char", 
+                                    "string", "len", "ord", "chr")
+    val keywords = if (!classFlag) {
+            basicKeywords.toSet
+        } else {
+           (basicKeywords.append("class", "ssalc", "has", "public", "private", "newinstance", "extends")).toSet
+        }
+
     /*
         The language definition for the wacc language.
+
     */
     private val wacc = LanguageDef.plain.copy(
         commentLine = "#",
-        keywords = Set("begin", "end", "is", "skip", "read", "free", "return", 
-                       "exit", "print", "println", "if", "then", "else", "fi", 
-                       "while", "do", "done", "newpair", "call", "fst", "snd", 
-                       "pair", "true", "false", "null", "int", "bool", "char", 
-                       "string", "len", "ord", "chr"),
+        keywords = keywords,
         operators = Set("!", "len", "ord", "chr", "*", "/", "%", "+", "-", ">",
                         ">=", "<", "<=", "==", "!=", "&&", "||"),
         identStart = Predicate(c => c.isLetter || c == '_'),

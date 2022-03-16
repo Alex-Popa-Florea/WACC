@@ -34,11 +34,11 @@ class StatParserTest extends AnyFlatSpec with AppendedClues{
             AssignType
             (
                 ArrayType(IntType(), 1),
-                Ident("x"), 
+                VarIdent("x"), 
                 ArrayLiter(List(IntLiter(1)))
             )
         ) =>} withClue(" Success(AssignType(ArrayType(IntType(), 1), " +
-                       "Ident(\"x\"), ArrayLiter(List(IntLiter(1)))))")
+                       "VarIdent(\"x\"), ArrayLiter(List(IntLiter(1)))))")
 
         info("array with multiple elements")
         fully(statement).parse("bool [] arr = [true, false, true]") should matchPattern {
@@ -47,10 +47,10 @@ class StatParserTest extends AnyFlatSpec with AppendedClues{
             AssignType
             (
                 ArrayType(BoolType(), 1),
-                Ident("arr"), 
+                VarIdent("arr"), 
                 ArrayLiter(List(BoolLiter(true), BoolLiter(false), BoolLiter(true)))
             )
-        ) =>} withClue(" Success(AssignType(ArrayType(BoolType(), 1), Ident(\"arr\"), " +
+        ) =>} withClue(" Success(AssignType(ArrayType(BoolType(), 1), VarIdent(\"arr\"), " +
                        "ArrayLiter(List(BoolLiter(true), BoolLiter(false), BoolLiter(true)))))")
 
     }
@@ -62,11 +62,11 @@ class StatParserTest extends AnyFlatSpec with AppendedClues{
             AssignType
             (
                 PairType(IntType(), IntType()),
-                Ident("p"), 
+                VarIdent("p"), 
                 NewPair(IntLiter(1), IntLiter(2))
             )
         ) =>} withClue(" Success(AssignType(PairType(IntType(), IntType()), " +
-                       "Ident(\"p\"), NewPair(IntLiter(1), IntLiter(2))))")
+                       "VarIdent(\"p\"), NewPair(IntLiter(1), IntLiter(2))))")
     }
 
     "Assignment to call statement" should "parse successfully and produce a correct AST" in {
@@ -77,11 +77,11 @@ class StatParserTest extends AnyFlatSpec with AppendedClues{
             AssignType
             (
                 BoolType(),
-                Ident("res"), 
-                Call(Ident("foo"), List())
+                VarIdent("res"), 
+                Call(VarIdent("foo"), List())
             )
-        ) =>} withClue(" Success(AssignType(BoolType(), Ident(\"res\"), " +
-                       "Call(Ident(\"foo\"), List())))")
+        ) =>} withClue(" Success(AssignType(BoolType(), VarIdent(\"res\"), " +
+                       "Call(VarIdent(\"foo\"), List())))")
 
         info("call function with arguments")
         fully(statement).parse("int res = call foo(1, true)") should matchPattern{
@@ -90,11 +90,11 @@ class StatParserTest extends AnyFlatSpec with AppendedClues{
             AssignType
             (
                 IntType(),
-                Ident("res"), 
-                Call(Ident("foo"), List(IntLiter(1), BoolLiter(true)))
+                VarIdent("res"), 
+                Call(VarIdent("foo"), List(IntLiter(1), BoolLiter(true)))
             )
-        ) =>} withClue(" Success(AssignType(IntType(), Ident(\"res\"), " +
-                       "Call(Ident(\"foo\"), List(IntLiter(1), BoolLiter(true)))))")
+        ) =>} withClue(" Success(AssignType(IntType(), VarIdent(\"res\"), " +
+                       "Call(VarIdent(\"foo\"), List(IntLiter(1), BoolLiter(true)))))")
     }
             
 
@@ -106,50 +106,50 @@ class StatParserTest extends AnyFlatSpec with AppendedClues{
         (
             Assign
             (
-                ArrayElem(Ident("arr"), List(IntLiter(0))), 
+                ArrayElem(VarIdent("arr"), List(IntLiter(0))), 
                 IntLiter(42)
             )
-        ) =>} withClue(" Success(Assign(ArrayElem(Ident(\"arr\")," +
+        ) =>} withClue(" Success(Assign(ArrayElem(VarIdent(\"arr\")," +
                        " List(IntLiter(0))), IntLiter(42)))")
 
         info("assign pair element to expression")
         fully(statement).parse("fst p = true") should matchPattern
-            {case Success(Assign(Fst(Ident("p")), BoolLiter(true)))
-        =>} withClue(" Success(Assign(Fst(Ident(\"p\")), BoolLiter(true)))")
+            {case Success(Assign(Fst(VarIdent("p")), BoolLiter(true)))
+        =>} withClue(" Success(Assign(Fst(VarIdent(\"p\")), BoolLiter(true)))")
 
         info("assign identifier to expression")
         fully(statement).parse("var = 1 + 2") should matchPattern
-            {case Success(Assign(Ident("var"), Add(IntLiter(1), IntLiter(2))))
-        =>} withClue(" Success(Assign(Ident(\"var\"), Add(IntLiter(1), IntLiter(2))))")
+            {case Success(Assign(VarIdent("var"), Add(IntLiter(1), IntLiter(2))))
+        =>} withClue(" Success(Assign(VarIdent(\"var\"), Add(IntLiter(1), IntLiter(2))))")
     }
 
     "Read statements" should "parse successfully and produce a correct AST" in {
         info("read into identifier")
         fully(statement).parse("read input") should matchPattern
-            {case Success(Read(Ident("input")))
-        =>} withClue(" Success(Read(Ident(\"input\")))")
+            {case Success(Read(VarIdent("input")))
+        =>} withClue(" Success(Read(VarIdent(\"input\")))")
 
         info("read into pair elem")
         fully(statement).parse("read snd p") should matchPattern
-            {case Success(Read(Snd(Ident("p"))))
-        =>} withClue(" Success(Read(Snd(Ident(\"p\"))))")
+            {case Success(Read(Snd(VarIdent("p"))))
+        =>} withClue(" Success(Read(Snd(VarIdent(\"p\"))))")
 
         info("read into array elem")
         fully(statement).parse("read arr[0][2]") should matchPattern
-            {case Success(Read(ArrayElem(Ident("arr"), List(IntLiter(0), IntLiter(2)))))
-        =>} withClue(" Success(Read(ArrayElem(Ident(\"arr\"), List(IntLiter(0), IntLiter(2)))))")
+            {case Success(Read(ArrayElem(VarIdent("arr"), List(IntLiter(0), IntLiter(2)))))
+        =>} withClue(" Success(Read(ArrayElem(VarIdent(\"arr\"), List(IntLiter(0), IntLiter(2)))))")
     }
 
     "Free statements" should "parse successfully and produce a correct AST" in {
         fully(statement).parse("free arr[0]") should matchPattern
-            {case Success(Free(ArrayElem(Ident("arr"), List(IntLiter(0)))))
-        =>} withClue(" Success(Free(ArrayElem(Ident(\"arr\"), List(IntLiter(0)))))")
+            {case Success(Free(ArrayElem(VarIdent("arr"), List(IntLiter(0)))))
+        =>} withClue(" Success(Free(ArrayElem(VarIdent(\"arr\"), List(IntLiter(0)))))")
     }
 
     "Return statements" should "parse successfully and produce a correct AST" in {
         fully(statement).parse("return result") should matchPattern
-            {case Success(Return(Ident("result")))
-        =>} withClue(" Success(Return(Ident(\"result\")))")
+            {case Success(Return(VarIdent("result")))
+        =>} withClue(" Success(Return(VarIdent(\"result\")))")
     }
 
     "Exit statements" should "parse successfully and produce a correct AST" in {
@@ -185,13 +185,13 @@ class StatParserTest extends AnyFlatSpec with AppendedClues{
             (
                 If
                 (
-                    EQ(Ident("x"), IntLiter(1)), 
+                    EQ(VarIdent("x"), IntLiter(1)), 
                     List(Print(StrLiter("Hello World!"))), 
-                    List(Assign(Ident("x"), Sub(Ident("x"), IntLiter(1))))
+                    List(Assign(VarIdent("x"), Sub(VarIdent("x"), IntLiter(1))))
                 )
             )
-        =>} withClue(" Success(If(EQ(Ident(\"x\"), IntLiter(1)), List(Print(StrLiter(\"Hello World!\"))),"+
-                    "List(Assign(Ident(\"x\"), Sub(Ident(\"x\"), IntLiter(1))))))")
+        =>} withClue(" Success(If(EQ(VarIdent(\"x\"), IntLiter(1)), List(Print(StrLiter(\"Hello World!\"))),"+
+                    "List(Assign(VarIdent(\"x\"), Sub(VarIdent(\"x\"), IntLiter(1))))))")
     
     }
 
@@ -201,12 +201,12 @@ class StatParserTest extends AnyFlatSpec with AppendedClues{
             (
                 While
                 (
-                    LT(Ident("i"), Len(Ident("arr"))),
-                    List(Assign(Ident("x"), Add(Ident("x"), IntLiter(1))))
+                    LT(VarIdent("i"), Len(VarIdent("arr"))),
+                    List(Assign(VarIdent("x"), Add(VarIdent("x"), IntLiter(1))))
                 )
             )
-        =>} withClue(" Success(While(LT(Ident(\"i\"), Len(Ident(\"arr\")))," +
-                    "List(Assign(Ident(\"x\"), Add(Ident(\"x\"), IntLiter(1)))))))")
+        =>} withClue(" Success(While(LT(VarIdent(\"i\"), Len(VarIdent(\"arr\")))," +
+                    "List(Assign(VarIdent(\"x\"), Add(VarIdent(\"x\"), IntLiter(1)))))))")
     }
 
     "Begin and end statements" should "parse successfully and produce a correct AST" in {
@@ -223,13 +223,13 @@ class StatParserTest extends AnyFlatSpec with AppendedClues{
             (
                 If
                 (
-                    EQ(Ident("x"), IntLiter(1)), 
+                    EQ(VarIdent("x"), IntLiter(1)), 
                     List(Print(StrLiter("Hello World!")), Skip(), Skip()), 
-                    List(Assign(Ident("x"), Sub(Ident("x"), IntLiter(1))), Skip())
+                    List(Assign(VarIdent("x"), Sub(VarIdent("x"), IntLiter(1))), Skip())
                 )
             )
-        =>} withClue(" Success(If(EQ(Ident(\"x\"), IntLiter(1)), List(Print(StrLiter(\"Hello World!\")), Skip(). Skip()),"+
-                    "List(Assign(Ident(\"x\"), Sub(Ident(\"x\"), IntLiter(1))), Skip())))")
+        =>} withClue(" Success(If(EQ(VarIdent(\"x\"), IntLiter(1)), List(Print(StrLiter(\"Hello World!\")), Skip(). Skip()),"+
+                    "List(Assign(VarIdent(\"x\"), Sub(VarIdent(\"x\"), IntLiter(1))), Skip())))")
 
         info("in body of while statement")
         fully(statement).parse("while i < len arr do x = x + 1 ; if true then skip else skip fi done") should matchPattern{
@@ -237,12 +237,12 @@ class StatParserTest extends AnyFlatSpec with AppendedClues{
             (
                 While
                 (
-                    LT(Ident("i"), Len(Ident("arr"))),
-                    List(Assign(Ident("x"), Add(Ident("x"),IntLiter(1))), If(BoolLiter(true), List(Skip()), List(Skip())))
+                    LT(VarIdent("i"), Len(VarIdent("arr"))),
+                    List(Assign(VarIdent("x"), Add(VarIdent("x"),IntLiter(1))), If(BoolLiter(true), List(Skip()), List(Skip())))
                 )
             )
-        =>} withClue(" Success(While(LT(Ident(\"i\"), Len(Ident(\"arr\")))," +
-                     "List(Assign(Ident(\"x\"), Add(Ident(\"x\"), IntLiter(1)))IntLiter(1))), " +
+        =>} withClue(" Success(While(LT(VarIdent(\"i\"), Len(VarIdent(\"arr\")))," +
+                     "List(Assign(VarIdent(\"x\"), Add(VarIdent(\"x\"), IntLiter(1)))IntLiter(1))), " +
                      "If(BoolLiter(true), List(Skip()), List(Skip())))")
         
         info("inside nested begin statement")

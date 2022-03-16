@@ -62,33 +62,33 @@ class ExprParserTest extends AnyFlatSpec with AppendedClues{
     "Identifiers" should "parse successfully and produce correct AST" in {
     info("starting with lower case letter")
     fully(expr).parse("identifier1Name") should matchPattern {
-    case Success(Ident("identifier1Name")
-    ) =>} withClue( " Success(Ident(\"identifier1Name\"))")
+    case Success(VarIdent("identifier1Name")
+    ) =>} withClue( " Success(VarIdent(\"identifier1Name\"))")
     
 
     info("starting with upper case letter")
     fully(expr).parse("Identifier1Name") should matchPattern {
-    case Success(Ident("Identifier1Name"))
-     =>} withClue( " Success(Ident(\"Identifier1Name\"))")
+    case Success(VarIdent("Identifier1Name"))
+     =>} withClue( " Success(VarIdent(\"Identifier1Name\"))")
   
 
     info("starting with an underscore letter")
     fully(expr).parse("_Identifier1Name") should matchPattern {
-    case Success(Ident("_Identifier1Name")
-    ) =>} withClue( " Success(Ident(\"_Identifier1Name\"))")
+    case Success(VarIdent("_Identifier1Name")
+    ) =>} withClue( " Success(VarIdent(\"_Identifier1Name\"))")
   }
 
     "Array elems" should "parse successfully and produce correct AST" in {
     info("single array elem")
     fully(expr).parse("array [1]") should matchPattern {
-    case Success(ArrayElem(Ident("array"), List(IntLiter(1)))
-    ) =>} withClue( " Success(ArrayElem(Ident(\"array\"), List(IntLiter(1))))")
+    case Success(ArrayElem(VarIdent("array"), List(IntLiter(1)))
+    ) =>} withClue( " Success(ArrayElem(VarIdent(\"array\"), List(IntLiter(1))))")
     
 
     info("nested array elem")
     fully(expr).parse("array [1][2][3]") should matchPattern {
-    case Success(ArrayElem(Ident("array"), List(IntLiter(1), IntLiter(2), IntLiter(3)))
-    ) =>} withClue( " Success(ArrayElem(Ident(\"array\"), List(IntLiter(1), IntLiter(2), IntLiter(3))))")
+    case Success(ArrayElem(VarIdent("array"), List(IntLiter(1), IntLiter(2), IntLiter(3)))
+    ) =>} withClue( " Success(ArrayElem(VarIdent(\"array\"), List(IntLiter(1), IntLiter(2), IntLiter(3))))")
 
   }
 
@@ -104,7 +104,7 @@ class ExprParserTest extends AnyFlatSpec with AppendedClues{
 
     info("len")
     fully(expr).parse("len array") should matchPattern {
-    case Success(Len(Ident("array"))) =>} withClue( " Success(Len(Ident(\"array\")))")
+    case Success(Len(VarIdent("array"))) =>} withClue( " Success(Len(VarIdent(\"array\")))")
 
     info("ord")
     fully(expr).parse("ord 'c'") should matchPattern {

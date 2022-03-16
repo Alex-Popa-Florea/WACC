@@ -11,6 +11,7 @@ import parsley.Success
 import wacc.ast._
 import wacc.functionTable._
 import wacc.symbolTable._
+import wacc.classTable._
 import wacc.types._
 import wacc.section._
 
@@ -184,11 +185,13 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
         val variableMap = analyser(p)._1.getVariableMap()
         var lhsType = variableMap.filter({case (x, _) => x == "i"}).map({case (_, (t, _)) => t})
         var rhsType = variableMap.filter({case (x, _) => x == "b"}).map({case (_, (t, _)) => t})
+        println(lhsType)
+        println(rhsType)
         lhsType should equal (List(IntCheck(0)))
         rhsType should equal (List(BoolCheck(0)))
         val error = analyser(p)._3 
         // Check that == fails and returns semantic error
-        error should equal (List(("Expressions in EQ(Ident(i),Ident(b)) have missmatched types: int and bool!",(1,43))))
+        error should equal (List(("Expressions in EQ(VarIdent(i),VarIdent(b)) have missmatched types: int and bool!",(1,43))))
       }
       case Failure(err) => {
         println(err)
@@ -219,7 +222,7 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
         rhsType should equal (List(CharCheck(0)))
         val error = analyser(p)._3
         // Check that > fails and returns semantic error
-        error should equal (List(("Expressions in GT(Ident(i),Ident(c)) have missmatched types: int and char!",(1,42))))
+        error should equal (List(("Expressions in GT(VarIdent(i),VarIdent(c)) have missmatched types: int and char!",(1,42))))
       }
       case Failure(err) => {
         println(err)
@@ -296,8 +299,9 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
   }
   def analyser(p: Node): (SymbolTable, FunctionTable, ListBuffer[(String, (Int, Int))]) = { 
     val symbolTable = new SymbolTable(ProgramSection(), None)
-    val functionTable = new FunctionTable()
-    analyse(p, symbolTable, functionTable, None)
+    val functionTable = new FunctionTable(ProgramSection(), None)
+    val classTable = new ClassTable()
+    analyse(p, symbolTable, functionTable, classTable, None)
     val e = errors
     errors = ListBuffer.empty
     (symbolTable, functionTable, e)

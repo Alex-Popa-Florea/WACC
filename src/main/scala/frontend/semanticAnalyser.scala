@@ -4,13 +4,16 @@ import parsley.Parsley
 import wacc.ast._
 import wacc.functionTable._
 import wacc.symbolTable._
+import wacc.classTable._
 import wacc.types._
 import wacc.section._
+import scala.collection.mutable.Map
 
 import scala.collection.mutable.ListBuffer
 
 import Parsley._
 import parser._
+import java.util.HashMap
 
 object semanticAnalyser {
     var errors: ListBuffer[(String, (Int, Int))] = ListBuffer.empty
@@ -28,12 +31,15 @@ object semanticAnalyser {
         semantically, while the second boolean represents whether all functions in the AST have a return or exit
         statement, and that main does not have return statements.
 
-        This function is first called on a Begin node of the AST, and then called recursivelly on other
+        This function is first called on a Begin node of the AST, and then called recursively on other
         inner function and statement nodes within the AST.
 
         It builds the symbol table and function tables throughout the recursive calls.
     */
-	def analyse(node: Node, st: SymbolTable, ft: FunctionTable, returnType: Option[TypeCheck]): (Boolean, Boolean) = {
+    /*CHANGE THIS*/
+    val classFlag = true
+
+	def analyse(node: Node, st: SymbolTable, ft: FunctionTable, ct: ClassTable, returnType: Option[TypeCheck]): (Boolean, Boolean) = {
         /*
             We pattern match over nodes in the AST
         */
@@ -43,7 +49,46 @@ object semanticAnalyser {
                 the function table, then recursively call analyse on the functions and 
                 statements inside the two lists of begin (func and stat) 
             */
-			case Begin(func, stat) =>
+			case Begin(classes, func, stat) =>
+
+                var classParentChecked = true
+                var addedClasses = true
+                if (classFlag) {
+                    for (singleClass <- classes) {
+                        val publicFieldsMap = Map.empty[String, TypeCheck]
+                        val privateFieldsMap = Map.empty[String, TypeCheck]
+                        singleClass.fields.foreach(x => {x.visiblity match {
+                            case Private() => privateFieldsMap.addOne(x.assign.id.variable, extractType(x.assign.t))
+                            case Public() => publicFieldsMap.addOne(x.assign.id.variable, extractType(x.assign.t))
+                        }})
+                        val parent = singleClass.parent match {
+                            case None => None
+                            case Some(parentId) =>
+                                if (parentId.variable == singleClass.id.variable) {
+                                    classParentChecked = false
+                                    errors.addOne((s"Class ${parentId.variable} cannot extend itself!"), node.pos)
+                                } else {
+                                    val parentExists = ! (ct.getClass(parentId.variable).isEmpty)
+                                    if (!parentExists) {
+                                        classParentChecked = false
+                                        errors.addOne((s"Parent class ${parentId.variable} does not exist"), node.pos)
+                                    }
+                                }
+                                Some(parentId.variable)
+                        }
+                        val publicMethodMap = Map.empty[String, (TypeCheck, List[TypeCheck])]
+                        val privateMethodMap = Map.empty[String, (TypeCheck, List[TypeCheck])]
+                        singleClass.methods.foreach(x => x.visibility match {
+                            case Private() => privateMethodMap.addOne((x.func.id.variable, (extractType(x.func.t), x.func.vars.map(y => extractType(y.t)))))
+                            case Public() => publicMethodMap.addOne((x.func.id.variable, (extractType(x.func.t), x.func.vars.map(x => extractType(x.t))))) })
+                        val addedClass = ct.add(singleClass.id.variable, parent, singleClass.vars.map(x => (x.id.variable, extractType(x.t))), publicFieldsMap, privateFieldsMap, publicMethodMap, privateMethodMap)
+                        if (!addedClass) {
+                            addedClasses = false
+                            errors.addOne((s"Class ${singleClass.id.variable} has already been defined, sorry!", node.pos))
+                        }
+                    }
+                }
+
                 var addedFunctions = true
                 for (function <- func){
                     val addedFunction = ft.add(function.id.variable, extractType(function.t), function.vars.map(x => extractType(x.t)))
@@ -52,12 +97,72 @@ object semanticAnalyser {
                         errors.addOne((s"Function ${function.id.variable} has already been defined, sorry!", node.pos))
                     }
                 }
-				val functionsChecked = func.map(x => analyse(x, st, ft, None))
-                val statsChecked = stat.map(x => analyse(x, st, ft, None)._1)
+                
+
+                var classesChecked: (Boolean, Boolean) = (true, true)
+                if (classFlag) { 
+                    classesChecked = classes.map(x => analyse(x, st, ft, ct, None)).reduceOption((x, y) => (x._1 && y._1, x._2 && y._2)) match {
+                        case None => (true, true)
+                        case Some(value) => value
+                    }
+                }
+ 
+				val functionsChecked = func.map(x => analyse(x, st, ft, ct, None)) 
+                val statsChecked = stat.map(x => analyse(x, st, ft, ct, None)._1)
+
                 functionsChecked.reduceOption((x, y) => ((x._1 && y._1), false)) match {
 					case None => (statsChecked.reduce((x, y) => x && y), true)
-					case Some(value) => (addedFunctions && value._1 && statsChecked.reduce((x, y) => x && y), functionsChecked.last._2)
-				}
+					case Some(value) => (classesChecked._1 && classParentChecked && addedClasses && addedFunctions && value._1 && statsChecked.reduce((x, y) => x && y), classesChecked._2 && functionsChecked.last._2)
+                }
+            
+            case classStat: Class =>
+                val funcTable = new FunctionTable(ClassSection(classStat.id.variable), Some(ft))
+                val symbolTable = new SymbolTable(ClassSection(classStat.id.variable), Some(st))
+                ft.addChildFt(funcTable)
+                var addedMethods = true
+                val bannedFields: Map[String, TypeCheck] = ct.getPrivateFields(classStat.id.variable).get ++ ct.getPublicFields(classStat.id.variable).get
+                val bannedMethods: Map[String, (TypeCheck, List[TypeCheck])] = ct.getPrivateMethods(classStat.id.variable).get ++ ct.getPublicMethods(classStat.id.variable).get
+                classStat.parent match {
+                    case Some(value) => addClassMembers(None, value.variable, ct, symbolTable, funcTable, bannedFields, bannedMethods)
+                    case None =>
+                }
+                
+                for (method <- classStat.methods){
+                    val addedFunction = funcTable.add(method.func.id.variable, extractType(method.func.t), method.func.vars.map(x => extractType(x.t)))
+                    if (!addedFunction) {
+                        addedMethods = false
+                        errors.addOne((s"Method ${method.func.id.variable} has already been defined, sorry!", node.pos))
+                    }
+                }
+                val paramsCheck = classStat.vars.map(v => analyse(v, symbolTable, ft, ct, None)._1).reduceOption((x, y) => x && y) match {
+                    case Some(value) => value
+                    case None => true
+                }
+                val correctConstr =  classStat.parent match {
+                    case Some(parentName) => ct.getConstructors(parentName.variable) match {
+                        case Some(parentConstr) => 
+                            val classConstr = classStat.vars.map(v => (v.id.variable, extractType(v.t)))
+                            parentConstr.map(v => classConstr.contains(v)).reduceOption((x, y) => x && y) match {
+                                case Some(presentVars) => 
+                                    if (!presentVars) {
+                                        errors.addOne((s"Class ${classStat.id.variable}'s constructor must include its parent class, ${parentName.variable}'s, constructor parameters", node.pos))
+                                    }
+                                    presentVars
+                                case None => true
+                            }
+                        case None => false
+                    }
+                    case None => true
+                }
+                val fieldCheck = classStat.fields.map(f => analyse(f.assign, symbolTable, ft, ct, None)._1).reduceOption((x, y) => x && y) match {
+                    case Some(value) => value
+                    case None => true
+                }
+                val methodCheck = classStat.methods.map(m => analyse(m.func, symbolTable, funcTable, ct, None))
+                methodCheck.reduceOption((x, y) => ((x._1 && y._1), false)) match {
+					case None => (fieldCheck && paramsCheck && correctConstr, true) 
+					case Some(value) => (value._1 && fieldCheck && paramsCheck && correctConstr, methodCheck.last._2)
+                }
             /*
                 For the function node, we create a new symbol table whose parent becomes
                 the old symbol table, then recursively check its parameters and statements, 
@@ -69,9 +174,9 @@ object semanticAnalyser {
                 var nst = new SymbolTable(FunctionSection(functionStat.id.variable), Some(st))
                 st.addChildSt(nst)
                 functionStat.semanticTable = Some(nst)
-				val checkedParams = functionStat.vars.reverse.map(x => analyse(x, nst, ft, None)._1).reduceOption((x, y) => x && y)
+				val checkedParams = functionStat.vars.reverse.map(x => analyse(x, nst, ft, ct, None)._1).reduceOption((x, y) => x && y)
                 nst.updateSize(nst, 4)
-				val checkedStats = functionStat.stat.map(x => (analyse(x, nst, ft, Some(extractType(functionStat.t))), x.pos))
+				val checkedStats = functionStat.stat.map(x => (analyse(x, nst, ft, ct, Some(extractType(functionStat.t))), x.pos))
                 if (!checkedStats.last._1._2) {
                     if (returnTypeError == None) {
                         returnTypeError = Some((s"Function ${functionStat.id.variable} missing return statement", checkedStats.last._2))
@@ -103,10 +208,23 @@ object semanticAnalyser {
             */
 			case AssignType(t, id, rhs) =>
                 val addedVariable = st.add(id, extractType(t))
+                var classAssign = true
                 if (!addedVariable) {
                     errors.addOne((s"Variable already declared", node.pos))
+                } else {
+                    t match {
+                        case ClassType(className) => 
+                            val classEntry = ct.getClass(className.variable) match {
+                                case Some(foundClass) => addClassMembers(Some(id.variable), className.variable, ct, st, ft, Map.empty, Map.empty) 
+                                case None => 
+                                    errors.addOne((s"Undefined class ${className.variable}", className.pos))
+                                    classAssign = false
+                            }
+                        case _ =>
+                        
+                    }
                 }
-                val checkedRHS = analyseRHS(rhs, st, ft, extractType(t))
+                val checkedRHS = analyseRHS(rhs, st, ft, ct, extractType(t))
                 (checkedRHS && addedVariable, false)
              /*
                 An Assign node analyses the left hand side of the assignment,
@@ -118,7 +236,7 @@ object semanticAnalyser {
                 val checkedLHS = analyseLHS(lhs, st)
                 checkedLHS._2 match {
                     case None => (false, false)
-                    case Some(foundType) => ((checkedLHS._1 && analyseRHS(rhs, st, ft, foundType)), false)
+                    case Some(foundType) => ((checkedLHS._1 && analyseRHS(rhs, st, ft, ct, foundType)), false)
                 }
              /*
                 For a Read node we analyse the inner "left hand side" expression
@@ -222,14 +340,18 @@ object semanticAnalyser {
             */
 			case ifStat: If =>
 				var trueNst = new SymbolTable(TrueIfSection(), Some(st))
+                var trueNft = new FunctionTable(TrueIfSection(), Some(ft))
                 st.addChildSt(trueNst)
+                ft.addChildFt(trueNft)
                 ifStat.trueSemanticTable = Some(trueNst)
 				var falseNst = new SymbolTable(FalseIfSection(), Some(st))
+                var falseNft = new FunctionTable(FalseIfSection(), Some(ft))
                 st.addChildSt(falseNst)
+                ft.addChildFt(falseNft)
                 ifStat.falseSemanticTable = Some(falseNst)
 				val conditionCheck = analyseExpr(ifStat.cond, st)
-				val trueStatCheck = ifStat.trueStat.map(x => analyse(x, trueNst, ft, returnType))
-				val falseStatCheck = ifStat.falseStat.map(x => analyse(x, falseNst, ft, returnType))
+				val trueStatCheck = ifStat.trueStat.map(x => analyse(x, trueNst, trueNft, ct, returnType))
+				val falseStatCheck = ifStat.falseStat.map(x => analyse(x, falseNst, falseNft, ct, returnType))
                 val correctType = conditionCheck._2 == Some(BoolCheck(0))
                 if (!correctType && conditionCheck._2 != None) {
                     errors.addOne((s"Expression of type bool expected in if statement condition, " +
@@ -246,7 +368,9 @@ object semanticAnalyser {
             */
 			case whileStat: While => 
                 var nst = new SymbolTable(WhileSection(), Some(st))
+                var nft = new FunctionTable(WhileSection(), Some(ft))
                 st.addChildSt(nst)
+                ft.addChildFt(nft)
                 whileStat.semanticTable = Some(nst)
 				val conditionCheck = analyseExpr(whileStat.cond, st)
                 val correctType = conditionCheck._2 == Some(BoolCheck(0))
@@ -254,7 +378,7 @@ object semanticAnalyser {
                     errors.addOne((s"Expression of type bool expected in while statement condition," +
                       s" but expression of type ${typeCheckToString(conditionCheck._2.get)} found!", node.pos))
                 }
-                val correctStats = whileStat.stat.map(x => analyse(x, nst, ft, returnType)._1).reduce((x, y) => x && y)
+                val correctStats = whileStat.stat.map(x => analyse(x, nst, nft, ct, returnType)._1).reduce((x, y) => x && y)
 				(conditionCheck._1 && correctType && 
                  correctStats, false)
             
@@ -264,9 +388,11 @@ object semanticAnalyser {
             */
 			case nestedBegin: NestedBegin => 
                 var nst = new SymbolTable(NestedProgramSection(), Some(st))
+                var nft = new FunctionTable(NestedProgramSection(), Some(ft))
                 st.addChildSt(nst)
+                ft.addChildFt(nft)
                 nestedBegin.semanticTable = Some(nst)
-                val correctStats = nestedBegin.stat.map(x => analyse(x, nst, ft, returnType)._1).reduce((x, y) => x && y)
+                val correctStats = nestedBegin.stat.map(x => analyse(x, nst, nft, ct, returnType)._1).reduce((x, y) => x && y)
 				(correctStats, false)
 			
 			case _ => (false, false)
@@ -279,7 +405,7 @@ object semanticAnalyser {
         and the type of the left hand side of the assignment, and returns a boolean if the right
         hand sign is valid semantically and has the same type as the left hand side.
     */
-    def analyseRHS(assignRHS: AssignRHS, st: SymbolTable, ft: FunctionTable, lhsType: TypeCheck): Boolean = {
+    def analyseRHS(assignRHS: AssignRHS, st: SymbolTable, ft: FunctionTable, ct: ClassTable, lhsType: TypeCheck): Boolean = {
          /*
             For a expressions, we call analyseExpr, and check the type of 
             that expr is the same as the given left hand side type.
@@ -289,14 +415,14 @@ object semanticAnalyser {
                 val checkedExpr = analyseExpr(expr, st)
                 lhsType match {
                     case PairCheck(type1, type2, nested) => 
-                        val correctType =  checkedExpr._2 == Some(lhsType) || checkedExpr._2 == Some(EmptyPairCheck())
+                        val correctType =  equalTypes(ct, checkedExpr._2, Some(lhsType)) || checkedExpr._2 == Some(EmptyPairCheck())
                         if (!correctType && checkedExpr._2 != None) {
                             errors.addOne((s"Expression of type pair expected in right hand side of assignment, " +
                               s"but expression of type ${typeCheckToString(checkedExpr._2.get)} found!", assignRHS.pos))
                         }
                         (checkedExpr._1 && correctType)
                     case _ => 
-                        val correctType = checkedExpr._2 == Some(lhsType)
+                        val correctType = equalTypes(ct, checkedExpr._2, Some(lhsType))
                         if (!correctType && checkedExpr._2 != None) {
                             errors.addOne((s"Expression of type ${typeCheckToString(lhsType)} expected in right " +
                               s"hand side of assignment, but expression of type ${typeCheckToString(checkedExpr._2.get)} found!", assignRHS.pos))
@@ -312,12 +438,17 @@ object semanticAnalyser {
             case ArrayLiter(elements) => 
                 lhsType match {
                     case baseTypeCheck: BaseTypeCheck =>
-                        val correctType = elements.map(x => analyseExpr(x, st) == (true, baseTypeCheck match {
-                            case IntCheck(nested) => Some(IntCheck(nested - 1))
-                            case BoolCheck(nested) => Some(BoolCheck(nested - 1))
-                            case CharCheck(nested) => Some(CharCheck(nested - 1))
-                            case StrCheck(nested) => Some(StrCheck(nested - 1))
-                        })).reduceOption((x, y) => x && y)
+                        val correctType = elements.map(x => {
+                            val analysedExpr = analyseExpr(x, st) 
+                            val newType = baseTypeCheck match {
+                                case IntCheck(nested) => Some(IntCheck(nested - 1))
+                                case BoolCheck(nested) => Some(BoolCheck(nested - 1))
+                                case CharCheck(nested) => Some(CharCheck(nested - 1))
+                                case StrCheck(nested) => Some(StrCheck(nested - 1))
+                                case ClassCheck(name, nested) => Some(ClassCheck(name, nested - 1))
+                            }
+                            analysedExpr._1 && equalTypes(ct, analysedExpr._2, newType) 
+                        }).reduceOption((x, y) => x && y)
                         correctType match {
                             case None => true
                             case Some(value) => 
@@ -330,7 +461,7 @@ object semanticAnalyser {
 					case PairCheck(type1, type2, nested) => 
 						val correctType = elements.map(x => {
 							val checkedExpr = analyseExpr(x, st)
-							checkedExpr == (true, Some(PairCheck(type1, type2, nested - 1))) || checkedExpr == (true, Some(EmptyPairCheck()))
+                            checkedExpr._1 && (equalTypes(ct, checkedExpr._2, Some(PairCheck(type1, type2, nested - 1))) || checkedExpr._2 == Some(EmptyPairCheck()))
 						}).reduceOption((x, y) => x && y)
                         correctType match {
                             case None => true
@@ -344,6 +475,35 @@ object semanticAnalyser {
 
 					case _ => false
 				} 
+
+            case NewInstance(className, args) =>
+                val checkedArgs: List[(Boolean, Option[TypeCheck])] = args.map(x => analyseExpr(x, st))
+                if (checkedArgs.forall(x => x._1)) {
+                    ct.getClass(className.variable) match {
+                        case Some(foundClass) =>
+                            val correctType = equalTypes(ct, Some(ClassCheck(className.variable, 0)), Some(lhsType))
+                            if (!correctType) {
+                                errors.addOne((s"Expected type: ${typeCheckToString(lhsType)}, " +
+                                    s"actual type of new instance: ${typeCheckToString(ClassCheck(className.variable, 0))}!", assignRHS.pos))
+                            }
+                            val checkedNumArgs = ct.checkLengthConstructor(className.variable, checkedArgs.map(x => x._2.get))
+                            if (!checkedNumArgs) {
+                                errors.addOne((s"Wrong number of arguments in constructor of ${className.variable}!", assignRHS.pos))
+                            }
+                            val checkArgs = ct.checkConstructor(className.variable, checkedArgs.map(x => x._2.get))
+                            if (checkedNumArgs && !checkArgs) {
+                                errors.addOne((s"Expected argument types: ${foundClass._2.map(x => typeCheckToString(x._2))}, " +
+                                    s"but found: ${checkedArgs.map(x => typeCheckToString(x._2.get))}in call to function ${className.variable}!", assignRHS.pos))
+                            }
+                            correctType && checkArgs
+                        case None => 
+                            errors.addOne((s"Class ${className.variable} not declared!", assignRHS.pos))
+                            false
+                    }
+                } else {
+                    false
+                }
+            
              /*
                 For a NewPair node, the inner expresssions are analysed, and
                 checked that they are the same as the 
@@ -363,14 +523,14 @@ object semanticAnalyser {
                                     case EmptyPairCheck() => true
                                     case _ => false
                                 }
-                                case _ => (foundType1 == lhsFoundType1)
+                                case _ => equalTypes(ct, Some(foundType1), Some(lhsFoundType1))
                             }) &&
                             (foundType2 match {
                                 case EmptyPairCheck() | PairCheck(_, _, 0) => lhsFoundType2 match {
                                     case EmptyPairCheck() => true
                                     case _ => false
                                 }
-                                case _ => (foundType2 == lhsFoundType2)
+                                case _ => equalTypes(ct, Some(foundType2), Some(lhsFoundType2))
                             })
                             if (!correctType) {
                                 errors.addOne((s"New pair must be of type ${typeCheckToString(lhsType)} but is " +
@@ -401,7 +561,7 @@ object semanticAnalyser {
                                     false
                             }
                         case PairCheck(type1, _, 0) =>
-                            val correctType = type1 == lhsType
+                            val correctType = equalTypes(ct, Some(type1), Some(lhsType))
                             if (!correctType) {
                                 errors.addOne((s"First element of input pair should be of type: ${typeCheckToString(lhsType)}, " +
                                   s"but found: ${typeCheckToString(type1)}!", assignRHS.pos))
@@ -433,12 +593,12 @@ object semanticAnalyser {
                                     false
                             }
                         case PairCheck(_, type2, 0) => 
-                            val correctType = type2 == lhsType
+                            val correctType = equalTypes(ct, Some(type2), Some(lhsType))
                             if (!correctType) {
                                 errors.addOne((s"Second element of input pair should be of type: ${typeCheckToString(lhsType)}, " +
                                   s"but found: ${typeCheckToString(type2)}!", assignRHS.pos))
                             }
-                            checkedExpr._1 && (type2 == lhsType)
+                            checkedExpr._1 && correctType
                         case _ => 
                             errors.addOne((s"Input of snd must be of type pair but found type: ${typeCheckToString(foundType)}!", assignRHS.pos))
                             false
@@ -454,73 +614,77 @@ object semanticAnalyser {
             */
             case Call(id, args) => 
                 val checkedArgs = args.map(x => analyseExpr(x, st))
-				ft.getFunction(id.variable) match {
-					case Some(foundFuncType) =>
-                        if (lhsType == EmptyPairCheck()) {
-                            foundFuncType._1 match {
-									case PairCheck(type1, type2, nested) => 
-                                        val checkedNumArgs = ft.checkLength(id.variable, checkedArgs.map(x => x._2.get))
-                                        if (!checkedNumArgs) {
-                                            errors.addOne((s"Wrong number of arguments in call to function ${id.variable}!", assignRHS.pos))
-                                        }
-                                        val checkArgs = ft.check(id.variable, checkedArgs.map(x => x._2.get))
-                                        if (checkedNumArgs && !checkArgs) {
-                                            errors.addOne((s"Expected argument types: ${foundFuncType._2.map(x=> typeCheckToString(x))}, " +
-                                              s"but found: ${checkedArgs.map(x => typeCheckToString(x._2.get))}in call to function ${id.variable}!", assignRHS.pos))
-                                        }
-                                        val checkedArgsResult = checkedArgs.map(x => x._1).reduceOption((x, y) => x && y)
-                                        checkedArgsResult match {
-                                            case Some(value) => value && ft.check(id.variable, checkedArgs.map(x => x._2.get))	
-                                            case None => ft.check(id.variable, checkedArgs.map(x => x._2.get))
-                                        }
-                                        
-									case _ =>
-                                        val correctType = foundFuncType._1 == lhsType
-                                        if (!correctType) {
-                                            errors.addOne((s"Expected type: ${typeCheckToString(lhsType)}, " +
-                                              s"actual type of function return: ${typeCheckToString(foundFuncType._1)}!", assignRHS.pos))
-                                        }
-                                        val checkedNumArgs = ft.checkLength(id.variable, checkedArgs.map(x => x._2.get))
-                                        if (!checkedNumArgs) {
-                                            errors.addOne((s"Wrong number of arguments in call to function ${id.variable}!", assignRHS.pos))
-                                        }
-                                        val checkArgs = ft.check(id.variable, checkedArgs.map(x => x._2.get))
-                                        if (checkedNumArgs && !checkArgs) {
-                                            errors.addOne((s"Expected argument types: ${foundFuncType._2.map(x=> typeCheckToString(x))}, " +
-                                              s"but found: ${checkedArgs.map(x => typeCheckToString(x._2.get))}in call to function ${id.variable}!", assignRHS.pos))
+                if (checkedArgs.forall(x => x._1)) {
+                    ft.getFunction(id.variable) match {
+                        case Some(foundFuncType) =>
+                            if (lhsType == EmptyPairCheck()) {
+                                foundFuncType._1 match {
+                                        case PairCheck(type1, type2, nested) => 
+                                            val checkedNumArgs = ft.checkLength(id.variable, checkedArgs.map(x => x._2.get))
+                                            if (!checkedNumArgs) {
+                                                errors.addOne((s"Wrong number of arguments in call to function ${id.variable}!", assignRHS.pos))
+                                            }
+                                            val checkArgs = ft.check(id.variable, checkedArgs.map(x => x._2.get))
+                                            if (checkedNumArgs && !checkArgs) {
+                                                errors.addOne((s"Expected argument types: ${foundFuncType._2.map(x=> typeCheckToString(x))}, " +
+                                                s"but found: ${checkedArgs.map(x => typeCheckToString(x._2.get))}in call to function ${id.variable}!", assignRHS.pos))
+                                            }
+                                            val checkedArgsResult = checkedArgs.map(x => x._1).reduceOption((x, y) => x && y)
+                                            checkedArgsResult match {
+                                                case Some(value) => value && ft.check(id.variable, checkedArgs.map(x => x._2.get))	
+                                                case None => ft.check(id.variable, checkedArgs.map(x => x._2.get))
+                                            }
                                             
-                                        }
-                                        val checkedArgsResult = checkedArgs.map(x => x._1).reduceOption((x, y) => x && y)
-                                        checkedArgsResult match {
-                                            case Some(value) => correctType && value && ft.check(id.variable, checkedArgs.map(x => x._2.get))	
-                                            case None => correctType && ft.check(id.variable, checkedArgs.map(x => x._2.get))
-                                        }
-							}
-                        } else {
-                            val correctType = foundFuncType._1 == lhsType
-                            if (!correctType) {
-                                errors.addOne((s"Expected type: ${typeCheckToString(lhsType)}, " +
-                                  s"actual type of function return: ${typeCheckToString(foundFuncType._1)}!", assignRHS.pos))
+                                        case _ =>
+                                            val correctType = foundFuncType._1 == lhsType
+                                            if (!correctType) {
+                                                errors.addOne((s"Expected type: ${typeCheckToString(lhsType)}, " +
+                                                s"actual type of function return: ${typeCheckToString(foundFuncType._1)}!", assignRHS.pos))
+                                            }
+                                            val checkedNumArgs = ft.checkLength(id.variable, checkedArgs.map(x => x._2.get))
+                                            if (!checkedNumArgs) {
+                                                errors.addOne((s"Wrong number of arguments in call to function ${id.variable}!", assignRHS.pos))
+                                            }
+                                            val checkArgs = ft.check(id.variable, checkedArgs.map(x => x._2.get))
+                                            if (checkedNumArgs && !checkArgs) {
+                                                errors.addOne((s"Expected argument types: ${foundFuncType._2.map(x=> typeCheckToString(x))}, " +
+                                                s"but found: ${checkedArgs.map(x => typeCheckToString(x._2.get))}in call to function ${id.variable}!", assignRHS.pos))
+                                                
+                                            }
+                                            val checkedArgsResult = checkedArgs.map(x => x._1).reduceOption((x, y) => x && y)
+                                            checkedArgsResult match {
+                                                case Some(value) => correctType && value && ft.check(id.variable, checkedArgs.map(x => x._2.get))	
+                                                case None => correctType && ft.check(id.variable, checkedArgs.map(x => x._2.get))
+                                            }
+                                }
+                            } else {
+                                val correctType = equalTypes(ct, Some(foundFuncType._1), Some(lhsType))
+                                if (!correctType) {
+                                    errors.addOne((s"Expected type: ${typeCheckToString(lhsType)}, " +
+                                    s"actual type of function return: ${typeCheckToString(foundFuncType._1)}!", assignRHS.pos))
+                                }
+                                val checkedNumArgs = ft.checkLength(id.variable, checkedArgs.map(x => x._2.get))
+                                if (!checkedNumArgs) {
+                                    errors.addOne((s"Wrong number of arguments in call to function ${id.variable}!", assignRHS.pos))
+                                }
+                                val checkArgs = ft.check(id.variable, checkedArgs.map(x => x._2.get))
+                                if (checkedNumArgs && !checkArgs) {
+                                    errors.addOne((s"Expected argument types: ${foundFuncType._2.map(x=> typeCheckToString(x))}, " +
+                                    s"but found: ${checkedArgs.map(x => typeCheckToString(x._2.get))}in call to function ${id.variable}!", assignRHS.pos))
+                                }
+                                val checkedArgsResult = checkedArgs.map(x => x._1).reduceOption((x, y) => x && y)
+                                checkedArgsResult match {
+                                    case Some(value) => correctType && value && checkArgs	
+                                    case None => correctType && checkArgs
+                                }
                             }
-                            val checkedNumArgs = ft.checkLength(id.variable, checkedArgs.map(x => x._2.get))
-                            if (!checkedNumArgs) {
-                                errors.addOne((s"Wrong number of arguments in call to function ${id.variable}!", assignRHS.pos))
-                            }
-                            val checkArgs = ft.check(id.variable, checkedArgs.map(x => x._2.get))
-                            if (checkedNumArgs && !checkArgs) {
-                                errors.addOne((s"Expected argument types: ${foundFuncType._2.map(x=> typeCheckToString(x))}, " +
-                                  s"but found: ${checkedArgs.map(x => typeCheckToString(x._2.get))}in call to function ${id.variable}!", assignRHS.pos))
-                            }
-                            val checkedArgsResult = checkedArgs.map(x => x._1).reduceOption((x, y) => x && y)
-                            checkedArgsResult match {
-                                case Some(value) => correctType && value && checkArgs	
-                                case None => correctType && checkArgs
-                            }
-                        }
-					case None => 
-                        errors.addOne((s"Function ${id.variable} not declared!", assignRHS.pos))
-                        false
-				}
+                        case None => 
+                            errors.addOne((s"Function ${id.variable} not declared!", assignRHS.pos))
+                            false
+                    }
+                } else {
+                    false
+                }
         }
     }
 
@@ -621,6 +785,7 @@ object semanticAnalyser {
                                         case BoolCheck(nested) => Some(BoolCheck(nested - exprs.size))
                                         case CharCheck(nested) => Some(CharCheck(nested - exprs.size))
                                         case StrCheck(nested) => Some(StrCheck(nested - exprs.size))
+                                        case ClassCheck(className, nested) => Some(ClassCheck(className, nested - exprs.size))
                                     })  
                                 } else {
                                     errors.addOne(s"${id.variable} has type: ${typeCheckToString(array)}, " +
@@ -810,5 +975,73 @@ object semanticAnalyser {
                 }
                 (checkedExpr1._1 && checkedExpr2._1 && correctType1 && correctType2, Some(BoolCheck(0)))
         }
+    }
+
+    def addClassMembers(optionInstanceName: Option[String], className: String, ct: ClassTable, st: SymbolTable, ft: FunctionTable, bannedFields: Map[String, TypeCheck], bannedMethods: Map[String, (TypeCheck, List[TypeCheck])]): Boolean = {
+        var added = true
+        val publicFields = ct.getPublicFields(className) 
+        val privateFields = ct.getPrivateFields(className)
+        val publicMethods = ct.getPublicMethods(className)
+        val privateMethods = ct.getPrivateMethods(className)
+        // println("")
+        // println(className)
+        // println(optionInstanceName)
+        // println("--------------------adhithiiiii:")
+        // println(publicFields)
+        // println(privateFields)
+        // println(publicMethods)
+        // println(privateMethods)
+        // println("---------------------banny bans:")
+        // println(bannedFields)
+        // println(bannedMethods)
+        privateFields match {
+            case Some(foundPrivateFields) => bannedFields.addAll(foundPrivateFields)
+            case None => added = false
+        }
+        publicFields match {
+            case Some(foundPublicFields) => 
+                optionInstanceName match {
+                    case Some(instanceName) => foundPublicFields.map(f => {
+                            if (!bannedFields.contains(f._1)) {
+                                st.addClassMember(instanceName + "." + f._1, f._2)
+                            }
+                        })
+                    case None => foundPublicFields.map(f => {
+                            if (!bannedFields.contains(f._1)) {
+                                st.addClassMember(f._1, f._2)
+                            }
+                        })
+                }
+            case None => added = false
+        }
+        privateMethods match {
+            case Some(foundPrivateMethods) => bannedMethods.addAll(foundPrivateMethods)
+            case None => added = false
+        }
+        publicMethods match {
+            case Some(foundPublicMethods) => 
+                optionInstanceName match {
+                    case Some(instanceName) => foundPublicMethods.map(m => {
+                            if (!bannedMethods.contains(m._1)) {
+                                ft.add(instanceName + "." + m._1, m._2._1, m._2._2)
+                            }
+                        })
+                    case None => foundPublicMethods.map(m => {
+                            if (!bannedMethods.contains(m._1)) {
+                                ft.add(m._1, m._2._1, m._2._2)
+                            }
+                        })
+                }
+            case None => added = false
+        }
+        ct.getParent(className) match {
+            case Some(parent) => 
+                addClassMembers(optionInstanceName, parent, ct, st, ft, bannedFields, bannedMethods)
+            case None =>
+        }
+        // println("------------------banny bans 2:")
+        // println(bannedFields)
+        // println(bannedMethods)
+        added
     }
 }

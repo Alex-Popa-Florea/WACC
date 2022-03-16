@@ -1,6 +1,7 @@
 package wacc
 
 import wacc.ast._
+import classTable._
 
 object types {
 	/*
@@ -22,6 +23,8 @@ object types {
     case class CharCheck(nested: Int) extends BaseTypeCheck
     case class StrCheck(nested: Int) extends BaseTypeCheck
 
+	case class ClassCheck(name: String, nested: Int) extends BaseTypeCheck
+
 	/*
 		TypeChecks for a pair and empty pair. 
 	*/
@@ -34,24 +37,56 @@ object types {
 		For pairs and arrays, the function is called recursively to find the base type.
 	*/
     def extractType(astType: Type): TypeCheck = {
-		astType match {
-			case IntType() => IntCheck(0)
-			case BoolType() => BoolCheck(0)
-			case CharType() => CharCheck(0)
-			case StrType() => StrCheck(0)
-			case Pair() => EmptyPairCheck()
-			case PairType(elemtype1, elemtype2) => 
-				PairCheck(extractType(elemtype1), extractType(elemtype2), 0)
-			case ArrayType(arrayType, count) => 
-				arrayType match {
-					case IntType() => IntCheck(count)
-					case BoolType() => BoolCheck(count)
-					case CharType() => CharCheck(count)
-					case StrType() => StrCheck(count)
-					case PairType(elemtype1, elemtype2) => PairCheck(extractType(elemtype1), extractType(elemtype2), count)
-					case _ => null
-				}
-		}
+        astType match {
+            case IntType() => IntCheck(0)
+            case BoolType() => BoolCheck(0)
+            case CharType() => CharCheck(0)
+            case StrType() => StrCheck(0)
+            case ClassType(className) => ClassCheck(className.variable, 0)
+            case Pair() => EmptyPairCheck()
+            case PairType(elemtype1, elemtype2) => 
+                PairCheck(extractType(elemtype1), extractType(elemtype2), 0)
+            case ArrayType(arrayType, count) => 
+                arrayType match {
+                    case IntType() => IntCheck(count)
+                    case BoolType() => BoolCheck(count)
+                    case CharType() => CharCheck(count)
+                    case StrType() => StrCheck(count)
+                    case ClassType(className) => ClassCheck(className.variable, count)
+                    case PairType(elemtype1, elemtype2) => PairCheck(extractType(elemtype1), extractType(elemtype2), count)
+                    case _ => null
+                }
+        }
+	}
+
+	def equalTypes(ct: ClassTable, ot1: Option[TypeCheck], ot2: Option[TypeCheck]): Boolean = {
+		ot1 match {
+            case None => ot1 == ot2
+            case Some(t1) => 
+                ot2 match {
+                    case None => false
+                    case Some(t2) => t1 match {
+                        case ClassCheck(name, nested) => 
+                            if (t1 != t2) {
+                                ct.getParent(name) match {
+                                    case Some(value) => equalTypes(ct, Some(ClassCheck(value, nested)), ot2)
+                                    case None => false
+                                }
+                            } else {
+                                true
+                            }
+                        case PairCheck(t2type1, t2type2, t2nested) => 
+                            t1 match {
+                                case PairCheck(t1type1, t1type2, t1nested) =>
+                                    equalTypes(ct, Some(t1type1), Some(t2type1)) && equalTypes(ct, Some(t1type2), Some(t2type2)) && t1nested == t2nested
+                                case _ => false
+                            }
+                        
+                        case _ => t1 == t2
+                    }
+                }
+                
+        }
 	}
 
 	/* 
@@ -71,6 +106,8 @@ object types {
 						typeString = "char"
 					case StrCheck(nested) =>
 						typeString = "string"
+					case ClassCheck(name, nested) => 
+						typeString = s"class ${name}"
 				}
 
 				/*

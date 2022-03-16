@@ -97,7 +97,7 @@ object codeGenerator {
     def generateNode(node: Node, symbolTable: SymbolTable, functionTable: FunctionTable, label: Scope, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
 
         node match {
-            case Begin(func, stat) =>
+            case Begin(classes, func, stat) =>
                 /* 
                     Generates code for user defined functions.
                 */
@@ -691,8 +691,11 @@ object codeGenerator {
                 stackOffset = 0
                 textMap(label).addOne(BL(None, "f_" + id.variable))
                 textMap(label).addOne(ADD(None, false, SP(), SP(), Immed(args.foldLeft(0)((arg1, arg2) => arg1 + getBytes(arg2, symbolTable)))))
-                textMap(label).addOne(MOV(None, false, R(4), R(0)))    
-            }
+                textMap(label).addOne(MOV(None, false, R(4), R(0)))
+            
+            case _ =>    
+        }
+            
     }
 
     /*

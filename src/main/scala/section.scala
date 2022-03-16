@@ -23,6 +23,14 @@ object section {
         }
     }
     /*
+        Class to represent the section of a class
+    */
+    case class ClassSection(name: String) extends Section {
+        override def toString() : String = {
+            s"Class ${name}"
+        }
+    }
+    /*
         Class to represent the section of a true branch of an if statement
     */
     case class TrueIfSection() extends Section {

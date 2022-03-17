@@ -9,5 +9,14 @@ object multiStream{
             sysOut.write(b)
             bufferOut.write(b)
         }
+
+        override def flush(): Unit = {
+            sysOut.flush()
+            bufferOut.flush()
+        }
+        override def close(): Unit = {
+            sysOut.close()
+            bufferOut.close()
+        }
     }
 }

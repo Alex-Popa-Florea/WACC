@@ -43,6 +43,7 @@ object shell{
 
     val validCommands = ListBuffer[String]()
     val validFunctions = ListBuffer[String]()
+    var out = new ByteArrayOutputStream()
 
     def insert(file: File, command: String, validCommands: ListBuffer[String],validFunctions: ListBuffer[String], function: Boolean, read: String) = {
         val fileWriter = new FileWriter(file)
@@ -50,6 +51,8 @@ object shell{
         bw.write("begin ")
         val lines = validCommands.mkString("; ")
         val functions = validFunctions.mkString(" ")
+        println(s"FUCNTION $function")
+        println(read)
         if (function){
             if(validCommands.size == 0){
                 bw.write(functions)
@@ -82,18 +85,18 @@ object shell{
 
     def getOutputAndCode(file: File):String = {
         var output = ""
-        var out = new ByteArrayOutputStream
         val assemblyfile  = file.getPath().replace(".wacc",".s")
         val exeName = s"./tmp/${file.getName().replace(".wacc","")}"
         s"arm-linux-gnueabi-gcc -o $exeName -mcpu=arm1176jzf-s -mtune=arm1176jzf-s $assemblyfile".!
+        out = new ByteArrayOutputStream()
         val stream = new MultiStream(System.out,out)
         System.setOut(new PrintStream(stream))
         val io = BasicIO.standard(true)
         val proc = Process(s"qemu-arm -L /usr/arm-linux-gnueabi/ $exeName").run(io)
         while(proc.isAlive()){}
         output = out.toString("UTF-8").split("\n").last
-        System.setOut(System.out)
-        s"rm tmp/$exeName tmp/$assemblyfile"        
+        println(s"OUTPIUTIS: $output")
+        //s"rm tmp/$exeName tmp/$assemblyfile"        
         output
     }
 
@@ -105,7 +108,6 @@ object shell{
                 validCommands.addOne(validComand)
             }else{
                 buffer.addOne(command)
-
             }
         }else{
             if(command.startsWith("if")){
@@ -137,7 +139,8 @@ object shell{
                 insert(file,command,validCommands,validFunctions,function,variable.trim().strip())
             }
             else if (isFunctionCall){
-                val variable = command.substring(command.indexOf(" "),command.indexOf("=")).trim().strip()
+                println("im here")
+                val variable = command.substring(0,command.indexOf("=")).trim().strip().split(" ").last
                 // println(variable)
                 insert(file,command,validCommands,validFunctions,function,variable)
             }
@@ -160,7 +163,7 @@ object shell{
                     if(semanticallyValid){
                         val lines = generate(value, symbolTable, functionTable)
                         writeToFile(lines,"tmp/"+file.getName().replace(".wacc",".s"), true)
-                        //println(isFunctionCall)
+                        println(isFunctionCall)
                         val output = getOutputAndCode(file)
                         if (output.startsWith("ArrayIndexOutOfBoundsError") ){
                             println(output)
@@ -180,9 +183,9 @@ object shell{
             }
         }
         read = false
-        // println(validCommands)
-        // println(validFunctions)
-        //println(path)   
+        println(validCommands)
+        println(validFunctions)
+        println(path)   
     }
     def noChain(command: String): Boolean = {
         val entryTerminatorPairs = Array(("if","fi"),("while","done"),("begin","end"))
@@ -192,16 +195,13 @@ object shell{
                 val firstEntry = term.length() //0
                 val lastTerm = command.indexOf(term)
                 val inside = command.substring(term.length(),command.length-term.length())
-                println(inside)
                 val secondEntry = inside.indexOf(entry)
                 val secondTerm = inside.indexOf(term)
-
-                println("sec " ++ secondEntry.toString ++ "sec term" ++ secondTerm.toString())
                 val noChain =  secondEntry < secondTerm || secondTerm == -1 || secondEntry == -1 //might bite you in the arse check it
                 return noChain
             }
             case _ => None
-    }
+        }
         if(command.contains("=")){
             // println("tried split")
             return command.split(";").size == 1
@@ -227,6 +227,7 @@ object shell{
             while (command != "exit"){
                 command = readLine(">>> ").trim().strip()
                 if(command != ""){
+                    println(command)
                     if(command == ":ml"){
                         println("Muliline mode enabled use for if, while, function definitions or begin statements\n")
                         val lines = new ListBuffer[String]()
@@ -251,10 +252,10 @@ object shell{
                             if(validCommands.size == 1 || validFunctions == 1){
                                 first = false
                             }
-                            function = false
                         }else{
                             println("NO CHAIN COMMANDS")
-                        }                        
+                        } 
+                        function = false                       
                     }
                 } 
                 Thread.sleep(10)

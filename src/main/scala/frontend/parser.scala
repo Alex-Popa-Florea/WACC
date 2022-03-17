@@ -51,7 +51,7 @@ object parser {
         Array elements are made up of an array variable name followed by an expression 
         (index of element) in square brackets 
     */
-    private lazy val arrayElem = ArrayElem(ident, endBy1("[" ~> expr, "]"))
+    private lazy val arrayElem = ArrayElem(varIdent, endBy1("[" ~> expr, "]"))
     /*
         Pair elements are made up of the key word fst or snd followed by an expression (identifier of a pair) 
     */
@@ -181,7 +181,7 @@ object parser {
         Expressions in brackets are treated like atoms 
     */
     private lazy val atom =  
-        "(" ~> expr <~ ")" <|> attempt(arrayElem) <|> ident <|> charLiter <|> intLiter <|> boolLiter <|> stringLiter <|> pairLiter 
+        "(" ~> expr <~ ")" <|> attempt(arrayElem) <|> varIdent <|> charLiter <|> intLiter <|> boolLiter <|> stringLiter <|> pairLiter 
 
 
     /*

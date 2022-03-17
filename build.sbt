@@ -29,7 +29,7 @@ lazy val shell = (project in file("shell"))
       scalaVersion := "2.13.7",
       version := "0.1.0",
       
-      assembly / mainClass:= Some("shell.shell"),
+      assembly / mainClass:= Some("qwacc.shell"),
       assembly / assemblyOutputPath := baseDirectory.value / "QWACC.jar"      
     )
   .dependsOn(root)

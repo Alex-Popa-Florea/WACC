@@ -9,6 +9,7 @@ import parsley.implicits.zipped.Zipped4
 import parsley.implicits.zipped.Zipped5
 import parsley.lift.lift1
 import wacc.symbolTable._
+import wacc.functionTable._
 
 import Parsley._
 
@@ -41,7 +42,10 @@ object ast {
 
     case class Begin(classList: List[Class], func: List[Function], stat: List[Statement])(val pos: (Int, Int)) extends Program 
 
-    case class Class(id: VarIdent, vars: List[Parameter], parent: Option[VarIdent], fields: List[AssignField], methods: List[Method])(val pos: (Int, Int)) extends Node 
+    case class Class(id: VarIdent, vars: List[Parameter], parent: Option[VarIdent], fields: List[AssignField], methods: List[Method])(val pos: (Int, Int)) extends Node {
+        var symbolTable: Option[SymbolTable] = None
+        var functionTable: Option[FunctionTable] = None
+    }
 
     case class AssignField(visiblity: Visibility, assign: AssignType)(val pos: (Int, Int)) extends Node
 

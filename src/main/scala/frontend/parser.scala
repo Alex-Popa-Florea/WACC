@@ -20,7 +20,7 @@ object parser {
         Parsers for literals and identifiers, used to construct the apporopriate AST nodes 
     */
     private lazy val varIdent: Parsley[VarIdent] = VarIdent(VARIABLE).label("Variable").explain("Use to name expression")
-    private lazy val classIdent: Parsley[ClassAccess] = ClassAccess(attempt(varIdent <~ "."), varIdent)
+    private lazy val classIdent: Parsley[ClassAccess] = ClassAccess(attempt((varIdent <|> ("this" ~> VarIdent(pure("this"))))<~ "." ), varIdent)
     private lazy val ident = if (classFlag) { 
         classIdent <|> varIdent
     } else {
@@ -126,7 +126,7 @@ object parser {
     private lazy val assignField: Parsley[AssignField] = AssignField(visibility, AssignType(types, varIdent, "=" ~> assignRHS))
     private lazy val assignFields = sepBy(assignField, ";")
 
-    private lazy val singleClass: Parsley[Class] = Class("class" ~> VarIdent(VARIABLE), "(" ~> params <~ ")", option("extends" ~> VarIdent(VARIABLE)), "has" ~> assignFields, methods <~ "ssalc" ) //might need word for end of field assignments
+    private lazy val singleClass: Parsley[Class] = Class(attempt("class" ~> VarIdent(VARIABLE) <~ "(" ), params <~ ")", option("extends" ~> VarIdent(VARIABLE)), "has" ~> assignFields, methods <~ "ssalc" ) //might need word for end of field assignments
     private lazy val classes: Parsley[List[Class]] = if (classFlag) {
         many(singleClass)
     } else {

@@ -9,6 +9,7 @@ import wacc.ast._
 import wacc.functionTable._
 import wacc.section._
 import wacc.symbolTable._
+import wacc.classTable._
 import wacc.types.BoolCheck
 import wacc.types.CharCheck
 import wacc.types.EmptyPairCheck
@@ -60,10 +61,10 @@ object codeGenerator {
         Method that iterates through the program and returns a list of lines representing
         the lines of the program in assembly language. 
     */
-    def generate(program: Node, symbolTable: SymbolTable, functionTable: FunctionTable): List[Line] = {
+    def generate(program: Node, symbolTable: SymbolTable, functionTable: FunctionTable, classTable: ClassTable): List[Line] = {
         val dataMap: Map[Scope, Msg] = Map.empty
         val textMap: Map[Scope, ListBuffer[Instruction]] = Map.empty
-        generateNode(program, symbolTable, functionTable, Main(), dataMap, textMap)
+        generateNode(program, symbolTable, functionTable, classTable, Main(), dataMap, textMap, None)
         val lines: ListBuffer[Line] = ListBuffer.empty
         if (!dataMap.isEmpty) {
             lines.addOne(Data())
@@ -76,7 +77,7 @@ object codeGenerator {
                     lines.addOne(key)
                     lines.addAll(textMap(key))
                 case _ => 
-            }    
+            }
         )
         lines.addOne(Main())
         lines.addAll(textMap(Main()))
@@ -91,17 +92,23 @@ object codeGenerator {
         lines.toList
     }
 
+    val fieldMap: Map[String, ListBuffer[AssignType]] = Map.empty
+    val methodMap: Map[String, ListBuffer[Function]] = Map.empty
+
     /* 
         Method that generates the assembly level code for all statements and functions between keywords begin and end.
     */
-    def generateNode(node: Node, symbolTable: SymbolTable, functionTable: FunctionTable, label: Scope, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
+    def generateNode(node: Node, symbolTable: SymbolTable, functionTable: FunctionTable, classTable: ClassTable, label: Scope, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]], inClass: Option[String]): Unit = {
 
         node match {
             case Begin(classes, func, stat) =>
+
+                
+                classes.map(singleClass => generateNode(singleClass, symbolTable, functionTable, classTable, label, dataMap, textMap, None))
                 /* 
                     Generates code for user defined functions.
                 */
-                func.map(function => generateNode(function, symbolTable, functionTable, F(function.id.variable), dataMap, textMap))
+                func.map(function => generateNode(function, symbolTable, functionTable, classTable, F(function.id.variable), dataMap, textMap, None))
                 textMap(label) = ListBuffer(PUSH(List(LR())))
 
                 /*
@@ -112,7 +119,7 @@ object codeGenerator {
                 /*
                     Generates code for statements within main.
                 */
-                stat.map(statement => generateNode(statement, symbolTable, functionTable, label, dataMap, textMap))
+                stat.map(statement => generateNode(statement, symbolTable, functionTable, classTable, label, dataMap, textMap, None))
 
                 /*
                     Increments stack back to its original position.
@@ -122,27 +129,112 @@ object codeGenerator {
                 textMap(label).addOne(LDR(None, R(0), Immed(0)))
                 textMap(label).addOne(POP(List(PC())))
                 textMap(label).addOne(Ltorg())
+            case singleClass: Class =>
+                singleClass.fields.foreach(field => {
+                    if (!fieldMap.contains(singleClass.id.variable)) {
+                        fieldMap(singleClass.id.variable) = ListBuffer(field.assign)
+                    } else {
+                        fieldMap(singleClass.id.variable).addOne(field.assign)
+                    }
+                }) 
+                singleClass.parent match {
+                    case Some(parent) =>
+                        fieldMap(parent.variable).foreach(field => {
+                            if (fieldMap.contains(singleClass.id.variable)) {
+                                if (fieldMap(singleClass.id.variable).forall(assignment => assignment.id.variable != field.id.variable)) {
+                                    fieldMap(singleClass.id.variable).addOne(field)
+                                }
+                            } else {
+                                fieldMap(singleClass.id.variable) = ListBuffer(field)
+                            }
+                        }) 
+                    case None =>
+                }
+                singleClass.methods.foreach(m => generateNode(m.func, symbolTable, singleClass.functionTable.get, classTable, label, dataMap, textMap, Some(singleClass.id.variable)))
+                singleClass.parent match {
+                    case Some(parent) =>
+                        methodMap(parent.variable).foreach(method => {
+                            generateNode(method, symbolTable, singleClass.functionTable.get, classTable, label, dataMap, textMap, Some(singleClass.id.variable))
+                        }) 
+                    case None =>
+                }
 
             case function: Function =>
-                val funcLabel = F(function.id.variable)
+                //functionTable.printFunctionTables2(functionTable, 0)
+                val funcLabel = inClass match {
+                    case None => F(function.id.variable)
+                    case Some(value) => 
+                        if (!methodMap.contains(value)) {
+                            methodMap(value) = ListBuffer(function)
+                        } else {
+                            if (methodMap(value).forall(f => f.id.variable != function.id.variable)) {
+                                methodMap(value).addOne(function)
+                            }
+                        }
+                        F(value + "_" + function.id.variable)
+
+                }
+                 
                 textMap(funcLabel) = ListBuffer(PUSH(List(LR())))
-                functionStackSize = function.semanticTable.getOrElse(symbolTable).getSize() - 
-                    functionTable.getFuncMap()(function.id.variable)._2.foldLeft(0)((x, y) => x + getBytesFromType(y)) - 4
+                val variable = if (inClass.isDefined) {
+                    "this." + function.id.variable
+                }
+                else {
+                    function.id.variable
+                }
+                if (inClass.isDefined) {
+                    functionStackSize = function.semanticTable.getOrElse(symbolTable).getSize() - 
+                        functionTable.getFuncMap()(variable)._2.foldLeft(0)((x, y) => x + getBytesFromType(y)) - 8
+                } else {
+                    functionStackSize = function.semanticTable.getOrElse(symbolTable).getSize() - 
+                        functionTable.getFuncMap()(variable)._2.foldLeft(0)((x, y) => x + getBytesFromType(y)) - 4
+                }
                 
                 /*
                     Decrements stack based on input size.
                     If more that 1024 bytes are needed, decrements stack in multiple subtractions.
                 */
-                var i = decrementStack(functionStackSize, textMap, label)
+                var i = decrementStack(functionStackSize, textMap, funcLabel)
                 
                 function.stat.map(statement => {
-                    generateNode(statement, function.semanticTable.get, functionTable, funcLabel, dataMap, textMap)
+                    generateNode(statement, function.semanticTable.get, functionTable, classTable, funcLabel, dataMap, textMap, inClass)
                 })
                 textMap(funcLabel).addOne(POP(List(PC())))
                 textMap(funcLabel).addOne(Ltorg()) 
+            
+            case AssignField(visibility, assign) =>
+                /* 
+                    1. generateRHS - puts rhs in a register 
+                    2. put size of rhs into r0
+                    3. malloc - puts pointer into r0
+                    4. mov from register to [r0]
+                    5. mov r0 to [classpointerregister + offset]
+
+                */
+                
+                symbolTable.findField("this." + assign.id) match {
+                    case Some(value) => 
+                        generateRHS(assign.rhs, symbolTable, functionTable, classTable, label, 5, dataMap, textMap, inClass)
+                        val assignBytes = getBytesFromType(value)
+                        textMap(label).addOne(LDR(None, R(0), Immed(assignBytes)))
+                        textMap(label).addOne(BL(None, "malloc"))
+                    case None =>  
+                }
+                // generateRHS(assign.rhs, symbolTable, functionTable, label, 4, dataMap, textMap)
+                // val a_mode2 = if (symbolTable.getSizeWithIdent(assign.id).get - assign.id.symbolTable.get.findId(id).get + stackOffset == 0) {
+                //     ZeroOffset(SP())
+                // } else {
+                //     ImmediateOffset(SP(), Immed(symbolTable.getSizeWithIdent(id).get - id.symbolTable.get.findId(id).get + stackOffset))
+                // }
+                // val lhsSize = getBytes(id, symbolTable)
+                // if (lhsSize == 4) {
+                //     textMap(label).addOne(STR(None, R(4), a_mode2))
+                // } else {
+                //     textMap(label).addOne(STRB(None, R(4), a_mode2))
+                // }
 
             case AssignType(t, id, rhs) => 
-                generateRHS(rhs, symbolTable, functionTable, label, 4, dataMap, textMap)
+                generateRHS(rhs, symbolTable, functionTable, classTable, label, 4, dataMap, textMap, inClass)
                 val a_mode2 = if (symbolTable.getSizeWithIdent(id).get - id.symbolTable.get.findId(id).get + stackOffset == 0) {
                     ZeroOffset(SP())       
                 } else {
@@ -156,11 +248,11 @@ object codeGenerator {
                 }
 
             case Assign(lhs, rhs) => 
-                generateRHS(rhs, symbolTable, functionTable, label, 4, dataMap, textMap)
-                generateLHS(lhs, symbolTable, functionTable, label, 5, dataMap, textMap, false)
+                generateRHS(rhs, symbolTable, functionTable, classTable, label, 4, dataMap, textMap, inClass)
+                generateLHS(lhs, symbolTable, functionTable, classTable, label, 5, dataMap, textMap, false, inClass)
 
             case Read(lhs) => 
-                generateLHS(lhs, symbolTable, functionTable, label, 4, dataMap, textMap, true)
+                generateLHS(lhs, symbolTable, functionTable, classTable, label, 4, dataMap, textMap, true, inClass)
                 textMap(label).addOne(MOV(None, false, R(0), R(4)))
                 lhs match {
                     case ident: Ident => 
@@ -177,7 +269,7 @@ object codeGenerator {
                 }
 
             case Free(expr) => 
-                generateExpr(expr, symbolTable, functionTable, label, 4, dataMap, textMap)
+                generateExpr(expr, symbolTable, functionTable, classTable, label, 4, dataMap, textMap)
                 textMap(label).addOne(MOV(None, false, R(0), R(4)))
                 expr match {
                     case ident: Ident => ident.symbolTable.get.find(ident) match {
@@ -233,7 +325,7 @@ object codeGenerator {
                 }
 
             case Return(expr) => 
-                generateExpr(expr, symbolTable, functionTable, label, 4, dataMap, textMap)
+                generateExpr(expr, symbolTable, functionTable, classTable, label, 4, dataMap, textMap)
                 textMap(label).addOne(MOV(None, false, R(0), R(4)))
                 
                 /*
@@ -244,14 +336,14 @@ object codeGenerator {
                 textMap(label).addOne(POP(List(PC())))
 
             case Exit(expr) => 
-                generateExpr(expr, symbolTable, functionTable, label, 4, dataMap, textMap)
+                generateExpr(expr, symbolTable, functionTable, classTable, label, 4, dataMap, textMap)
                 textMap(label).addAll(ListBuffer(
                     MOV(None, false, R(0), R(4)), 
                     BL(None, "exit")
                 ))
 
             case print: PrintTrait =>
-                generateExpr(print.expr, symbolTable, functionTable, label, 4, dataMap, textMap)
+                generateExpr(print.expr, symbolTable, functionTable, classTable, label, 4, dataMap, textMap)
                 textMap(label).addOne(MOV(None, false, R(0), R(4)))
                 textMap(label).addOne(print.expr match {
                     case ident: Ident => 
@@ -304,6 +396,10 @@ object codeGenerator {
                                     BL(None, "p_print_reference")
 
                                 case EmptyPairCheck() => BL(None, "p_print_reference")
+
+                                case ClassCheck(_, _) => 
+                                    generatePrintReference(dataMap, textMap)
+                                    BL(None, "p_print_reference")
                             }
                         }
 
@@ -423,7 +519,7 @@ object codeGenerator {
                 }
 
             case ifStatement: If => 
-                generateExpr(ifStatement.cond, symbolTable, functionTable, label, 4, dataMap, textMap)
+                generateExpr(ifStatement.cond, symbolTable, functionTable, classTable, label, 4, dataMap, textMap)
                 textMap(label).addOne(CMP(None, R(4), Immed(0)))
                 val falseLabel = scopeLabels
                 scopeLabels += 1
@@ -435,7 +531,7 @@ object codeGenerator {
                 */
                 var i = decrementStack(ifStatement.trueSemanticTable.getOrElse(symbolTable).getSize(), textMap, label)
                 functionStackSize += i
-                ifStatement.trueStat.map(statement => generateNode(statement, ifStatement.trueSemanticTable.getOrElse(symbolTable), functionTable, label, dataMap, textMap))
+                ifStatement.trueStat.map(statement => generateNode(statement, ifStatement.trueSemanticTable.getOrElse(symbolTable), functionTable, classTable, label, dataMap, textMap, inClass))
                 
                 /*
                     Increments stack back to its original position.
@@ -455,7 +551,7 @@ object codeGenerator {
                 i = decrementStack(ifStatement.falseSemanticTable.getOrElse(symbolTable).getSize(), textMap, label)
                 
                 functionStackSize += i
-                ifStatement.falseStat.map(statement => generateNode(statement, ifStatement.falseSemanticTable.getOrElse(symbolTable), functionTable, label, dataMap, textMap))
+                ifStatement.falseStat.map(statement => generateNode(statement, ifStatement.falseSemanticTable.getOrElse(symbolTable), functionTable, classTable, label, dataMap, textMap, inClass))
                 
                 /*
                     Increments stack back to its original position.
@@ -481,7 +577,7 @@ object codeGenerator {
                 var i = decrementStack(whileStatement.semanticTable.getOrElse(symbolTable).getSize(), textMap, label)
                 
                 functionStackSize += i
-                whileStatement.stat.map(statement => generateNode(statement, whileStatement.semanticTable.getOrElse(symbolTable), functionTable, label, dataMap, textMap))
+                whileStatement.stat.map(statement => generateNode(statement, whileStatement.semanticTable.getOrElse(symbolTable), functionTable, classTable, label, dataMap, textMap, inClass))
                 
                 /*
                     Increments stack back to its original position.
@@ -491,7 +587,7 @@ object codeGenerator {
                 
                 functionStackSize -= i  
                 textMap(label).addOne(L(condLabel))
-                generateExpr(whileStatement.cond, symbolTable, functionTable, label, 4, dataMap, textMap)
+                generateExpr(whileStatement.cond, symbolTable, functionTable, classTable, label, 4, dataMap, textMap)
                 textMap(label).addOne(CMP(None, R(4), Immed(1)))
                 textMap(label).addOne(B(Some(EQCOND()), s"L${bodyLabel}"))
 
@@ -504,7 +600,7 @@ object codeGenerator {
                 var i = decrementStack(nestedBegin.semanticTable.getOrElse(symbolTable).getSize(), textMap, label)
                 
                 functionStackSize += i
-                nestedBegin.stat.map(statement => generateNode(statement, nestedBegin.semanticTable.getOrElse(symbolTable), functionTable, label, dataMap, textMap))
+                nestedBegin.stat.map(statement => generateNode(statement, nestedBegin.semanticTable.getOrElse(symbolTable), functionTable, classTable, label, dataMap, textMap, inClass))
                 
                 /*
                     Increments stack back to its original position.
@@ -520,30 +616,82 @@ object codeGenerator {
     /*
         Method that generates assembly level code for LHS expressions.
     */
-    def generateLHS(lhs: AssignLHS, symbolTable: SymbolTable, functionTable: FunctionTable, label: Scope, register: Int, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]], read: Boolean): Unit = {
+    def generateLHS(lhs: AssignLHS, symbolTable: SymbolTable, functionTable: FunctionTable, classTable: ClassTable, label: Scope, register: Int, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]], read: Boolean, inClass: Option[String]): Unit = {
         lhs match {
             case ident: Ident => 
-                if (read) {
-                    textMap(label).addOne(ADD(None, false, R(register), SP(), Immed(symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset)))
-                } else {
-                    val a_mode2 = if (symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset == 0) {
-                        ZeroOffset(SP())       
+                ident match {
+                    case ClassAccess(classIdent, memberIdent) => // means i need to look in heap - lhs so this must be field - find index, find pointer to instance\
+                        val a_mode2 = if (classIdent.variable == "this") {
+                            if (symbolTable.getSize() - 4 + stackOffset == 0) {
+                                ZeroOffset(SP())       
+                            } else {
+                                ImmediateOffset(SP(), Immed(symbolTable.getSize() - 4 + stackOffset))
+                            }
+                        } else {
+                            if (symbolTable.getSizeWithIdent(classIdent).get - classIdent.symbolTable.get.findId(classIdent).get + stackOffset == 0) {
+                                ZeroOffset(SP())       
+                            } else {
+                                ImmediateOffset(SP(), Immed(symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset))
+                            }
+                        }
+                        val classType = if (classIdent.variable != "this") {
+                            symbolTable.find(classIdent).get match {
+                                case ClassCheck(name, nested) => name
+                                case _ => ""
+                            }
+                        } else {
+                            inClass match {
+                                case Some(value) => value
+                                case None => ""
+                            }
+                        }
+
+                        textMap(label).addOne(LDR(None, R(register), a_mode2)) 
+                        //println(classIdent.variable)
+                        val classFieldMap = classTable.getFieldMap(classType, 0, Map.empty)
+                        //println(classFieldMap)
+                        val fieldInfo = classFieldMap.get(memberIdent.variable)
+
+                        val offset: Int = fieldInfo match {
+                            case None => 0
+                            case Some(value) => value._2 * 4
+                        } 
+                        if (offset == 0) {
+                            textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
+
+                        } else {
+                            textMap(label).addOne(LDR(None, R(register), ImmediateOffset(R(register), Immed(offset))))
+                        }
+                        val lhsSize = getBytesFromType(fieldInfo.get._1)
+                        if (lhsSize == 4) {
+                            textMap(label).addOne(STR(None, R(register - 1), ZeroOffset(R(register))))
+                        } else {
+                            textMap(label).addOne(STRB(None, R(register - 1), ZeroOffset(R(register))))
+                        }
+                    
+                case VarIdent(variable) => if (read) {
+                        textMap(label).addOne(ADD(None, false, R(register), SP(), Immed(symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset)))
                     } else {
-                        ImmediateOffset(SP(), Immed(symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset))
-                    }
-                    val lhsSize = getBytes(ident, symbolTable)
-                    if (lhsSize == 4) {
-                        textMap(label).addOne(STR(None, R(register - 1), a_mode2))
-                    } else {
-                        textMap(label).addOne(STRB(None, R(register - 1), a_mode2))
+                        val a_mode2 = if (symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset == 0) {
+                            ZeroOffset(SP())       
+                        } else {
+                            ImmediateOffset(SP(), Immed(symbolTable.getSizeWithIdent(ident).get - ident.symbolTable.get.findId(ident).get + stackOffset))
+                        }
+                        val lhsSize = getBytes(ident, symbolTable)
+                        if (lhsSize == 4) {
+                            textMap(label).addOne(STR(None, R(register - 1), a_mode2))
+                        } else {
+                            textMap(label).addOne(STRB(None, R(register - 1), a_mode2))
+                        }
                     }
                 }
+                
             
             case arrayElem: ArrayElem =>
                 textMap(label).addOne(ADD(None, false, R(register), SP(), Immed(symbolTable.getSizeWithIdent(arrayElem.id).get - arrayElem.id.symbolTable.get.findId(arrayElem.id).get + stackOffset)))
                 var i = 0
                 arrayElem.exprs.map(expr => {
-                    generateExpr(expr, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                    generateExpr(expr, symbolTable, functionTable, classTable, label, register + 1, dataMap, textMap)
                     textMap(label).addAll(List(
                         LDR(None, R(register), ZeroOffset(R(register))),
                         MOV(None, false, R(0), R(register + 1)),
@@ -590,14 +738,14 @@ object codeGenerator {
                 }
             
             case Fst(expr) =>
-                generateExpr(expr, symbolTable, functionTable, label, register, dataMap, textMap)
+                generateExpr(expr, symbolTable, functionTable, classTable, label, register, dataMap, textMap)
                 textMap(label).addOne(MOV(None, false, R(0), R(register)))
                 textMap(label).addOne(BL(None, "p_check_null_pointer"))
                 textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
                 generateLHSFstAndSnd(read, register, expr, dataMap, textMap, label, true)
 
             case Snd(expr) =>
-                generateExpr(expr, symbolTable, functionTable, label, register, dataMap, textMap)
+                generateExpr(expr, symbolTable, functionTable, classTable, label, register, dataMap, textMap)
                 textMap(label).addOne(MOV(None, false, R(0), R(register)))
                 textMap(label).addOne(BL(None, "p_check_null_pointer"))
                 textMap(label).addOne(LDR(None, R(register), ImmediateOffset(R(register), Immed(4))))
@@ -608,9 +756,58 @@ object codeGenerator {
     /*
         Method that generates assembly level code for RHS expressions.
     */
-    def generateRHS(assignRHS: AssignRHS, symbolTable: SymbolTable, functionTable: FunctionTable, label: Scope, register: Int, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
+    def generateRHS(assignRHS: AssignRHS, symbolTable: SymbolTable, functionTable: FunctionTable, classTable: ClassTable, label: Scope, register: Int, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]], inClass: Option[String]): Unit = {
         assignRHS match {
-            case expr: Expr => generateExpr(expr, symbolTable, functionTable, label, 4, dataMap, textMap) 
+            case ident: ClassAccess => 
+                val a_mode2 = if (ident.classIdent.variable == "this") {
+                    if (symbolTable.getSize() - 4 + stackOffset == 0) {
+                        ZeroOffset(SP())       
+                    } else {
+                        ImmediateOffset(SP(), Immed(symbolTable.getSize() - 4 + stackOffset))
+                    }
+                } else {
+                    if (symbolTable.getSizeWithIdent(ident.classIdent).get - ident.classIdent.symbolTable.get.findId(ident.classIdent).get + stackOffset == 0) {
+                        ZeroOffset(SP())       
+                    } else {
+                        ImmediateOffset(SP(), Immed(symbolTable.getSizeWithIdent(ident.classIdent).get - ident.classIdent.symbolTable.get.findId(ident.classIdent).get + stackOffset))
+                    }
+                }
+                
+                val classType = if (ident.classIdent.variable != "this") {
+                    symbolTable.find(ident.classIdent).get match {
+                        case ClassCheck(name, nested) => name
+                        case _ => ""
+                    }
+                } else {
+                    inClass match {
+                        case Some(value) => value
+                        case None => ""
+                    }
+                }
+
+                textMap(label).addOne(LDR(None, R(register), a_mode2)) 
+                val classFieldMap = classTable.getFieldMap(classType, 0, Map.empty)
+                val fieldInfo = classFieldMap.get(ident.memberIdent.variable)
+
+                val offset: Int = fieldInfo match {
+                    case None => 0
+                    case Some(value) => value._2 * 4
+                } 
+                if (offset == 0) {
+                    textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
+
+                } else {
+                    textMap(label).addOne(LDR(None, R(register), ImmediateOffset(R(register), Immed(offset))))
+                }
+                val lhsSize = getBytesFromType(fieldInfo.get._1)
+                if (lhsSize == 4) {
+                    textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
+                } else {
+                    textMap(label).addOne(LDRB(None, R(register), ZeroOffset(R(register))))
+                }
+                    
+
+            case expr: Expr => generateExpr(expr, symbolTable, functionTable, classTable, label, register, dataMap, textMap) 
             
             case ArrayLiter(array) => 
                 var elemSize = 0
@@ -625,7 +822,7 @@ object codeGenerator {
                 if (!array.isEmpty) {
                     var i = 4;
                     array.map(expr => {
-                        generateExpr(expr, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                        generateExpr(expr, symbolTable, functionTable, classTable, label, register + 1, dataMap, textMap)
                         textMap(label).addOne(
                             if (elemSize == 4) {
                                 STR(None, R(register + 1), ImmediateOffset(R(register), Immed(i)))
@@ -642,7 +839,7 @@ object codeGenerator {
                 textMap(label).addOne(LDR(None, R(0), Immed(8)))
                 textMap(label).addOne(BL(None, "malloc"))
                 textMap(label).addOne(MOV(None, false, R(register), R(0)))
-                generateExpr(expr1, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                generateExpr(expr1, symbolTable, functionTable, classTable, label, register + 1, dataMap, textMap)
                 val expr1Bytes = getBytes(expr1, symbolTable)
                 textMap(label).addOne(LDR(None, R(0), Immed(expr1Bytes)))
                 textMap(label).addOne(BL(None, "malloc"))
@@ -652,7 +849,7 @@ object codeGenerator {
                     textMap(label).addOne(STRB(None, R(register + 1), ZeroOffset(R(0))))
                 }
                 textMap(label).addOne(STR(None, R(0), ZeroOffset(R(register))))
-                generateExpr(expr2, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                generateExpr(expr2, symbolTable, functionTable, classTable, label, register + 1, dataMap, textMap)
                 val expr2Bytes = getBytes(expr2, symbolTable)
                 textMap(label).addOne(LDR(None, R(0), Immed(getBytes(expr2, symbolTable))))
                 textMap(label).addOne(BL(None, "malloc"))
@@ -664,22 +861,42 @@ object codeGenerator {
                 textMap(label).addOne(STR(None, R(0), ImmediateOffset(R(register), Immed(4))))
                 
             case Fst(expr) => 
-                generateExpr(expr, symbolTable, functionTable, label, 4, dataMap, textMap)
+                generateExpr(expr, symbolTable, functionTable, classTable, label, 4, dataMap, textMap)
                 textMap(label).addOne(MOV(None, false, R(0), R(register)))
                 textMap(label).addOne(BL(None, "p_check_null_pointer"))
                 textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
                 generateRHSFstAndSnd(expr, register, dataMap, textMap, label, true)
             
             case Snd(expr) =>
-                generateExpr(expr, symbolTable, functionTable, label, 4, dataMap, textMap)
+                generateExpr(expr, symbolTable, functionTable, classTable, label, 4, dataMap, textMap)
                 textMap(label).addOne(MOV(None, false, R(0), R(register)))
                 textMap(label).addOne(BL(None, "p_check_null_pointer"))
                 textMap(label).addOne(LDR(None, R(register), ImmediateOffset(R(register), Immed(4))))
                 generateRHSFstAndSnd(expr, register, dataMap, textMap, label, false)
             
             case Call(id, args) => 
+                id match {
+                    case VarIdent(variable) => 
+                    case ident: ClassAccess =>
+                         val a_mode2 = if (ident.classIdent.variable == "this") {
+                            if (symbolTable.getSize() - 4 + stackOffset == 0) {
+                                ZeroOffset(SP())       
+                            } else {
+                                ImmediateOffset(SP(), Immed(symbolTable.getSize() - 4 + stackOffset))
+                            }
+                        } else {
+                            if (symbolTable.getSizeWithIdent(ident.classIdent).get - ident.classIdent.symbolTable.get.findId(ident.classIdent).get + stackOffset == 0) {
+                                ZeroOffset(SP())       
+                            } else {
+                                ImmediateOffset(SP(), Immed(symbolTable.getSizeWithIdent(ident.classIdent).get - ident.classIdent.symbolTable.get.findId(ident.classIdent).get + stackOffset))
+                            }
+                        }
+                        textMap(label).addOne(LDR(None, R(4), a_mode2))    
+                        textMap(label).addOne(STR(None, R(4), RegisterWriteBack(SP(), Immed(-4))))                     
+                        
+                }
                 args.reverse.map(arg => {
-                    generateExpr(arg, symbolTable, functionTable, label, 4, dataMap, textMap)
+                    generateExpr(arg, symbolTable, functionTable, classTable, label, 4, dataMap, textMap)
                     if (getBytes(arg, symbolTable) == 1) {
                         textMap(label).addOne(STRB(None, R(4), RegisterWriteBack(SP(), Immed(-1))))
                         stackOffset += 1
@@ -689,11 +906,83 @@ object codeGenerator {
                     }
                 })
                 stackOffset = 0
-                textMap(label).addOne(BL(None, "f_" + id.variable))
-                textMap(label).addOne(ADD(None, false, SP(), SP(), Immed(args.foldLeft(0)((arg1, arg2) => arg1 + getBytes(arg2, symbolTable)))))
+                id match {
+                    case ident: ClassAccess =>
+                         val classType = if (ident.classIdent.variable != "this") {
+                            symbolTable.find(ident.classIdent).get match {
+                                case ClassCheck(name, nested) => name
+                                case _ => ""
+                            }
+                        } else {
+                            inClass match {
+                                case Some(value) => value
+                                case None => ""
+                            }
+                        }
+                        textMap(label).addOne(BL(None, "f_" + classType + "_" + ident.memberIdent.variable))
+                    case VarIdent(variable) => textMap(label).addOne(BL(None, "f_" + id.variable))
+                }
+                
+                id match {
+                    case VarIdent(variable) => textMap(label).addOne(ADD(None, false, SP(), SP(), Immed(args.foldLeft(0)((arg1, arg2) => arg1 + getBytes(arg2, symbolTable)))))
+                    case ClassAccess(classIdent, memberIdent) => textMap(label).addOne(ADD(None, false, SP(), SP(), Immed(args.foldLeft(0)((arg1, arg2) => arg1 + getBytes(arg2, symbolTable)) + 4)))
+                }
                 textMap(label).addOne(MOV(None, false, R(4), R(0)))
             
-            case _ =>    
+            case NewInstance(className, args) => 
+                textMap(label).addOne(LDR(None, R(0), Immed(classTable.getClassSize(className.variable))))
+                textMap(label).addOne(BL(None, "malloc"))
+                textMap(label).addOne(MOV(None, false, R(register), R(0)))
+                var i = 0
+                args.map(arg => {   
+                    generateExpr(arg, symbolTable, functionTable, classTable, label, register + 1, dataMap, textMap)
+                    val exprBytes = getBytes(arg, symbolTable)
+                    textMap(label).addOne(LDR(None, R(0), Immed(exprBytes)))
+                    textMap(label).addOne(BL(None, "malloc"))
+                    if (exprBytes == 4) {
+                        textMap(label).addOne(STR(None, R(register + 1), ZeroOffset(R(0))))
+                    } else {
+                        textMap(label).addOne(STRB(None, R(register + 1), ZeroOffset(R(0))))
+                    }
+                    if (i == 0) {
+                        textMap(label).addOne(STR(None, R(0), ZeroOffset(R(register))))
+                    } else {
+                        textMap(label).addOne(STR(None, R(0), ImmediateOffset(R(register), Immed(i))))
+                    }   
+                    i += 4
+                })
+                fieldMap.get(className.variable) match {
+                    case Some(value) => value.map(assign => {
+                            generateRHS(assign.rhs, symbolTable, functionTable, classTable, label, register + 1, dataMap, textMap, inClass)
+                            val exprBytes = getBytesFromType(extractType(assign.t))
+                            textMap(label).addOne(LDR(None, R(0), Immed(exprBytes)))
+                            textMap(label).addOne(BL(None, "malloc"))
+                            if (exprBytes == 4) {
+                                textMap(label).addOne(STR(None, R(register + 1), ZeroOffset(R(0))))
+                            } else {
+                                textMap(label).addOne(STRB(None, R(register + 1), ZeroOffset(R(0))))
+                            }
+                            val currentMap: Map[String, (TypeCheck, Int)] = classTable.getFieldMap(className.variable, 0, Map.empty)
+                            val i = currentMap(assign.id.variable)._2 
+                            if (i == 0) {
+                                textMap(label).addOne(STR(None, R(0), ZeroOffset(R(register))))
+                            } else {
+                                textMap(label).addOne(STR(None, R(0), ImmediateOffset(R(register), Immed(i * 4))))
+                            }  
+                        }) 
+                    case None =>
+                } 
+
+                // ct.getClass(className)
+                // val symbolTableSize = singleClass.symbolTable match {
+                //     case Some(value) => value.getSize()
+                //     case None => 0
+                // }
+                // textMap(label).addOne(LDR(None, R(0), Immed(symbolTableSize)))
+                // textMap(classLabel).addOne(BL(None, "malloc"))
+                // textMap(label).addOne(MOV(None, false, R(4), R(0)))
+
+
         }
             
     }
@@ -833,13 +1122,14 @@ object codeGenerator {
             case StrCheck(nested) => 4
             case PairCheck(type1, type2, nested) => 4
             case EmptyPairCheck() => 4
+            case ClassCheck(_, _) => 4
         }
     }
 
     /*
         Method that generates the assembly level code for all expressions.
     */
-    def generateExpr(expr: Expr, symbolTable: SymbolTable, functionTable: FunctionTable, label: Scope, register: Int, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
+    def generateExpr(expr: Expr, symbolTable: SymbolTable, functionTable: FunctionTable, classTable: ClassTable, label: Scope, register: Int, dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
         
         val reg1 = if (register < 10) {
             register
@@ -873,9 +1163,9 @@ object codeGenerator {
                     if (register + 1 > 10) {
                         textMap(label).addOne(PUSH(List(R(10))))
                         stackOffset += 4
-                        generateExpr(expr, symbolTable, functionTable, label, register, dataMap, textMap)
+                        generateExpr(expr, symbolTable, functionTable, classTable, label, register, dataMap, textMap)
                     } else {
-                        generateExpr(expr, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                        generateExpr(expr, symbolTable, functionTable, classTable, label, register + 1, dataMap, textMap)
                     }
                     if (register + 1 > 10) {
                         stackOffset -= 4
@@ -947,33 +1237,33 @@ object codeGenerator {
                 textMap(label).addOne(LDR(None, R(register), Immed(0)))
             
             case Not(expr1) =>
-                generateExpr(expr1, symbolTable, functionTable, label, register, dataMap, textMap)
+                generateExpr(expr1, symbolTable, functionTable, classTable, label, register, dataMap, textMap)
                 textMap(label).addOne(EOR(None, false, R(register), R(register), Immed(1)))
             
             case Neg(expr1) => 
                 generateOverflow(dataMap, textMap)
-                generateExpr(expr1, symbolTable, functionTable, label, register, dataMap, textMap)
+                generateExpr(expr1, symbolTable, functionTable, classTable, label, register, dataMap, textMap)
                 textMap(label).addOne(RSB(None, true, R(register), R(register), Immed(0)))
                 textMap(label).addOne(BL(Some(VSCOND()), "p_throw_overflow_error"))
             
             case Len(expr1) => 
-                generateExpr(expr1, symbolTable, functionTable, label, register, dataMap, textMap)
+                generateExpr(expr1, symbolTable, functionTable, classTable, label, register, dataMap, textMap)
                 textMap(label).addOne(LDR(None, R(register), ZeroOffset(R(register))))
             
             case Ord(expr1) => 
-                generateExpr(expr1, symbolTable, functionTable, label, register, dataMap, textMap)
+                generateExpr(expr1, symbolTable, functionTable, classTable, label, register, dataMap, textMap)
             
             case Chr(expr1) => 
-                generateExpr(expr1, symbolTable, functionTable, label, register, dataMap, textMap)
+                generateExpr(expr1, symbolTable, functionTable, classTable, label, register, dataMap, textMap)
             
             case binOpInt: BinOpInt => 
-                generateExpr(binOpInt.expr1, symbolTable, functionTable, label, register, dataMap, textMap) 
+                generateExpr(binOpInt.expr1, symbolTable, functionTable, classTable, label, register, dataMap, textMap) 
                 if (register + 1 > 10) {
                     textMap(label).addOne(PUSH(List(R(10))))
                     stackOffset += 4
-                    generateExpr(binOpInt.expr2, symbolTable, functionTable, label, register, dataMap, textMap)
+                    generateExpr(binOpInt.expr2, symbolTable, functionTable, classTable, label, register, dataMap, textMap)
                 } else {
-                    generateExpr(binOpInt.expr2, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                    generateExpr(binOpInt.expr2, symbolTable, functionTable, classTable, label, register + 1, dataMap, textMap)
                 }
                 if (register + 1 > 10) {
                     stackOffset -= 4
@@ -1014,13 +1304,13 @@ object codeGenerator {
                 }
                 
             case binOpComp: BinOpComp => 
-                generateExpr(binOpComp.expr1, symbolTable, functionTable, label, register, dataMap, textMap) 
+                generateExpr(binOpComp.expr1, symbolTable, functionTable, classTable, label, register, dataMap, textMap) 
                 if (register + 1 > 10) {
                     textMap(label).addOne(PUSH(List(R(10))))
                     stackOffset += 4
-                    generateExpr(binOpComp.expr2, symbolTable, functionTable, label, register, dataMap, textMap)
+                    generateExpr(binOpComp.expr2, symbolTable, functionTable, classTable, label, register, dataMap, textMap)
                 } else {
-                    generateExpr(binOpComp.expr2, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                    generateExpr(binOpComp.expr2, symbolTable, functionTable, classTable, label, register + 1, dataMap, textMap)
                 }
                 if (register + 1 > 10) {
                     stackOffset -= 4
@@ -1054,13 +1344,13 @@ object codeGenerator {
                 }
 
             case binOpEqs: BinOpEqs => 
-                generateExpr(binOpEqs.expr1, symbolTable, functionTable, label, register, dataMap, textMap) 
+                generateExpr(binOpEqs.expr1, symbolTable, functionTable, classTable, label, register, dataMap, textMap) 
                 if (register + 1 > 10) {
                     textMap(label).addOne(PUSH(List(R(10))))
                     stackOffset += 4
-                    generateExpr(binOpEqs.expr2, symbolTable, functionTable, label, register, dataMap, textMap)
+                    generateExpr(binOpEqs.expr2, symbolTable, functionTable, classTable, label, register, dataMap, textMap)
                 } else {
-                    generateExpr(binOpEqs.expr2, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                    generateExpr(binOpEqs.expr2, symbolTable, functionTable, classTable, label, register + 1, dataMap, textMap)
                 }
                 if (register + 1 > 10) {
                     stackOffset -= 4
@@ -1081,13 +1371,13 @@ object codeGenerator {
                         ))
                 }
             case binOpBool: BinOpBool => 
-                generateExpr(binOpBool.expr1, symbolTable, functionTable, label, register, dataMap, textMap) 
+                generateExpr(binOpBool.expr1, symbolTable, functionTable, classTable, label, register, dataMap, textMap) 
                 if (register + 1 > 10) {
                     textMap(label).addOne(PUSH(List(R(10))))
                     stackOffset += 4
-                    generateExpr(binOpBool.expr2, symbolTable, functionTable, label, register, dataMap, textMap)
+                    generateExpr(binOpBool.expr2, symbolTable, functionTable, classTable, label, register, dataMap, textMap)
                 } else {
-                    generateExpr(binOpBool.expr2, symbolTable, functionTable, label, register + 1, dataMap, textMap)
+                    generateExpr(binOpBool.expr2, symbolTable, functionTable, classTable, label, register + 1, dataMap, textMap)
                 }
                 if (register + 1 > 10) {
                     stackOffset -= 4
@@ -1535,5 +1825,9 @@ object codeGenerator {
             case _ =>
         }
         generateCheckNullPointer(dataMap, textMap)
+    }
+
+    def mallocObject(expr: Expr): Unit = {
+
     }
 }

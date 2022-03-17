@@ -68,7 +68,7 @@ object main {
         */
         answer.get match {
             case Success(x) => {
-                val (semanticallyValid, hasReturnStatements) = analyse(x, symbolTable, functionTable, classTable, None)
+                val (semanticallyValid, hasReturnStatements) = analyse(x, symbolTable, functionTable, classTable, None, false)
                 if (!hasReturnStatements) {
                     /*
                         Errors relating to missing return statements in functions are found 
@@ -81,7 +81,7 @@ object main {
                         If semantic analysis passes, print the AST, symbol table and function table
                     */
                     if (semanticallyValid) {
-                        val lines = generate(x, symbolTable, functionTable)
+                        val lines = generate(x, symbolTable, functionTable, classTable)
                         if(output == ""){
                             writeToFile(lines, file.getName().replace(".wacc",".s"), false)
                         }
@@ -105,5 +105,11 @@ object main {
                 sys.exit(100)
             }
         }
-    }
+        // println("\nCLASS STUFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
+        // classTable.printClassTables()  
+        // println("\nFUNCTION STUFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
+        // functionTable.printFunctionTables2(functionTable, 0)
+        // println("\nSYMBOL STUFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
+        // symbolTable.printSymbolTables(symbolTable, 0)
+    } 
 }

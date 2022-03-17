@@ -91,7 +91,25 @@ object symbolTable {
                     case Some(value) => value.find(ident)
                 }
                 case Some(extractedType) => 
+                    ident match {
+                        case VarIdent(variable) => 
+                        case ClassAccess(classIdent, memberIdent) =>
+                            find(classIdent)
+                    }
                     ident.symbolTable = Some(this)
+                    //printSymbolTables(this, 0)
+                    Some(extractedType._1)
+            }
+        }
+
+        def findField(variable: String): Option[TypeCheck] = {
+            var foundType = variableMap.get(variable)
+            foundType match {
+                case None => parent match {
+                    case None => None
+                    case Some(value) => value.findField(variable)
+                }
+                case Some(extractedType) => 
                     Some(extractedType._1)
             }
         }
@@ -134,6 +152,7 @@ object symbolTable {
         def getSize(): Int = {
             size
         }
+
         
         /*
             Method to return the size of the symbol table of an ident, accounting for

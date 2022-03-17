@@ -84,7 +84,7 @@ class AssemblyToStringTest extends AnyFlatSpec with AppendedClues {
     "LDR instruction" should "produce correct string" in
     {
         info("without cond")
-        println(LDR(None, R(0), ZeroOffset(R(0))))
+        //println(LDR(None, R(0), ZeroOffset(R(0))))
         LDR(None, R(0), ZeroOffset(R(0))).toString() should equal ("    LDR r0, [r0]\n")
 
         info("with cond")
@@ -155,8 +155,8 @@ class AssemblyToStringTest extends AnyFlatSpec with AppendedClues {
         */
         answer.get match {
             case Success(x) => 
-                val (semanticallyValid, hasReturnStatements) = analyse(x, symbolTable, functionTable, classTable, None)
-                generate(x, symbolTable, functionTable)
+                val (semanticallyValid, hasReturnStatements) = analyse(x, symbolTable, functionTable, classTable, None, false)
+                generate(x, symbolTable, functionTable, classTable)
             case _ => List.empty
         }
     }

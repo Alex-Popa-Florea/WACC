@@ -83,8 +83,8 @@ class AssemblyGenerationTest extends AnyFlatSpec with AppendedClues {
         */
         answer.get match {
             case Success(x) => 
-                val (semanticallyValid, hasReturnStatements) = analyse(x, symbolTable, functionTable, classTable, None)
-                generate(x, symbolTable, functionTable)
+                val (semanticallyValid, hasReturnStatements) = analyse(x, symbolTable, functionTable, classTable, None, false)
+                generate(x, symbolTable, functionTable, classTable)
             case _ => List.empty
         }
     }

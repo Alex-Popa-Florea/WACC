@@ -57,7 +57,7 @@ class FunctionParserTest extends AnyFlatSpec with AppendedClues
         val symbolTable = new SymbolTable(ProgramSection(), None)
         val functionTable = new FunctionTable(ProgramSection(), None)
         val classTable = new ClassTable()
-        analyse(p, symbolTable, functionTable, classTable, None)
+        analyse(p, symbolTable, functionTable, classTable, None, false)
         returnTypeError
     }
   }

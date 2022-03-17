@@ -1,9 +1,10 @@
 package wacc
 import wacc.types._
 import scala.collection.mutable.Map
+import backend.codeGenerator.getBytesFromType
 object classTable {
      class ClassTable() {
-         // classMap(className, (parent, constructors, fields, methods))
+         // classMap(className, (parent, constructors (paramters), fields (assigntype), methods(functions ))) - parent fields and methods we can access 
         private var classMap: Map[String, (Option[String], List[(String, TypeCheck)], Map[String, TypeCheck],  Map[String, TypeCheck], Map[String, (TypeCheck, List[TypeCheck])],  Map[String, (TypeCheck, List[TypeCheck])])] = Map.empty
         /*
             The add method adds a function to the function table, returning true
@@ -106,6 +107,51 @@ object classTable {
                     }
                     equality
             }
+        }
+
+        def getFieldMap(className: String, index: Int, fieldMap: Map[String, (TypeCheck, Int)]): Map[String, (TypeCheck, Int)] = {
+            var localIndex = index
+            getConstructors(className) match {
+                case Some(fields) => fields.foreach( field =>
+                    fieldMap.get(field._1) match {
+                        case Some(value) => 
+                        case None => fieldMap.addOne((field._1, (field._2, localIndex)))
+                                    localIndex += 1
+                    }
+                    )
+                case None => 
+            }
+            getPrivateFields(className) match {
+                case Some(fields) => fields.foreach( field =>
+                    fieldMap.get(field._1) match {
+                        case Some(value) => 
+                        case None => fieldMap.addOne((field._1, (field._2, localIndex)))
+                                    localIndex += 1
+                    }
+                    )
+                case None => 
+            }
+
+            getPublicFields(className) match {
+                case Some(fields) => fields.foreach( field =>
+                    fieldMap.get(field._1) match {
+                        case Some(value) => 
+                        case None => fieldMap.addOne((field._1, (field._2, localIndex)))
+                                    localIndex += 1
+                    }
+                    )
+                case None =>
+            }
+
+            getParent(className) match {
+                case Some(foundParent) => getFieldMap(foundParent, localIndex, fieldMap)
+                case None =>
+            }
+            fieldMap
+        }
+
+        def getClassSize(className: String): Int = {
+            getFieldMap(className, 0, Map.empty).size * 4
         }
 
         // def checkField(className: String, field: String, foundType: TypeCheck): Boolean = {

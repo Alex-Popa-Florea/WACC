@@ -185,8 +185,8 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
         val variableMap = analyser(p)._1.getVariableMap()
         var lhsType = variableMap.filter({case (x, _) => x == "i"}).map({case (_, (t, _)) => t})
         var rhsType = variableMap.filter({case (x, _) => x == "b"}).map({case (_, (t, _)) => t})
-        println(lhsType)
-        println(rhsType)
+        // println(lhsType)
+        // println(rhsType)
         lhsType should equal (List(IntCheck(0)))
         rhsType should equal (List(BoolCheck(0)))
         val error = analyser(p)._3 
@@ -301,7 +301,7 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     val symbolTable = new SymbolTable(ProgramSection(), None)
     val functionTable = new FunctionTable(ProgramSection(), None)
     val classTable = new ClassTable()
-    analyse(p, symbolTable, functionTable, classTable, None)
+    analyse(p, symbolTable, functionTable, classTable, None, false)
     val e = errors
     errors = ListBuffer.empty
     (symbolTable, functionTable, e)

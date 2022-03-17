@@ -39,7 +39,7 @@ object semanticAnalyser {
     /*CHANGE THIS*/
     val classFlag = true
 
-	def analyse(node: Node, st: SymbolTable, ft: FunctionTable, ct: ClassTable, returnType: Option[TypeCheck]): (Boolean, Boolean) = {
+	def analyse(node: Node, st: SymbolTable, ft: FunctionTable, ct: ClassTable, returnType: Option[TypeCheck], inClass: Boolean): (Boolean, Boolean) = {
         /*
             We pattern match over nodes in the AST
         */
@@ -89,6 +89,14 @@ object semanticAnalyser {
                     }
                 }
 
+                var classesChecked: (Boolean, Boolean) = (true, true)
+                if (classFlag) { 
+                    classesChecked = classes.map(x => analyse(x, st, ft, ct, None, false)).reduceOption((x, y) => (x._1 && y._1, x._2 && y._2)) match {
+                        case None => (true, true)
+                        case Some(value) => value
+                    }
+                }
+
                 var addedFunctions = true
                 for (function <- func){
                     val addedFunction = ft.add(function.id.variable, extractType(function.t), function.vars.map(x => extractType(x.t)))
@@ -97,48 +105,41 @@ object semanticAnalyser {
                         errors.addOne((s"Function ${function.id.variable} has already been defined, sorry!", node.pos))
                     }
                 }
-                
-
-                var classesChecked: (Boolean, Boolean) = (true, true)
-                if (classFlag) { 
-                    classesChecked = classes.map(x => analyse(x, st, ft, ct, None)).reduceOption((x, y) => (x._1 && y._1, x._2 && y._2)) match {
-                        case None => (true, true)
-                        case Some(value) => value
-                    }
-                }
- 
-				val functionsChecked = func.map(x => analyse(x, st, ft, ct, None)) 
-                val statsChecked = stat.map(x => analyse(x, st, ft, ct, None)._1)
+				val functionsChecked = func.map(x => analyse(x, st, ft, ct, None, false)) 
+                val statsChecked = stat.map(x => analyse(x, st, ft, ct, None, false)._1)
 
                 functionsChecked.reduceOption((x, y) => ((x._1 && y._1), false)) match {
-					case None => (statsChecked.reduce((x, y) => x && y), true)
+					case None => (classesChecked._1 && classParentChecked && addedClasses && statsChecked.reduce((x, y) => x && y), true)
 					case Some(value) => (classesChecked._1 && classParentChecked && addedClasses && addedFunctions && value._1 && statsChecked.reduce((x, y) => x && y), classesChecked._2 && functionsChecked.last._2)
                 }
             
             case classStat: Class =>
                 val funcTable = new FunctionTable(ClassSection(classStat.id.variable), Some(ft))
                 val symbolTable = new SymbolTable(ClassSection(classStat.id.variable), Some(st))
+                classStat.symbolTable = Some(symbolTable)
+                classStat.functionTable = Some(funcTable)
                 ft.addChildFt(funcTable)
+                st.addChildSt(symbolTable)
                 var addedMethods = true
                 val bannedFields: Map[String, TypeCheck] = ct.getPrivateFields(classStat.id.variable).get ++ ct.getPublicFields(classStat.id.variable).get
                 val bannedMethods: Map[String, (TypeCheck, List[TypeCheck])] = ct.getPrivateMethods(classStat.id.variable).get ++ ct.getPublicMethods(classStat.id.variable).get
                 classStat.parent match {
-                    case Some(value) => addClassMembers(None, value.variable, ct, symbolTable, funcTable, bannedFields, bannedMethods)
+                    case Some(value) => addClassMembers(Some("this"), value.variable, ct, symbolTable, funcTable, bannedFields, bannedMethods)
                     case None =>
                 }
                 
                 for (method <- classStat.methods){
-                    val addedFunction = funcTable.add(method.func.id.variable, extractType(method.func.t), method.func.vars.map(x => extractType(x.t)))
+                    val addedFunction = funcTable.add("this." + method.func.id.variable, extractType(method.func.t), method.func.vars.map(x => extractType(x.t)))
                     if (!addedFunction) {
                         addedMethods = false
                         errors.addOne((s"Method ${method.func.id.variable} has already been defined, sorry!", node.pos))
                     }
                 }
-                val paramsCheck = classStat.vars.map(v => analyse(v, symbolTable, ft, ct, None)._1).reduceOption((x, y) => x && y) match {
+                val paramsCheck = classStat.vars.map(v => analyse(v, symbolTable, ft, ct, None, true)._1).reduceOption((x, y) => x && y) match {
                     case Some(value) => value
                     case None => true
                 }
-                val correctConstr =  classStat.parent match {
+                val correctConstr = classStat.parent match {
                     case Some(parentName) => ct.getConstructors(parentName.variable) match {
                         case Some(parentConstr) => 
                             val classConstr = classStat.vars.map(v => (v.id.variable, extractType(v.t)))
@@ -154,11 +155,11 @@ object semanticAnalyser {
                     }
                     case None => true
                 }
-                val fieldCheck = classStat.fields.map(f => analyse(f.assign, symbolTable, ft, ct, None)._1).reduceOption((x, y) => x && y) match {
+                val fieldCheck = classStat.fields.map(f => analyse(f.assign, symbolTable, ft, ct, None, true)._1).reduceOption((x, y) => x && y) match {
                     case Some(value) => value
                     case None => true
                 }
-                val methodCheck = classStat.methods.map(m => analyse(m.func, symbolTable, funcTable, ct, None))
+                val methodCheck = classStat.methods.map(m => analyse(m.func, symbolTable, funcTable, ct, None, true))
                 methodCheck.reduceOption((x, y) => ((x._1 && y._1), false)) match {
 					case None => (fieldCheck && paramsCheck && correctConstr, true) 
 					case Some(value) => (value._1 && fieldCheck && paramsCheck && correctConstr, methodCheck.last._2)
@@ -174,9 +175,12 @@ object semanticAnalyser {
                 var nst = new SymbolTable(FunctionSection(functionStat.id.variable), Some(st))
                 st.addChildSt(nst)
                 functionStat.semanticTable = Some(nst)
-				val checkedParams = functionStat.vars.reverse.map(x => analyse(x, nst, ft, ct, None)._1).reduceOption((x, y) => x && y)
+                if (classFlag) {
+                    nst.updateSize(nst, 4)
+                }
+				val checkedParams = functionStat.vars.reverse.map(x => analyse(x, nst, ft, ct, None, false)._1).reduceOption((x, y) => x && y)
                 nst.updateSize(nst, 4)
-				val checkedStats = functionStat.stat.map(x => (analyse(x, nst, ft, ct, Some(extractType(functionStat.t))), x.pos))
+				val checkedStats = functionStat.stat.map(x => (analyse(x, nst, ft, ct, Some(extractType(functionStat.t)), false), x.pos))
                 if (!checkedStats.last._1._2) {
                     if (returnTypeError == None) {
                         returnTypeError = Some((s"Function ${functionStat.id.variable} missing return statement", checkedStats.last._2))
@@ -190,7 +194,11 @@ object semanticAnalyser {
                 We ensure parameters have unique names
             */			
 			case Parameter(t, id) => 
-                val addedParam = st.add(id, extractType(t))
+                val addedParam = if (inClass) {
+                    st.addClassMember("this." + id.variable, extractType(t))
+                } else {
+                    st.add(id, extractType(t))
+                }
                 if (!addedParam) {
                     errors.addOne((s"Cannot duplicate parameter name: ${id.variable}", node.pos))
                 }
@@ -199,6 +207,7 @@ object semanticAnalyser {
                 Skip is automatically correct semantically
             */			
 			case Skip() => (true, false)
+
             /*
                 An AssignType node adds its identifier to the symbol table with
                 the given type, ensuring no identifier of the same name already 
@@ -207,7 +216,11 @@ object semanticAnalyser {
                 the left hand side
             */
 			case AssignType(t, id, rhs) =>
-                val addedVariable = st.add(id, extractType(t))
+                val addedVariable = if (inClass) {
+                    st.addClassMember("this." + id.variable, extractType(t))
+                } else {
+                    st.add(id, extractType(t))
+                }
                 var classAssign = true
                 if (!addedVariable) {
                     errors.addOne((s"Variable already declared", node.pos))
@@ -350,8 +363,8 @@ object semanticAnalyser {
                 ft.addChildFt(falseNft)
                 ifStat.falseSemanticTable = Some(falseNst)
 				val conditionCheck = analyseExpr(ifStat.cond, st)
-				val trueStatCheck = ifStat.trueStat.map(x => analyse(x, trueNst, trueNft, ct, returnType))
-				val falseStatCheck = ifStat.falseStat.map(x => analyse(x, falseNst, falseNft, ct, returnType))
+				val trueStatCheck = ifStat.trueStat.map(x => analyse(x, trueNst, trueNft, ct, returnType, false))
+				val falseStatCheck = ifStat.falseStat.map(x => analyse(x, falseNst, falseNft, ct, returnType, false))
                 val correctType = conditionCheck._2 == Some(BoolCheck(0))
                 if (!correctType && conditionCheck._2 != None) {
                     errors.addOne((s"Expression of type bool expected in if statement condition, " +
@@ -378,7 +391,7 @@ object semanticAnalyser {
                     errors.addOne((s"Expression of type bool expected in while statement condition," +
                       s" but expression of type ${typeCheckToString(conditionCheck._2.get)} found!", node.pos))
                 }
-                val correctStats = whileStat.stat.map(x => analyse(x, nst, nft, ct, returnType)._1).reduce((x, y) => x && y)
+                val correctStats = whileStat.stat.map(x => analyse(x, nst, nft, ct, returnType, false)._1).reduce((x, y) => x && y)
 				(conditionCheck._1 && correctType && 
                  correctStats, false)
             
@@ -392,7 +405,7 @@ object semanticAnalyser {
                 st.addChildSt(nst)
                 ft.addChildFt(nft)
                 nestedBegin.semanticTable = Some(nst)
-                val correctStats = nestedBegin.stat.map(x => analyse(x, nst, nft, ct, returnType)._1).reduce((x, y) => x && y)
+                val correctStats = nestedBegin.stat.map(x => analyse(x, nst, nft, ct, returnType, false)._1).reduce((x, y) => x && y)
 				(correctStats, false)
 			
 			case _ => (false, false)
@@ -614,6 +627,11 @@ object semanticAnalyser {
             */
             case Call(id, args) => 
                 val checkedArgs = args.map(x => analyseExpr(x, st))
+                id match {
+                    case ClassAccess(classIdent, memberIdent) =>
+                        st.find(classIdent)
+                    case _ =>
+                }
                 if (checkedArgs.forall(x => x._1)) {
                     ft.getFunction(id.variable) match {
                         case Some(foundFuncType) =>
@@ -983,17 +1001,6 @@ object semanticAnalyser {
         val privateFields = ct.getPrivateFields(className)
         val publicMethods = ct.getPublicMethods(className)
         val privateMethods = ct.getPrivateMethods(className)
-        // println("")
-        // println(className)
-        // println(optionInstanceName)
-        // println("--------------------adhithiiiii:")
-        // println(publicFields)
-        // println(privateFields)
-        // println(publicMethods)
-        // println(privateMethods)
-        // println("---------------------banny bans:")
-        // println(bannedFields)
-        // println(bannedMethods)
         privateFields match {
             case Some(foundPrivateFields) => bannedFields.addAll(foundPrivateFields)
             case None => added = false

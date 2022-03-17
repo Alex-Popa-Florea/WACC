@@ -22,7 +22,7 @@ object lexer {
     val keywords = if (!classFlag) {
             basicKeywords.toSet
         } else {
-           (basicKeywords.append("class", "ssalc", "has", "public", "private", "newinstance", "extends")).toSet
+           (basicKeywords.append("class", "ssalc", "has", "public", "private", "newinstance", "extends", "this")).toSet
         }
 
     /*

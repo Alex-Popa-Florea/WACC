@@ -6,6 +6,8 @@ import wacc.functionTable._
 import wacc.symbolTable._
 import wacc.types._
 import wacc.section._
+import wacc.arrayBounds._
+import wacc.main.ARRAY_BOUNDS
 
 import scala.collection.mutable.ListBuffer
 
@@ -20,7 +22,7 @@ object semanticAnalyser {
     val mismatch = "Type mismatch"
     val argsIncorrect = "Wrong number of arguments"
     val ranks = "Incorrect number of ranks in array access: "
-
+    
     /*
         Function that takes in a node, symbol table, function table and an optional return type (used
         for checked that return statements within functions return the correct type) as
@@ -106,7 +108,7 @@ object semanticAnalyser {
                 if (!addedVariable) {
                     errors.addOne((s"Variable already declared", node.pos))
                 }
-                val checkedRHS = analyseRHS(rhs, st, ft, extractType(t))
+                val checkedRHS = analyseRHS(rhs, st, ft, extractType(t), id)
                 (checkedRHS && addedVariable, false)
              /*
                 An Assign node analyses the left hand side of the assignment,
@@ -118,7 +120,9 @@ object semanticAnalyser {
                 val checkedLHS = analyseLHS(lhs, st)
                 checkedLHS._2 match {
                     case None => (false, false)
-                    case Some(foundType) => ((checkedLHS._1 && analyseRHS(rhs, st, ft, foundType)), false)
+                    case Some(foundType) => 
+                        val checkedRHS = analyseRHS(rhs, st, ft, foundType, lhs)
+                        ((checkedLHS._1 && checkedRHS), false)
                 }
              /*
                 For a Read node we analyse the inner "left hand side" expression
@@ -229,7 +233,7 @@ object semanticAnalyser {
                 ifStat.falseSemanticTable = Some(falseNst)
 				val conditionCheck = analyseExpr(ifStat.cond, st)
 				val trueStatCheck = ifStat.trueStat.map(x => analyse(x, trueNst, ft, returnType))
-				val falseStatCheck = ifStat.falseStat.map(x => analyse(x, falseNst, ft, returnType))
+                val falseStatCheck = ifStat.falseStat.map(x => analyse(x, falseNst, ft, returnType))
                 val correctType = conditionCheck._2 == Some(BoolCheck(0))
                 if (!correctType && conditionCheck._2 != None) {
                     errors.addOne((s"Expression of type bool expected in if statement condition, " +
@@ -279,7 +283,7 @@ object semanticAnalyser {
         and the type of the left hand side of the assignment, and returns a boolean if the right
         hand sign is valid semantically and has the same type as the left hand side.
     */
-    def analyseRHS(assignRHS: AssignRHS, st: SymbolTable, ft: FunctionTable, lhsType: TypeCheck): Boolean = {
+    def analyseRHS(assignRHS: AssignRHS, st: SymbolTable, ft: FunctionTable, lhsType: TypeCheck, arrayIdent: AssignLHS): Boolean = {
          /*
             For a expressions, we call analyseExpr, and check the type of 
             that expr is the same as the given left hand side type.
@@ -287,7 +291,7 @@ object semanticAnalyser {
         assignRHS match {
             case expr: Expr => 
                 val checkedExpr = analyseExpr(expr, st)
-                lhsType match {
+                val result = lhsType match {
                     case PairCheck(type1, type2, nested) => 
                         val correctType =  checkedExpr._2 == Some(lhsType) || checkedExpr._2 == Some(EmptyPairCheck())
                         if (!correctType && checkedExpr._2 != None) {
@@ -303,6 +307,16 @@ object semanticAnalyser {
                         }
                         (checkedExpr._1 && correctType)                      
                 }
+                if (ARRAY_BOUNDS) {
+                    expr match {
+                        case arrayElem: ArrayElem => 
+                            setArraySize(arrayIdent, st, getArraySize(arrayElem, st))
+                        case ident: Ident =>
+                            setArraySize(arrayIdent, st, getArraySize(ident, st))
+                        case _ =>
+                    }
+                }
+                result
             /*
                 For a array liter, we call analyseExpr on the elements within
                 the array liter, ensuring they are of the same type as the expected 
@@ -312,6 +326,18 @@ object semanticAnalyser {
             case ArrayLiter(elements) => 
                 lhsType match {
                     case baseTypeCheck: BaseTypeCheck =>
+                        if (ARRAY_BOUNDS) {
+                            if (baseTypeCheck.nested == 1) {
+                                setArraySize(arrayIdent, st, LeafArraySize(elements.size))
+                            } else {
+                                val sizes = elements.map(expr => expr match {
+                                    case ident: Ident => getArraySize(ident, st)
+                                    case arrayElem: ArrayElem => getArraySize(arrayElem, st)
+                                    case _ => Unknown()
+                                })
+                                setArraySize(arrayIdent, st, NestedArraySize(elements.size, sizes))
+                            }
+                        }
                         val correctType = elements.map(x => analyseExpr(x, st) == (true, baseTypeCheck match {
                             case IntCheck(nested) => Some(IntCheck(nested - 1))
                             case BoolCheck(nested) => Some(BoolCheck(nested - 1))
@@ -328,6 +354,14 @@ object semanticAnalyser {
                         }
                         
 					case PairCheck(type1, type2, nested) => 
+                        if (ARRAY_BOUNDS) {
+                            val sizes = elements.map(expr => expr match {
+                                case ident: Ident => getArraySize(ident, st)
+                                case arrayElem: ArrayElem => getArraySize(arrayElem, st)
+                                case _ => Unknown()
+                            })
+                            setArraySize(arrayIdent, st, NestedArraySize(elements.size, sizes))
+                        }
 						val correctType = elements.map(x => {
 							val checkedExpr = analyseExpr(x, st)
 							checkedExpr == (true, Some(PairCheck(type1, type2, nested - 1))) || checkedExpr == (true, Some(EmptyPairCheck()))
@@ -350,6 +384,25 @@ object semanticAnalyser {
                 left hand side type's inner expressions
             */               
             case NewPair(expr1, expr2) => 
+                if (ARRAY_BOUNDS) {
+                    val expr1Size = expr1 match {
+                        case arrayElem: ArrayElem => 
+                            getArraySize(arrayElem, st)
+                        case ident: Ident =>
+                            getArraySize(ident, st)
+                        case _ =>
+                            Unknown()
+                    }
+                    val expr2Size = expr2 match {
+                        case arrayElem: ArrayElem => 
+                            getArraySize(arrayElem, st)
+                        case ident: Ident =>
+                            getArraySize(ident, st)
+                        case _ =>
+                            Unknown()
+                    }
+                    setArraySize(arrayIdent, st, NodeArraySize(expr1Size, expr2Size))
+                }
                 val checkedExpr1 = analyseExpr(expr1, st)
 				val checkedExpr2 = analyseExpr(expr2, st)
                 if (checkedExpr1._2 != None && checkedExpr2._2 != None) {
@@ -388,6 +441,21 @@ object semanticAnalyser {
                 left hand side
             */ 
             case Fst(expr) => 
+                if (ARRAY_BOUNDS) {
+                    val exprSize = expr match {
+                        case arrayElem: ArrayElem => 
+                            getArraySize(arrayElem, st)
+                        case ident: Ident =>
+                            getArraySize(ident, st)
+                        case _ =>
+                            Unknown()
+                    }
+                    exprSize match {
+                        case NodeArraySize(fstArray, sndArray) =>
+                            setArraySize(arrayIdent, st, fstArray)
+                        case _ => Unknown()
+                    }
+                }
                 val checkedExpr = analyseExpr(expr, st)
 				checkedExpr._2 match {
                     case None => false
@@ -420,6 +488,21 @@ object semanticAnalyser {
                 left hand side
             */
             case Snd(expr) => 
+                if (ARRAY_BOUNDS) {
+                    val exprSize = expr match {
+                        case arrayElem: ArrayElem => 
+                            getArraySize(arrayElem, st)
+                        case ident: Ident =>
+                            getArraySize(ident, st)
+                        case _ =>
+                            Unknown()
+                    }
+                    exprSize match {
+                        case NodeArraySize(fstArray, sndArray) =>
+                            setArraySize(arrayIdent, st, sndArray)
+                        case _ => Unknown()
+                    }
+                }
                 val checkedExpr = analyseExpr(expr, st)
 				checkedExpr._2 match {
                     case None => false
@@ -453,74 +536,81 @@ object semanticAnalyser {
                 for that function in its function table
             */
             case Call(id, args) => 
+                if (ARRAY_BOUNDS) {
+                    setArraySize(arrayIdent, st, Unknown())
+                }
                 val checkedArgs = args.map(x => analyseExpr(x, st))
-				ft.getFunction(id.variable) match {
-					case Some(foundFuncType) =>
-                        if (lhsType == EmptyPairCheck()) {
-                            foundFuncType._1 match {
-									case PairCheck(type1, type2, nested) => 
-                                        val checkedNumArgs = ft.checkLength(id.variable, checkedArgs.map(x => x._2.get))
-                                        if (!checkedNumArgs) {
-                                            errors.addOne((s"Wrong number of arguments in call to function ${id.variable}!", assignRHS.pos))
-                                        }
-                                        val checkArgs = ft.check(id.variable, checkedArgs.map(x => x._2.get))
-                                        if (checkedNumArgs && !checkArgs) {
-                                            errors.addOne((s"Expected argument types: ${foundFuncType._2.map(x=> typeCheckToString(x))}, " +
-                                              s"but found: ${checkedArgs.map(x => typeCheckToString(x._2.get))}in call to function ${id.variable}!", assignRHS.pos))
-                                        }
-                                        val checkedArgsResult = checkedArgs.map(x => x._1).reduceOption((x, y) => x && y)
-                                        checkedArgsResult match {
-                                            case Some(value) => value && ft.check(id.variable, checkedArgs.map(x => x._2.get))	
-                                            case None => ft.check(id.variable, checkedArgs.map(x => x._2.get))
-                                        }
-                                        
-									case _ =>
-                                        val correctType = foundFuncType._1 == lhsType
-                                        if (!correctType) {
-                                            errors.addOne((s"Expected type: ${typeCheckToString(lhsType)}, " +
-                                              s"actual type of function return: ${typeCheckToString(foundFuncType._1)}!", assignRHS.pos))
-                                        }
-                                        val checkedNumArgs = ft.checkLength(id.variable, checkedArgs.map(x => x._2.get))
-                                        if (!checkedNumArgs) {
-                                            errors.addOne((s"Wrong number of arguments in call to function ${id.variable}!", assignRHS.pos))
-                                        }
-                                        val checkArgs = ft.check(id.variable, checkedArgs.map(x => x._2.get))
-                                        if (checkedNumArgs && !checkArgs) {
-                                            errors.addOne((s"Expected argument types: ${foundFuncType._2.map(x=> typeCheckToString(x))}, " +
-                                              s"but found: ${checkedArgs.map(x => typeCheckToString(x._2.get))}in call to function ${id.variable}!", assignRHS.pos))
+                if (checkedArgs.forall(x => x._1)) {
+                    ft.getFunction(id.variable) match {
+                        case Some(foundFuncType) =>
+                            if (lhsType == EmptyPairCheck()) {
+                                foundFuncType._1 match {
+                                        case PairCheck(type1, type2, nested) => 
+                                            val checkedNumArgs = ft.checkLength(id.variable, checkedArgs.map(x => x._2.get))
+                                            if (!checkedNumArgs) {
+                                                errors.addOne((s"Wrong number of arguments in call to function ${id.variable}!", assignRHS.pos))
+                                            }
+                                            val checkArgs = ft.check(id.variable, checkedArgs.map(x => x._2.get))
+                                            if (checkedNumArgs && !checkArgs) {
+                                                errors.addOne((s"Expected argument types: ${foundFuncType._2.map(x=> typeCheckToString(x))}, " +
+                                                s"but found: ${checkedArgs.map(x => typeCheckToString(x._2.get))}in call to function ${id.variable}!", assignRHS.pos))
+                                            }
+                                            val checkedArgsResult = checkedArgs.map(x => x._1).reduceOption((x, y) => x && y)
+                                            checkedArgsResult match {
+                                                case Some(value) => value && ft.check(id.variable, checkedArgs.map(x => x._2.get))	
+                                                case None => ft.check(id.variable, checkedArgs.map(x => x._2.get))
+                                            }
                                             
-                                        }
-                                        val checkedArgsResult = checkedArgs.map(x => x._1).reduceOption((x, y) => x && y)
-                                        checkedArgsResult match {
-                                            case Some(value) => correctType && value && ft.check(id.variable, checkedArgs.map(x => x._2.get))	
-                                            case None => correctType && ft.check(id.variable, checkedArgs.map(x => x._2.get))
-                                        }
-							}
-                        } else {
-                            val correctType = foundFuncType._1 == lhsType
-                            if (!correctType) {
-                                errors.addOne((s"Expected type: ${typeCheckToString(lhsType)}, " +
-                                  s"actual type of function return: ${typeCheckToString(foundFuncType._1)}!", assignRHS.pos))
+                                        case _ =>
+                                            val correctType = foundFuncType._1 == lhsType
+                                            if (!correctType) {
+                                                errors.addOne((s"Expected type: ${typeCheckToString(lhsType)}, " +
+                                                s"actual type of function return: ${typeCheckToString(foundFuncType._1)}!", assignRHS.pos))
+                                            }
+                                            val checkedNumArgs = ft.checkLength(id.variable, checkedArgs.map(x => x._2.get))
+                                            if (!checkedNumArgs) {
+                                                errors.addOne((s"Wrong number of arguments in call to function ${id.variable}!", assignRHS.pos))
+                                            }
+                                            val checkArgs = ft.check(id.variable, checkedArgs.map(x => x._2.get))
+                                            if (checkedNumArgs && !checkArgs) {
+                                                errors.addOne((s"Expected argument types: ${foundFuncType._2.map(x=> typeCheckToString(x))}, " +
+                                                s"but found: ${checkedArgs.map(x => typeCheckToString(x._2.get))}in call to function ${id.variable}!", assignRHS.pos))
+                                                
+                                            }
+                                            val checkedArgsResult = checkedArgs.map(x => x._1).reduceOption((x, y) => x && y)
+                                            checkedArgsResult match {
+                                                case Some(value) => correctType && value && ft.check(id.variable, checkedArgs.map(x => x._2.get))	
+                                                case None => correctType && ft.check(id.variable, checkedArgs.map(x => x._2.get))
+                                            }
+                                }
+                            } else {
+                                val correctType = foundFuncType._1 == lhsType
+                                if (!correctType) {
+                                    errors.addOne((s"Expected type: ${typeCheckToString(lhsType)}, " +
+                                    s"actual type of function return: ${typeCheckToString(foundFuncType._1)}!", assignRHS.pos))
+                                }
+                                val checkedNumArgs = ft.checkLength(id.variable, checkedArgs.map(x => x._2.get))
+                                if (!checkedNumArgs) {
+                                    errors.addOne((s"Wrong number of arguments in call to function ${id.variable}!", assignRHS.pos))
+                                }
+                                val checkArgs = ft.check(id.variable, checkedArgs.map(x => x._2.get))
+                                if (checkedNumArgs && !checkArgs) {
+                                    errors.addOne((s"Expected argument types: ${foundFuncType._2.map(x=> typeCheckToString(x))}, " +
+                                    s"but found: ${checkedArgs.map(x => typeCheckToString(x._2.get))}in call to function ${id.variable}!", assignRHS.pos))
+                                }
+                                val checkedArgsResult = checkedArgs.map(x => x._1).reduceOption((x, y) => x && y)
+                                checkedArgsResult match {
+                                    case Some(value) => correctType && value && checkArgs	
+                                    case None => correctType && checkArgs
+                                }
                             }
-                            val checkedNumArgs = ft.checkLength(id.variable, checkedArgs.map(x => x._2.get))
-                            if (!checkedNumArgs) {
-                                errors.addOne((s"Wrong number of arguments in call to function ${id.variable}!", assignRHS.pos))
-                            }
-                            val checkArgs = ft.check(id.variable, checkedArgs.map(x => x._2.get))
-                            if (checkedNumArgs && !checkArgs) {
-                                errors.addOne((s"Expected argument types: ${foundFuncType._2.map(x=> typeCheckToString(x))}, " +
-                                  s"but found: ${checkedArgs.map(x => typeCheckToString(x._2.get))}in call to function ${id.variable}!", assignRHS.pos))
-                            }
-                            val checkedArgsResult = checkedArgs.map(x => x._1).reduceOption((x, y) => x && y)
-                            checkedArgsResult match {
-                                case Some(value) => correctType && value && checkArgs	
-                                case None => correctType && checkArgs
-                            }
-                        }
-					case None => 
-                        errors.addOne((s"Function ${id.variable} not declared!", assignRHS.pos))
-                        false
-				}
+                        case None => 
+                            errors.addOne((s"Function ${id.variable} not declared!", assignRHS.pos))
+                            false
+                    }
+                } else {
+                    false
+                }
         }
     }
 
@@ -606,38 +696,45 @@ object semanticAnalyser {
                 of indeces is less or equal to the dimension of the array ,
                 returning the type of the element found at those indeces
             */                   
-            case ArrayElem(id, exprs) =>
-                val foundType = st.find(id)
-				foundType match {
-					case None => 
-                        errors.addOne(id.variable + undeclared, expr.pos)
-                        (false, None)
-					case Some(array) =>
-						array match {
-                            case baseTypeCheck: BaseTypeCheck => 
-                                if (baseTypeCheck.nested >= exprs.size) {
-                                    (exprs.map(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))).reduce((x, y) => x && y), baseTypeCheck match {
-                                        case IntCheck(nested) => Some(IntCheck(nested - exprs.size))
-                                        case BoolCheck(nested) => Some(BoolCheck(nested - exprs.size))
-                                        case CharCheck(nested) => Some(CharCheck(nested - exprs.size))
-                                        case StrCheck(nested) => Some(StrCheck(nested - exprs.size))
-                                    })  
-                                } else {
-                                    errors.addOne(s"${id.variable} has type: ${typeCheckToString(array)}, " +
-                                      s"which does not have ${exprs.size} ranks!" , expr.pos)
-                                    (false, None)
-                                }
-							case PairCheck(type1, type2, nested) =>
-								if (nested >= exprs.size) {
-									(exprs.map(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))).reduce((x, y) => x && y), Some(PairCheck(type1, type2, nested - exprs.size)))
-								} else {
-                                    errors.addOne(s"${id.variable} has type: ${typeCheckToString(array)}," +
-                                      s" which does not have ${exprs.size} ranks!" , expr.pos)
-									(false, None)
-								}
-							case _ => (false, None)
-						}					
-				}    
+            case arrayElem: ArrayElem =>
+                    val foundType = st.find(arrayElem.id)
+                    foundType match {
+                        case None => 
+                            errors.addOne((arrayElem.id.variable + undeclared, expr.pos))
+                            (false, None)
+                        case Some(array) =>
+                            if(!(updateArrayElemCheckedBounds(arrayElem, st).forall(identity))) {
+                                errors.addOne((s"Out of bounds error in ${arrayElem.id.variable}", arrayElem.exprs(arrayElem.checked._2.indexWhere(x => !x)).pos))
+                                                    (false, None)
+                                (false, None)
+                            } else {
+                                array match {
+                                    case baseTypeCheck: BaseTypeCheck => 
+                                        if (baseTypeCheck.nested >= arrayElem.exprs.size) {
+                                            (arrayElem.exprs.map(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))).reduce((x, y) => x && y), baseTypeCheck match {
+                                                case IntCheck(nested) => Some(IntCheck(nested - arrayElem.exprs.size))
+                                                case BoolCheck(nested) => Some(BoolCheck(nested - arrayElem.exprs.size))
+                                                case CharCheck(nested) => Some(CharCheck(nested - arrayElem.exprs.size))
+                                                case StrCheck(nested) => Some(StrCheck(nested - arrayElem.exprs.size))
+                                            })  
+                                        } else {
+                                            errors.addOne((s"${arrayElem.id.variable} has type: ${typeCheckToString(array)}, " +
+                                              s"which does not have ${arrayElem.exprs.size} ranks!" , expr.pos))
+                                            (false, None)
+                                        }
+                                    case PairCheck(type1, type2, nested) =>
+                                        if (nested >= arrayElem.exprs.size) {
+                                            (arrayElem.exprs.map(x => (analyseExpr(x, st) == (true, Some(IntCheck(0))))).reduce((x, y) => x && y), Some(PairCheck(type1, type2, nested - arrayElem.exprs.size)))
+                                        } else {
+                                            errors.addOne((s"${arrayElem.id.variable} has type: ${typeCheckToString(array)}," +
+                                              s" which does not have ${arrayElem.exprs.size} ranks!" , expr.pos))
+                                            (false, None)
+                                        }
+                                    case _ => (false, None)
+                                }					
+                            }
+                    }    
+                
              /*
                 For a Not node, we analyse the inner expression and ensure it is
                 a bool, and return a bool

@@ -16,6 +16,8 @@ import wacc.types.IntCheck
 import wacc.types.PairCheck
 import wacc.types.StrCheck
 import wacc.types._
+import wacc.main.STANDARD_LIBRARY
+import wacc.main.ARRAY_BOUNDS
 
 import java.io.BufferedWriter
 import java.io.File
@@ -542,13 +544,20 @@ object codeGenerator {
             case arrayElem: ArrayElem =>
                 textMap(label).addOne(ADD(None, false, R(register), SP(), Immed(symbolTable.getSizeWithIdent(arrayElem.id).get - arrayElem.id.symbolTable.get.findId(arrayElem.id).get + stackOffset)))
                 var i = 0
+                var j = 0
                 arrayElem.exprs.map(expr => {
                     generateExpr(expr, symbolTable, functionTable, label, register + 1, dataMap, textMap)
                     textMap(label).addAll(List(
                         LDR(None, R(register), ZeroOffset(R(register))),
                         MOV(None, false, R(0), R(register + 1)),
-                        MOV(None, false, R(1), R(register)),
-                        BL(None, "p_check_array_bounds"),
+                        MOV(None, false, R(1), R(register))))
+                    if (!arrayElem.checked._1(j) || !ARRAY_BOUNDS) {
+                        textMap(label).addOne(BL(None, "p_check_array_bounds"))
+                        generateCheckArrayBounds(dataMap, textMap)
+                    } else {
+                        j += 1
+                    }
+                    textMap(label).addAll(List(
                         ADD(None, false, R(register), R(register), Immed(4)),
                         (arrayElem.id.symbolTable.get.find(arrayElem.id): @unchecked) match {
                             /*
@@ -575,7 +584,6 @@ object codeGenerator {
                             }
                         }
                     ))
-                    generateCheckArrayBounds(dataMap, textMap)
                     i += 1
                 })
                 if (read) {
@@ -679,7 +687,7 @@ object codeGenerator {
             
             case Call(id, args) => 
                 args.reverse.map(arg => {
-                    generateExpr(arg, symbolTable, functionTable, label, 4, dataMap, textMap)
+                generateExpr(arg, symbolTable, functionTable, label, 4, dataMap, textMap)
                     if (getBytes(arg, symbolTable) == 1) {
                         textMap(label).addOne(STRB(None, R(4), RegisterWriteBack(SP(), Immed(-1))))
                         stackOffset += 1
@@ -689,9 +697,40 @@ object codeGenerator {
                     }
                 })
                 stackOffset = 0
-                textMap(label).addOne(BL(None, "f_" + id.variable))
+                if (STANDARD_LIBRARY && preDefFunc.contains(id.variable)) {
+                    id.variable match {
+                        case "max_int" => 
+                            generateMaxAndMin(textMap, true, "int")
+                        case "max_char" =>
+                            generateMaxAndMin(textMap, true, "char")
+                        case "min_int" => 
+                            generateMaxAndMin(textMap, false, "int")
+                        case "min_char" =>
+                            generateMaxAndMin(textMap, false, "char")
+                        case "abs" =>
+                            generateAbs(dataMap, textMap)
+                        case "pow" =>
+                           generatePow(dataMap, textMap)
+                        case "is_upper_string" =>
+                            generateIsUpperAndLowerString(dataMap, textMap, "upper")
+                        case "is_upper_char" =>
+                            generateIsUpperAndLowerChar(textMap, "upper")
+                        case "is_lower_string" =>
+                            generateIsUpperAndLowerString(dataMap, textMap, "lower")
+                        case "is_lower_char" =>
+                            generateIsUpperAndLowerChar(textMap, "lower")
+                        case "contains_int" =>
+                            generateContains(dataMap, textMap, "int")
+                        case "contains_char" =>
+                            generateContains(dataMap, textMap, "char")
+                    }
+                    textMap(label).addOne(BL(None, "def_" + id.variable)) 
+                } else {
+                        textMap(label).addOne(BL(None, "f_" + id.variable))
+                }
                 textMap(label).addOne(ADD(None, false, SP(), SP(), Immed(args.foldLeft(0)((arg1, arg2) => arg1 + getBytes(arg2, symbolTable)))))
-                textMap(label).addOne(MOV(None, false, R(4), R(0)))    
+                textMap(label).addOne(MOV(None, false, R(4), R(0)))
+   
             }
     }
 
@@ -866,6 +905,7 @@ object codeGenerator {
             case arrayElem: ArrayElem => 
                 textMap(label).addOne(ADD(None, false, R(register), SP(), Immed(symbolTable.getSizeWithIdent(arrayElem.id).get - arrayElem.id.symbolTable.get.findId(arrayElem.id).get + stackOffset)))
                 var i = 0
+                var j = 0
                 arrayElem.exprs.map(expr => {
                     if (register + 1 > 10) {
                         textMap(label).addOne(PUSH(List(R(10))))
@@ -881,8 +921,14 @@ object codeGenerator {
                     textMap(label).addAll(List(
                         LDR(None, R(reg1), ZeroOffset(R(reg1))),
                         MOV(None, false, R(0), R(reg2)),
-                        MOV(None, false, R(1), R(reg1)),
-                        BL(None, "p_check_array_bounds"),
+                        MOV(None, false, R(1), R(reg1))))
+                    if (!arrayElem.checked._1(j) || !ARRAY_BOUNDS) {
+                        textMap(label).addOne(BL(None, "p_check_array_bounds"))
+                        generateCheckArrayBounds(dataMap, textMap)
+                    } else {
+                        j += 1
+                    }
+                    textMap(label).addAll(List(
                         ADD(None, false, R(reg1), R(reg1), Immed(4)),
                         (arrayElem.id.symbolTable.get.find(arrayElem.id): @unchecked) match {
                             /*
@@ -909,7 +955,6 @@ object codeGenerator {
                             }
                         }
                     ))
-                    generateCheckArrayBounds(dataMap, textMap)
                     i += 1
                 })
                 val elemSize = getBytes(arrayElem, symbolTable)
@@ -1532,5 +1577,321 @@ object codeGenerator {
             case _ =>
         }
         generateCheckNullPointer(dataMap, textMap)
+    }
+
+    def generateMaxAndMin(textMap: Map[Scope, ListBuffer[Instruction]], findMax: Boolean, argType: String): Unit = {
+        val funcName = "max_" + argType
+        
+        textMap(F(funcName)) = ListBuffer(
+            PUSH(List(LR()))
+        )
+
+        if (argType.equals("char")) {
+            textMap(F(funcName)).addOne(LDRSB(None, R(4), ImmediateOffset(SP(), Immed(4))))
+            textMap(F(funcName)).addOne(LDRSB(None, R(4), ImmediateOffset(SP(), Immed(5))))
+        } else {
+            textMap(F(funcName)).addOne(LDR(None, R(4), ImmediateOffset(SP(), Immed(4))))
+            textMap(F(funcName)).addOne(LDR(None, R(4), ImmediateOffset(SP(), Immed(8))))
+        }
+
+        textMap(F(funcName)).addOne(CMP(None, R(4), R(5)))
+        if (findMax) {
+            textMap(F(funcName)).addOne(MOV(Some(GTCOND()), false, R(4), Immed(1)))
+            textMap(F(funcName)).addOne(MOV(Some(LECOND()), false, R(4), Immed(0)))
+        } else {
+            textMap(F(funcName)).addOne(MOV(Some(LTCOND()), false, R(4), Immed(1)))
+            textMap(F(funcName)).addOne(MOV(Some(GECOND()), false, R(4), Immed(0)))
+        }
+        
+        textMap(F(funcName)).addOne(CMP(None, R(4), Immed(0)))
+        textMap(F(funcName)).addOne(B(Some(EQCOND()), s"L${scopeLabels}"))
+
+        if (argType.equals("char")) {
+            textMap(F(funcName)).addOne(LDRSB(None, R(4), ImmediateOffset(SP(), Immed(4))))
+        } else {
+            textMap(F(funcName)).addOne(LDR(None, R(4), ImmediateOffset(SP(), Immed(4))))
+        }
+
+        textMap(F(funcName)).addOne(MOV(None, false, R(0), R(4)))
+        textMap(F(funcName)).addOne(POP(List(PC())))
+        textMap(F(funcName)).addOne(B(None, s"L${scopeLabels + 1}"))
+        textMap(F(funcName)).addOne(L(scopeLabels))
+        
+        if (argType.equals("char")) {
+            textMap(F(funcName)).addOne(LDRSB(None, R(4), ImmediateOffset(SP(), Immed(5))))
+        } else {
+            textMap(F(funcName)).addOne(LDR(None, R(4), ImmediateOffset(SP(), Immed(8))))
+        }
+        
+        textMap(F(funcName)).addOne(MOV(None, false, R(0), R(4)))
+        textMap(F(funcName)).addOne(POP(List(PC())))
+        textMap(F(funcName)).addOne(L(scopeLabels + 1))
+        textMap(F(funcName)).addOne(POP(List(PC())))
+        textMap(F(funcName)).addOne(Ltorg())
+        
+        scopeLabels += 2
+    }
+
+    def generateAbs(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
+        val funcName = "abs"
+
+        generateOverflow(dataMap, textMap)
+        generatePrintString(dataMap, textMap)
+
+        textMap(F(funcName)) = ListBuffer(
+            PUSH(List(LR())),
+            LDR(None, R(4), ImmediateOffset(SP(), Immed(4))),
+            LDR(None, R(5), Immed(0)),
+            CMP(None, R(4), R(5)),
+            MOV(Some(LTCOND()), false, R(4), Immed(1)),
+            MOV(Some(GECOND()), false, R(4), Immed(0)),
+            CMP(None, R(4), Immed(0)),
+            B(Some(EQCOND()), s"L${scopeLabels}"),
+            LDR(None, R(4), ImmediateOffset(SP(), Immed(4))),
+            RSB(None, true, R(4), R(4), Immed(0)),
+            BL(Some(VSCOND()), "p_throw_overflow_error"),
+            MOV(None, false, R(0), R(4)),
+            POP(List(PC())),
+            B(None, s"L${scopeLabels + 1}"),
+            L(scopeLabels),
+            LDR(None, R(4), ImmediateOffset(SP(), Immed(4))),
+            MOV(None, false, R(0), R(4)),
+            POP(List(PC())),
+            L(scopeLabels + 1),
+            POP(List(PC())),
+            Ltorg()
+        )
+        scopeLabels += 2
+    }
+
+    def generatePow(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
+        val funcName = "pow"
+
+        generateOverflow(dataMap, textMap)
+        generatePrintString(dataMap, textMap)
+
+        textMap(F(funcName)) = ListBuffer(
+            PUSH(List(LR())),
+            SUB(None, false, SP(), SP(), Immed(4)),
+            LDR(None, R(4), Immed(1)),
+            STR(None, R(4), ZeroOffset(SP())),
+            B(None, s"L${scopeLabels}"),
+            L(scopeLabels + 1),
+            LDR(None, R(4), ZeroOffset(SP())),
+            LDR(None, R(5), ImmediateOffset(SP(), Immed(8))),
+            SMULL(None, false, R(4), R(5), R(4), R(5)),
+            CMP(None, R(5), ArithmeticShiftRight(R(4), Immed(31))),
+            BL(Some(NECOND()), "p_throw_overflow_error"),
+            STR(None, R(4), ZeroOffset(SP())),
+            LDR(None, R(4), ImmediateOffset(SP(), Immed(12))),
+            LDR(None, R(5), Immed(1)),
+            SUB(None, true, R(4), R(4), R(5)),
+            BL(Some(VSCOND()), "p_throw_overflow_error"),
+            STR(None, R(4), ImmediateOffset(SP(), Immed(12))),
+            L(scopeLabels),
+            LDR(None, R(4), ImmediateOffset(SP(), Immed(12))),
+            LDR(None, R(5), Immed(0)),
+            CMP(None, R(4), R(5)),
+            MOV(Some(GTCOND()), false, R(4), Immed(1)),
+            MOV(Some(LECOND()), false, R(4), Immed(0)),
+            CMP(None, R(4), Immed(1)),
+            B(Some(EQCOND()), s"L${scopeLabels + 1}"),
+            LDR(None, R(4), ZeroOffset(SP())),
+            MOV(None, false, R(0), R(4)),
+            ADD(None, false, SP(), SP(), Immed(4)),
+            POP(List(PC())),
+            POP(List(PC())),
+            Ltorg()
+        )
+        scopeLabels += 2
+    }
+
+    def generateIsUpperAndLowerString(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]], caseType: String): Unit = {
+        val funcName = "is_" + caseType + "_string"
+
+        generateCheckArrayBounds(dataMap, textMap)
+        generateOverflow(dataMap, textMap)
+        generatePrintString(dataMap, textMap)
+
+        textMap(F(funcName)) = ListBuffer(
+            PUSH(List(LR())),
+            SUB(None, false, SP(), SP(), Immed(4)),
+            LDR(None, R(4), Immed(0)),
+            STR(None, R(4), ZeroOffset(SP())),
+            B(None, s"L${scopeLabels}"),
+            L(scopeLabels + 1),
+            ADD(None, false, R(4), SP(), Immed(8)),
+            LDR(None, R(5), ZeroOffset(SP())),
+            LDR(None, R(4), ZeroOffset(R(4))),
+            MOV(None, false, R(0), R(5)),
+            MOV(None, false, R(1), R(4)),
+            BL(None, "p_check_array_bounds"),
+            ADD(None, false, R(4), R(4), Immed(4)),
+            ADD(None, false, R(4), R(4), R(5)),
+            LDRSB(None, R(4), ZeroOffset(R(4)))
+        )
+
+        if (caseType.equals("upper")) {
+            textMap(F(funcName)).addOne(MOV(None, false, R(5), Immed('A')))
+        } else {
+            textMap(F(funcName)).addOne(MOV(None, false, R(5), Immed('a')))
+        }
+        
+        textMap(F(funcName)).addOne(CMP(None, R(4), R(5)))
+        textMap(F(funcName)).addOne(MOV(Some(LTCOND()), false, R(4), Immed(1)))
+        textMap(F(funcName)).addOne(MOV(Some(GECOND()), false, R(4), Immed(0)))
+        textMap(F(funcName)).addOne(ADD(None, false, R(5), SP(), Immed(8)))
+        textMap(F(funcName)).addOne(LDR(None, R(6), ZeroOffset(SP())))
+        textMap(F(funcName)).addOne(LDR(None, R(5), ZeroOffset(R(5))))
+        textMap(F(funcName)).addOne(MOV(None, false, R(0), R(6)))
+        textMap(F(funcName)).addOne(MOV(None, false, R(1), R(5)))
+        textMap(F(funcName)).addOne(BL(None, "p_check_array_bounds"))
+        textMap(F(funcName)).addOne(ADD(None, false, R(5), R(5), Immed(4)))
+        textMap(F(funcName)).addOne(ADD(None, false, R(5), R(5), R(6)))
+        textMap(F(funcName)).addOne(LDRSB(None, R(5), ZeroOffset(R(5))))
+
+        if (caseType.equals("upper")) {
+            textMap(F(funcName)).addOne(MOV(None, false, R(6), Immed('Z')))
+        } else {
+            textMap(F(funcName)).addOne(MOV(None, false, R(6), Immed('z')))
+        }
+
+        textMap(F(funcName)).addOne(CMP(None, R(5), R(6)))
+        textMap(F(funcName)).addOne(MOV(Some(GTCOND()), false, R(5), Immed(1)))
+        textMap(F(funcName)).addOne(MOV(Some(LECOND()), false, R(5), Immed(0)))
+        textMap(F(funcName)).addOne(ORR(None, false, R(4), R(4), R(5)))
+        textMap(F(funcName)).addOne(CMP(None, R(4), Immed(0)))
+        textMap(F(funcName)).addOne(B(Some(EQCOND()), s"L${scopeLabels + 2}"))
+        textMap(F(funcName)).addOne(MOV(None, false, R(4), Immed(0)))
+        textMap(F(funcName)).addOne(MOV(None, false, R(0), R(4)))
+        textMap(F(funcName)).addOne(ADD(None, false, SP(), SP(), Immed(4)))
+        textMap(F(funcName)).addOne(POP(List(PC())))
+        textMap(F(funcName)).addOne(B(None, s"L${scopeLabels + 3}"))
+        textMap(F(funcName)).addOne(L(scopeLabels + 2))
+        textMap(F(funcName)).addOne(LDR(None, R(4), ZeroOffset(SP())))
+        textMap(F(funcName)).addOne(LDR(None, R(5), Immed(1)))
+        textMap(F(funcName)).addOne(ADD(None, true, R(4), R(4), R(5)))
+        textMap(F(funcName)).addOne(BL(Some(VSCOND()), "p_throw_overflow_error"))
+        textMap(F(funcName)).addOne(STR(None, R(4), ZeroOffset(SP())))
+        textMap(F(funcName)).addOne(L(scopeLabels + 3))
+        textMap(F(funcName)).addOne(L(scopeLabels))
+        textMap(F(funcName)).addOne(LDR(None, R(4), ZeroOffset(SP())))
+        textMap(F(funcName)).addOne(LDR(None, R(5), ImmediateOffset(SP(), Immed(8))))
+        textMap(F(funcName)).addOne(LDR(None, R(5), ZeroOffset(R(5))))
+        textMap(F(funcName)).addOne(CMP(None, R(4), R(5)))
+        textMap(F(funcName)).addOne(MOV(Some(LTCOND()), false, R(4), Immed(1)))
+        textMap(F(funcName)).addOne(MOV(Some(GECOND()), false, R(4), Immed(0)))
+        textMap(F(funcName)).addOne(CMP(None, R(4), Immed(1)))
+        textMap(F(funcName)).addOne(B(Some(EQCOND()), s"L${scopeLabels + 1}"))
+        textMap(F(funcName)).addOne(MOV(None, false, R(4), Immed(1)))
+        textMap(F(funcName)).addOne(MOV(None, false, R(0), R(4)))
+        textMap(F(funcName)).addOne(ADD(None, false, SP(), SP(), Immed(4)))
+        textMap(F(funcName)).addOne(POP(List(PC())))
+        textMap(F(funcName)).addOne(POP(List(PC())))
+        textMap(F(funcName)).addOne(Ltorg())
+
+        scopeLabels += 4
+    }
+
+    def generateIsUpperAndLowerChar(textMap: Map[Scope, ListBuffer[Instruction]], caseType: String): Unit = {
+        val funcName = "is_" + caseType + "_char"
+
+        textMap(F(funcName)) = ListBuffer(
+            PUSH(List(LR())),
+            LDRSB(None, R(4), ImmediateOffset(SP(), Immed(4)))
+        )
+
+        if (caseType.equals("upper")) {
+            textMap(F(funcName)).addOne(MOV(None, false, R(5), Immed('A')))
+        } else {
+            textMap(F(funcName)).addOne(MOV(None, false, R(5), Immed('a')))
+        }
+        
+        textMap(F(funcName)).addOne(CMP(None, R(4), R(5)))
+        textMap(F(funcName)).addOne(MOV(Some(GECOND()), false, R(4), Immed(1)))
+        textMap(F(funcName)).addOne(MOV(Some(LTCOND()), false, R(4), Immed(0)))
+        textMap(F(funcName)).addOne(LDRSB(None, R(5), ImmediateOffset(SP(), Immed(4))))
+        
+        if (caseType.equals("upper")) {
+            textMap(F(funcName)).addOne(MOV(None, false, R(6), Immed('Z')))
+        } else {
+            textMap(F(funcName)).addOne(MOV(None, false, R(6), Immed('z')))
+        }
+        
+        textMap(F(funcName)).addOne(CMP(None, R(5), R(6)))
+        textMap(F(funcName)).addOne(MOV(Some(LECOND()), false, R(5), Immed(1)))
+        textMap(F(funcName)).addOne(MOV(Some(GTCOND()), false, R(5), Immed(0)))
+        textMap(F(funcName)).addOne(AND(None, false, R(4), R(4), R(5)))
+        textMap(F(funcName)).addOne(MOV(None, false, R(0), R(4)))
+        textMap(F(funcName)).addOne(POP(List(PC())))
+        textMap(F(funcName)).addOne(POP(List(PC())))
+        textMap(F(funcName)).addOne(Ltorg())
+    }
+
+    def generateContains(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]], dataType: String): Unit = {
+        val funcName = "contains" + dataType
+
+        generateCheckArrayBounds(dataMap, textMap)
+        generateOverflow(dataMap, textMap)
+        generatePrintString(dataMap, textMap)
+
+        textMap(F(funcName)) = ListBuffer(
+            PUSH(List(LR())),
+            SUB(None, false, SP(), SP(), Immed(4)),
+            LDR(None, R(4), Immed(0)),
+            STR(None, R(4), ZeroOffset(SP())),
+            B(None, s"L${scopeLabels}"),
+            L(scopeLabels + 1),
+            ADD(None, false, R(4), SP(), Immed(8)),
+            LDR(None, R(5), ZeroOffset(SP())),
+            LDR(None, R(4), ZeroOffset(R(4))),
+            MOV(None, false, R(0), R(5)),
+            MOV(None, false, R(1), R(4)),
+            BL(None, "p_check_array_bounds"),
+            ADD(None, false, R(4), R(4), Immed(4))
+        )
+
+        if (dataType.equals("int")) {
+            textMap(F(funcName)).addOne(ADD(None, false, R(4), R(4), LogicalShiftLeft(R(5), Immed(2))))
+            textMap(F(funcName)).addOne(LDR(None, R(4), ZeroOffset(R(4))))
+            textMap(F(funcName)).addOne(LDR(None, R(5), ImmediateOffset(SP(), Immed(12))))
+        } else {
+            textMap(F(funcName)).addOne(ADD(None, false, R(4), R(4), R(5)))
+            textMap(F(funcName)).addOne(LDRSB(None, R(4), ZeroOffset(R(4))))
+            textMap(F(funcName)).addOne(LDRSB(None, R(5), ImmediateOffset(SP(), Immed(12))))
+        }
+
+        textMap(F(funcName)).addOne(CMP(None, R(4), R(5)))
+        textMap(F(funcName)).addOne(MOV(Some(EQCOND()), false, R(4), Immed(1)))
+        textMap(F(funcName)).addOne(MOV(Some(NECOND()), false, R(4), Immed(0)))
+        textMap(F(funcName)).addOne(CMP(None, R(4), Immed(0)))
+        textMap(F(funcName)).addOne(B(Some(EQCOND()), s"L${scopeLabels + 2}"))
+        textMap(F(funcName)).addOne(MOV(None, false, R(4), Immed(1)))
+        textMap(F(funcName)).addOne(MOV(None, false, R(0), R(4)))
+        textMap(F(funcName)).addOne(ADD(None, false, SP(), SP(), Immed(4)))
+        textMap(F(funcName)).addOne(POP(List(PC())))
+        textMap(F(funcName)).addOne(B(None, s"L${scopeLabels + 3}"))
+        textMap(F(funcName)).addOne(L(scopeLabels + 2))
+        textMap(F(funcName)).addOne(LDR(None, R(4), ZeroOffset(SP())))
+        textMap(F(funcName)).addOne(LDR(None, R(5), Immed(1)))
+        textMap(F(funcName)).addOne(ADD(None, true, R(4), R(4), R(5)))
+        textMap(F(funcName)).addOne(BL(Some(VSCOND()), "p_throw_overflow_error"))
+        textMap(F(funcName)).addOne(STR(None, R(4), ZeroOffset(SP())))
+        textMap(F(funcName)).addOne(L(scopeLabels + 3))
+        textMap(F(funcName)).addOne(L(scopeLabels))
+        textMap(F(funcName)).addOne(LDR(None, R(4), ZeroOffset(SP())))
+        textMap(F(funcName)).addOne(LDR(None, R(5), ImmediateOffset(SP(), Immed(8))))
+        textMap(F(funcName)).addOne(LDR(None, R(5), ZeroOffset(R(5))))
+        textMap(F(funcName)).addOne(CMP(None, R(4), R(5)))
+        textMap(F(funcName)).addOne(MOV(Some(LTCOND()), false, R(4), Immed(1)))
+        textMap(F(funcName)).addOne(MOV(Some(GECOND()), false, R(4), Immed(0)))
+        textMap(F(funcName)).addOne(CMP(None, R(4), Immed(1)))
+        textMap(F(funcName)).addOne(B(Some(EQCOND()), s"L${scopeLabels + 1}"))
+        textMap(F(funcName)).addOne(MOV(None, false, R(4), Immed(0)))
+        textMap(F(funcName)).addOne(MOV(None, false, R(0), R(4)))
+        textMap(F(funcName)).addOne(ADD(None, false, SP(), SP(), Immed(4)))
+        textMap(F(funcName)).addOne(POP(List(PC())))
+        textMap(F(funcName)).addOne(POP(List(PC())))
+        textMap(F(funcName)).addOne(Ltorg())
     }
 }

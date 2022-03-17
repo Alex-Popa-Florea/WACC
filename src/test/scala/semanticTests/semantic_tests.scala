@@ -13,6 +13,9 @@ import wacc.functionTable._
 import wacc.symbolTable._
 import wacc.types._
 import wacc.section._
+import wacc.main.STANDARD_LIBRARY
+import wacc.arrayBounds._
+import wacc.section._
 
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
@@ -27,9 +30,15 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer match {
       case Success(p) => {
         // Check variable map is generated correctly.
-        analyser(p)._1.getVariableMap() should equal (Map("i" -> (IntCheck(0), 4), "b" -> (BoolCheck(0), 5), "c" -> (CharCheck(0), 6), "h" -> (StrCheck(0), 10)))
-        // Check function table is empty.
-        analyser(p)._2.getFuncMap().size should equal (0)
+        analyser(p)._1.getVariableMap() should equal (Map("i" -> ((IntCheck(0), 4, ListBuffer((ProgramSection(),Unknown(),true)))), "b" -> ((BoolCheck(0), 5, ListBuffer((ProgramSection(),Unknown(),true)))), "c" -> ((CharCheck(0), 6, ListBuffer((ProgramSection(),Unknown(),true)))), "h" -> ((StrCheck(0), 10, ListBuffer((ProgramSection(), Unknown(), true))))))
+        var funcMap = analyser(p)._2.getFuncMap()
+        if (STANDARD_LIBRARY) {
+          // Check function map contains only no new key value pair.
+          funcMap.size should equal (preDefFunc.size)
+        } else {
+          // Check function map is empty.
+          funcMap.size should equal (0)
+        }
       }
       case Failure(err) => {
         println(err)
@@ -68,8 +77,13 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer match {
       case Success(p) => {
         var funcMap = analyser(p)._2.getFuncMap()
-        // Check function map contains only one key value pair.
-        funcMap.size should equal (1)
+        if (STANDARD_LIBRARY) {
+          // Check function map contains only one new key value pair.
+          funcMap.size should equal (preDefFunc.size + 1)
+        } else {
+          // Check function map contains only one key value pair.
+          funcMap.size should equal (1)
+        }
         // Check function f's paramater list has size 0.
         funcMap.withFilter({case (name, (_, ts)) => name == "f"}).map({case (_, (_, ts)) => ts}) should equal (List(List()))
       }
@@ -82,13 +96,20 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer match {
       case Success(p) => {
         var funcMap = analyser(p)._2.getFuncMap()
-        // Check function map contains only one key value pair.
-        funcMap.size should equal (1)
+        if (STANDARD_LIBRARY) {
+          // Check function map contains only one new key value pair.
+          funcMap.size should equal (preDefFunc.size + 1)
+        } else {
+          // Check function map contains only one key value pair.
+          funcMap.size should equal (1)
+        }
         // Check function f's paramater list has two elements.
         funcMap.withFilter({case (name, (_, ts)) => name == "f"}).
         map({case (_, (_, ts)) => ts}) should equal (List(List(IntCheck(0), IntCheck(0))))
-        // Check function stores correct return type.
-        funcMap.map({case (_, (t, _)) => t}) should equal (List(IntCheck(0)))
+        if (! STANDARD_LIBRARY) {
+          // Check function stores correct return type.
+          funcMap.map({case (_, (t, _)) => t}) should equal (List(IntCheck(0)))
+        }
         // Check symbol table for function has three key value pairs in the variable map.
         val children = analyser(p)._1.getChildren()
         children(0).getVariableMap().size should equal (3)
@@ -101,9 +122,14 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer = result.parse("begin int f() is return 2 end int g() is int x = call f(); return x * 2 end int y = call g(); println y end")
     answer match {
       case Success(p) => {
-        // Check function map has two key value pairs.
         var funcMap = analyser(p)._2.getFuncMap()
-        funcMap.size should equal (2)
+        if (STANDARD_LIBRARY) {
+          // Check function map contains two new key value pairs.
+          funcMap.size should equal (preDefFunc.size + 2)
+        } else {
+          // Check function map contains two key value pairs.
+          funcMap.size should equal (2)
+        }
         // Check symbol table has two children.
         var children = analyser(p)._1.getChildren()
         children.size should equal (2)
@@ -119,14 +145,21 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     var answer = result.parse("begin int f(int a) is return a + 2 end int g(int b) is return b * 2 end int y = call g(5); println y end")
     answer match {
       case Success(p) => {
-        // Check function map has two key value pairs.
         var funcMap = analyser(p)._2.getFuncMap()
-        funcMap.size should equal (2)
+        if (STANDARD_LIBRARY) {
+          // Check function map contains two new key value pairs.
+          funcMap.size should equal (preDefFunc.size + 2)
+        } else {
+          // Check function map contains two key value pairs.
+          funcMap.size should equal (2)
+        }        
         // Check symbol table has two children.
         var children = analyser(p)._1.getChildren()
         children.size should equal (2)
-        // Check Function has correct return type.
-        funcMap.map({case (_, (t, _)) => t}) should equal (funcMap.flatMap({case (_, (_, ts)) => ts}))
+        if (! STANDARD_LIBRARY) {
+          // Check Function has correct return type.
+          funcMap.map({case (_, (t, _)) => t}) should equal (funcMap.flatMap({case (_, (_, ts)) => ts}))
+        }
       }
       case Failure(err) => {
         println(err)
@@ -182,8 +215,8 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer match {
       case Success(p) => {
         val variableMap = analyser(p)._1.getVariableMap()
-        var lhsType = variableMap.filter({case (x, _) => x == "i"}).map({case (_, (t, _)) => t})
-        var rhsType = variableMap.filter({case (x, _) => x == "b"}).map({case (_, (t, _)) => t})
+        var lhsType = variableMap.filter({case (x, _) => x == "i"}).map({case (_, (t, _, _)) => t})
+        var rhsType = variableMap.filter({case (x, _) => x == "b"}).map({case (_, (t, _, _)) => t})
         lhsType should equal (List(IntCheck(0)))
         rhsType should equal (List(BoolCheck(0)))
         val error = analyser(p)._3 
@@ -199,8 +232,8 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer match {
       case Success(p) => {
         val variableMap = analyser(p)._1.getVariableMap()
-        var lhsType = variableMap.filter({case (x, _) => x == "i"}).map({case (_, (t, _)) => t})
-        var rhsType = variableMap.filter({case (x, _) => x == "j"}).map({case (_, (t, _)) => t})
+        var lhsType = variableMap.filter({case (x, _) => x == "i"}).map({case (_, (t, _, _)) => t})
+        var rhsType = variableMap.filter({case (x, _) => x == "j"}).map({case (_, (t, _, _)) => t})
         // Check that lhs and rhs have equal types
         lhsType should equal (rhsType)
       }
@@ -213,8 +246,8 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer match {
       case Success(p) => {
         val variableMap = analyser(p)._1.getVariableMap()
-        var lhsType = variableMap.filter({case (x, _) => x == "i"}).map({case (_, (t, _)) => t})
-        var rhsType = variableMap.filter({case (x, _) => x == "c"}).map({case (_, (t, _)) => t})
+        var lhsType = variableMap.filter({case (x, _) => x == "i"}).map({case (_, (t, _, _)) => t})
+        var rhsType = variableMap.filter({case (x, _) => x == "c"}).map({case (_, (t, _, _)) => t})
         lhsType should equal (List(IntCheck(0)))
         rhsType should equal (List(CharCheck(0)))
         val error = analyser(p)._3
@@ -230,8 +263,8 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer match {
       case Success(p) => {
         val variableMap = analyser(p)._1.getVariableMap()
-        var lhsType = variableMap.filter({case (x, _) => x == "i"}).map({case (_, (t, _)) => t})
-        var rhsType = variableMap.filter({case (x, _) => x == "j"}).map({case (_, (t, _)) => t})
+        var lhsType = variableMap.filter({case (x, _) => x == "i"}).map({case (_, (t, _, _)) => t})
+        var rhsType = variableMap.filter({case (x, _) => x == "j"}).map({case (_, (t, _, _)) => t})
         // Check that lhs and rhs have equal types
         lhsType should equal (rhsType)
       }

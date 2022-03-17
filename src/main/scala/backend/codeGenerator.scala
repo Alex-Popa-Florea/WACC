@@ -17,6 +17,7 @@ import wacc.types.PairCheck
 import wacc.types.StrCheck
 import wacc.types._
 import wacc.main.STANDARD_LIBRARY
+import wacc.main.ARRAY_BOUNDS
 
 import java.io.BufferedWriter
 import java.io.File
@@ -543,13 +544,20 @@ object codeGenerator {
             case arrayElem: ArrayElem =>
                 textMap(label).addOne(ADD(None, false, R(register), SP(), Immed(symbolTable.getSizeWithIdent(arrayElem.id).get - arrayElem.id.symbolTable.get.findId(arrayElem.id).get + stackOffset)))
                 var i = 0
+                var j = 0
                 arrayElem.exprs.map(expr => {
                     generateExpr(expr, symbolTable, functionTable, label, register + 1, dataMap, textMap)
                     textMap(label).addAll(List(
                         LDR(None, R(register), ZeroOffset(R(register))),
                         MOV(None, false, R(0), R(register + 1)),
-                        MOV(None, false, R(1), R(register)),
-                        BL(None, "p_check_array_bounds"),
+                        MOV(None, false, R(1), R(register))))
+                    if (!arrayElem.checked._1(j) || !ARRAY_BOUNDS) {
+                        textMap(label).addOne(BL(None, "p_check_array_bounds"))
+                        generateCheckArrayBounds(dataMap, textMap)
+                    } else {
+                        j += 1
+                    }
+                    textMap(label).addAll(List(
                         ADD(None, false, R(register), R(register), Immed(4)),
                         (arrayElem.id.symbolTable.get.find(arrayElem.id): @unchecked) match {
                             /*
@@ -576,7 +584,6 @@ object codeGenerator {
                             }
                         }
                     ))
-                    generateCheckArrayBounds(dataMap, textMap)
                     i += 1
                 })
                 if (read) {
@@ -898,6 +905,7 @@ object codeGenerator {
             case arrayElem: ArrayElem => 
                 textMap(label).addOne(ADD(None, false, R(register), SP(), Immed(symbolTable.getSizeWithIdent(arrayElem.id).get - arrayElem.id.symbolTable.get.findId(arrayElem.id).get + stackOffset)))
                 var i = 0
+                var j = 0
                 arrayElem.exprs.map(expr => {
                     if (register + 1 > 10) {
                         textMap(label).addOne(PUSH(List(R(10))))
@@ -913,8 +921,14 @@ object codeGenerator {
                     textMap(label).addAll(List(
                         LDR(None, R(reg1), ZeroOffset(R(reg1))),
                         MOV(None, false, R(0), R(reg2)),
-                        MOV(None, false, R(1), R(reg1)),
-                        BL(None, "p_check_array_bounds"),
+                        MOV(None, false, R(1), R(reg1))))
+                    if (!arrayElem.checked._1(j) || !ARRAY_BOUNDS) {
+                        textMap(label).addOne(BL(None, "p_check_array_bounds"))
+                        generateCheckArrayBounds(dataMap, textMap)
+                    } else {
+                        j += 1
+                    }
+                    textMap(label).addAll(List(
                         ADD(None, false, R(reg1), R(reg1), Immed(4)),
                         (arrayElem.id.symbolTable.get.find(arrayElem.id): @unchecked) match {
                             /*
@@ -941,7 +955,6 @@ object codeGenerator {
                             }
                         }
                     ))
-                    generateCheckArrayBounds(dataMap, textMap)
                     i += 1
                 })
                 val elemSize = getBytes(arrayElem, symbolTable)

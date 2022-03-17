@@ -16,6 +16,7 @@ import wacc.types.IntCheck
 import wacc.types.PairCheck
 import wacc.types.StrCheck
 import wacc.types._
+import wacc.main.STANDARD_LIBRARY
 
 import java.io.BufferedWriter
 import java.io.File
@@ -689,7 +690,7 @@ object codeGenerator {
                     }
                 })
                 stackOffset = 0
-                if (preDefFunc.contains(id.variable)) {
+                if (STANDARD_LIBRARY && preDefFunc.contains(id.variable)) {
                     id.variable match {
                         case "max_int" => 
                             generateMaxAndMin(textMap, true, "int")

@@ -697,6 +697,11 @@ object codeGenerator {
                     }
                 })
                 stackOffset = 0
+                /*
+                    Check if the standard library flag is set.
+                    If the function is predefined, call its generation function
+                    to output predefined assembly code.
+                */
                 if (STANDARD_LIBRARY && preDefFunc.contains(id.variable)) {
                     id.variable match {
                         case "max_int" => 
@@ -1579,6 +1584,9 @@ object codeGenerator {
         generateCheckNullPointer(dataMap, textMap)
     }
 
+    /*
+        Method that generates assembly code for a predefined function to find maximum and minimum of two integers or characters.
+    */
     def generateMaxAndMin(textMap: Map[Scope, ListBuffer[Instruction]], findMax: Boolean, argType: String): Unit = {
         val funcName = "max_" + argType
         
@@ -1632,6 +1640,9 @@ object codeGenerator {
         scopeLabels += 2
     }
 
+    /*
+        Method that generates assembly code for a predefined function to compute absolute value of given integer.
+    */
     def generateAbs(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
         val funcName = "abs"
 
@@ -1664,6 +1675,9 @@ object codeGenerator {
         scopeLabels += 2
     }
 
+    /*
+        Method that generates assembly code for a predefined function to generate power of one integer raised to the other.
+    */
     def generatePow(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]]): Unit = {
         val funcName = "pow"
 
@@ -1706,6 +1720,9 @@ object codeGenerator {
         scopeLabels += 2
     }
 
+    /*
+        Method that generates assembly code for a predefined function to check if a string is upper case or lower case.
+    */
     def generateIsUpperAndLowerString(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]], caseType: String): Unit = {
         val funcName = "is_" + caseType + "_string"
 
@@ -1793,6 +1810,9 @@ object codeGenerator {
         scopeLabels += 4
     }
 
+    /*
+        Method that generates assembly code for a predefined function to check if a character is upper case or lower case.
+    */
     def generateIsUpperAndLowerChar(textMap: Map[Scope, ListBuffer[Instruction]], caseType: String): Unit = {
         val funcName = "is_" + caseType + "_char"
 
@@ -1828,6 +1848,9 @@ object codeGenerator {
         textMap(F(funcName)).addOne(Ltorg())
     }
 
+    /*
+        Method that generates assembly code for a predefined function to check if a given integer or character array contains the given element.
+    */
     def generateContains(dataMap: Map[Scope, Msg], textMap: Map[Scope, ListBuffer[Instruction]], dataType: String): Unit = {
         val funcName = "contains" + dataType
 

@@ -123,7 +123,7 @@ object parser {
 
     private lazy val visibility: Parsley[Visibility] =  (Private <# "private") <|> (Public <# "public")
     
-    private lazy val assignField: Parsley[AssignField] = AssignField(visibility, AssignType(types, varIdent, "=" ~> assignRHS))
+    private lazy val assignField: Parsley[AssignField] = attempt(AssignField(visibility, AssignType(types, varIdent, "=" ~> assignRHS)))
     private lazy val assignFields = sepBy(assignField, ";")
 
     private lazy val singleClass: Parsley[Class] = Class(attempt("class" ~> VarIdent(VARIABLE) <~ "(" ), params <~ ")", option("extends" ~> VarIdent(VARIABLE)), "has" ~> assignFields, methods <~ "ssalc" ) //might need word for end of field assignments
@@ -145,9 +145,9 @@ object parser {
         Parsers for the left and right hand of an assignment statement 
     */
     private lazy val assignLHS: Parsley[AssignLHS] = (attempt(arrayElem) <|> ident <|> pairElem)
-    private lazy val assignRHSNoClass = expr.explain(explainExpr) <|> arrayLiter <|> newPair <|> pairElem.explain(explainPairElem) <|> call
+    private lazy val assignRHSNoClass = expr.explain(explainExpr) <|> arrayLiter <|> newPair <|> pairElem.explain(explainPairElem) <|> call 
     private lazy val assignRHS = if (classFlag) {
-        assignRHSNoClass <|> newInstance
+        assignRHSNoClass <|> newInstance <|> classIdent
     } else {
         assignRHSNoClass
     }

@@ -139,6 +139,7 @@ object codeGenerator {
                 }) 
                 singleClass.parent match {
                     case Some(parent) =>
+                        if (fieldMap.contains(parent.variable)) {
                         fieldMap(parent.variable).foreach(field => {
                             if (fieldMap.contains(singleClass.id.variable)) {
                                 if (fieldMap(singleClass.id.variable).forall(assignment => assignment.id.variable != field.id.variable)) {
@@ -147,15 +148,16 @@ object codeGenerator {
                             } else {
                                 fieldMap(singleClass.id.variable) = ListBuffer(field)
                             }
-                        }) 
+                        })} 
                     case None =>
                 }
                 singleClass.methods.foreach(m => generateNode(m.func, symbolTable, singleClass.functionTable.get, classTable, label, dataMap, textMap, Some(singleClass.id.variable)))
                 singleClass.parent match {
                     case Some(parent) =>
+                        if (methodMap.contains(parent.variable)) {
                         methodMap(parent.variable).foreach(method => {
                             generateNode(method, symbolTable, singleClass.functionTable.get, classTable, label, dataMap, textMap, Some(singleClass.id.variable))
-                        }) 
+                        })}
                     case None =>
                 }
 
@@ -202,24 +204,24 @@ object codeGenerator {
                 textMap(funcLabel).addOne(POP(List(PC())))
                 textMap(funcLabel).addOne(Ltorg()) 
             
-            case AssignField(visibility, assign) =>
-                /* 
-                    1. generateRHS - puts rhs in a register 
-                    2. put size of rhs into r0
-                    3. malloc - puts pointer into r0
-                    4. mov from register to [r0]
-                    5. mov r0 to [classpointerregister + offset]
+            // case AssignField(visibility, assign) =>
+            //     /* 
+            //         1. generateRHS - puts rhs in a register 
+            //         2. put size of rhs into r0
+            //         3. malloc - puts pointer into r0
+            //         4. mov from register to [r0]
+            //         5. mov r0 to [classpointerregister + offset]
 
-                */
-                
-                symbolTable.findField("this." + assign.id) match {
-                    case Some(value) => 
-                        generateRHS(assign.rhs, symbolTable, functionTable, classTable, label, 5, dataMap, textMap, inClass)
-                        val assignBytes = getBytesFromType(value)
-                        textMap(label).addOne(LDR(None, R(0), Immed(assignBytes)))
-                        textMap(label).addOne(BL(None, "malloc"))
-                    case None =>  
-                }
+            //     */
+            //     println("HFKSJFBJKSDHSKJDHKSHSKJDHSKJDHSKJDHSKJDHSJKDHSKJDHAJDHSJKDHSJFDHSJDHSDJSHJKSHDJKSDHKJSDHSKJDHSJKHSJD")
+            //     symbolTable.findField("this." + assign.id) match {
+            //         case Some(value) => 
+            //             generateRHS(assign.rhs, symbolTable, functionTable, classTable, label, 5, dataMap, textMap, inClass)
+            //             val assignBytes = getBytesFromType(value)
+            //             textMap(label).addOne(LDR(None, R(0), Immed(assignBytes)))
+            //             textMap(label).addOne(BL(None, "malloc"))
+            //         case None =>  
+            //     }
                 // generateRHS(assign.rhs, symbolTable, functionTable, label, 4, dataMap, textMap)
                 // val a_mode2 = if (symbolTable.getSizeWithIdent(assign.id).get - assign.id.symbolTable.get.findId(id).get + stackOffset == 0) {
                 //     ZeroOffset(SP())

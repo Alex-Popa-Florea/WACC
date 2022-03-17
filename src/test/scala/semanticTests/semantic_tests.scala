@@ -106,7 +106,7 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
         // Check function f's paramater list has two elements.
         funcMap.withFilter({case (name, (_, ts)) => name == "f"}).
         map({case (_, (_, ts)) => ts}) should equal (List(List(IntCheck(0), IntCheck(0))))
-        if (! STANDARD_LIBRARY) {
+        if (!STANDARD_LIBRARY) {
           // Check function stores correct return type.
           funcMap.map({case (_, (t, _)) => t}) should equal (List(IntCheck(0)))
         }
@@ -156,7 +156,7 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
         // Check symbol table has two children.
         var children = analyser(p)._1.getChildren()
         children.size should equal (2)
-        if (! STANDARD_LIBRARY) {
+        if (!STANDARD_LIBRARY) {
           // Check Function has correct return type.
           funcMap.map({case (_, (t, _)) => t}) should equal (funcMap.flatMap({case (_, (_, ts)) => ts}))
         }
@@ -321,6 +321,98 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
         // Check function has incorrect number of arguments.
         var error = analyser(p)._3
         error should equal (List(("Expression of type int expected in right hand side of assignment, but expression of type char found!",(1,15))))
+      }
+      case Failure(err) => {
+        println(err)
+      }
+    }
+  }
+  "Predefined functions" should "parse successfully" in
+  {
+    info("with standard library flag")
+    STANDARD_LIBRARY = true
+    var answer = result.parse("begin char[] c = ['A']; bool b = call is_upper_string(123) end")
+    answer match {
+      case Success(p) => {
+        var error = analyser(p)._3
+        if (!STANDARD_LIBRARY) {
+          // Check error is thrown when standard library flag is not used.
+          error should equal (List(("Function is_upper_string not declared!",(1,34))))
+        } else {
+          // Check error is thrown when standard library flag is set.
+          error should equal (List(("Expected argument types: List(char[]), but found: List(int)in call to function is_upper_string!",(1,34))))
+        }
+      }
+      case Failure(err) => {
+        println(err)
+      }
+    }
+    info("and have correct name")
+    answer = result.parse("begin char[] c = ['A']; bool b = call contains(c, 'A') end")
+    answer match {
+      case Success(p) => {
+        var error = analyser(p)._3
+        if (STANDARD_LIBRARY) {
+          // Check error is thrown when standard library flag is set.
+          error should equal (List(("Function contains not declared!",(1,34))))
+        }
+      }
+      case Failure(err) => {
+        println(err)
+      }
+    }
+    info("and have correct parameter types")
+    answer = result.parse("begin char[] c = ['A']; bool b = call contains_char(c, 12) end")
+    answer match {
+      case Success(p) => {
+        var error = analyser(p)._3
+        if (STANDARD_LIBRARY) {
+          // Check error is thrown when standard library flag is set.
+          error should equal (List(("Expected argument types: List(char[], char), but found: List(char[], int)in call to function contains_char!",(1,34))))
+        }
+      }
+      case Failure(err) => {
+        println(err)
+      }
+    }
+    info("and have correct number of parameters")
+    answer = result.parse("begin int a = 5; int b = call abs(a, a, a) end")
+    answer match {
+      case Success(p) => {
+        var error = analyser(p)._3
+        if (STANDARD_LIBRARY) {
+          // Check error is thrown when standard library flag is set.
+          error should equal (List(("Wrong number of arguments in call to function abs!",(1,26))))
+        }
+      }
+      case Failure(err) => {
+        println(err)
+      }
+    }
+    info("and cannot be redefined when standard library flag is set")
+    answer = result.parse("begin bool max_int(int a, int b) is return true end skip end")
+    answer match {
+      case Success(p) => {
+        var error = analyser(p)._3
+        if (STANDARD_LIBRARY) {
+          // Check error is thrown when standard library flag is set.
+          error should equal (List((("Function max_int has already been defined, sorry!",(1,7)))))
+        }
+      }
+      case Failure(err) => {
+        println(err)
+      }
+    }
+    info("and can be redefined when standard library flag is not set")
+    STANDARD_LIBRARY = false
+    answer = result.parse("begin int abs(int a) is return true end skip end")
+    answer match {
+      case Success(p) => {
+        var error = analyser(p)._3
+        if (STANDARD_LIBRARY) {
+          // Check error is thrown when standard library flag is set.
+          error should equal (List(("Function abs has already been defined, sorry!",(1,7))))
+        }
       }
       case Failure(err) => {
         println(err)

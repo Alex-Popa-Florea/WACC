@@ -175,7 +175,7 @@ object semanticAnalyser {
                 var nst = new SymbolTable(FunctionSection(functionStat.id.variable), Some(st))
                 st.addChildSt(nst)
                 functionStat.semanticTable = Some(nst)
-                if (classFlag) {
+                if (inClass) {
                     nst.updateSize(nst, 4)
                 }
 				val checkedParams = functionStat.vars.reverse.map(x => analyse(x, nst, ft, ct, None, false)._1).reduceOption((x, y) => x && y)

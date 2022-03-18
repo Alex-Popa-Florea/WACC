@@ -4,11 +4,10 @@ import scala.collection.mutable.Map
 import backend.codeGenerator.getBytesFromType
 object classTable {
      class ClassTable() {
-         // classMap(className, (parent, constructors (paramters), fields (assigntype), methods(functions ))) - parent fields and methods we can access 
         private var classMap: Map[String, (Option[String], List[(String, TypeCheck)], Map[String, TypeCheck],  Map[String, TypeCheck], Map[String, (TypeCheck, List[TypeCheck])],  Map[String, (TypeCheck, List[TypeCheck])])] = Map.empty
         /*
-            The add method adds a function to the function table, returning true
-            if the addition succeded, as in there was no function of that
+            The add method adds a class to the class table, returning true
+            if the addition succeded, as in there was no class of that
             name previously added, false otherwise.
         */
         def add(className: String, parent: Option[String], constructors: List[(String, TypeCheck)], publicFields: Map[String, TypeCheck], privateFields: Map[String, TypeCheck], publicMethods: Map[String, (TypeCheck, List[TypeCheck])], privateMethods:  Map[String, (TypeCheck, List[TypeCheck])]): Boolean = {
@@ -20,14 +19,23 @@ object classTable {
             }
         }
 
+        /*
+            Method to get the element of that class name from the classTable
+        */
         def getClass(className: String): Option[(Option[String], List[(String, TypeCheck)], Map[String, TypeCheck], Map[String, TypeCheck], Map[String, (TypeCheck, List[TypeCheck])],  Map[String, (TypeCheck, List[TypeCheck])])] = {
             classMap.get(className)
         }
 
+        /*
+            Method to return the class map of the class table
+        */
         def getClassMap():  Map[String, (Option[String], List[(String, TypeCheck)], Map[String, TypeCheck], Map[String, TypeCheck], Map[String, (TypeCheck, List[TypeCheck])],  Map[String, (TypeCheck, List[TypeCheck])])] = {
             classMap
         }
 
+        /*
+            Method to return the constructors of a class from the class table
+        */
         def getConstructors(className: String): Option[List[(String, TypeCheck)]] = {
             classMap.get(className) match {
                 case Some(value) => Some(value._2)
@@ -36,8 +44,8 @@ object classTable {
         }
         
         /*
-            Method that checks the number of arguments passed is the same as
-            the expected number of arguments for a given function
+            Method that checks the number of constructors passed is the same as
+            the expected number of constructors for a given class
         */
         def checkLengthConstructor(className: String, argTypes: List[TypeCheck]): Boolean = {
             classMap.get(className) match {
@@ -46,7 +54,9 @@ object classTable {
             }
         }
 
-        // get fields
+        /*
+            Method to return the public fields of a class from the class table
+        */
         def getPublicFields(className: String): Option[Map[String, TypeCheck]] = {
             classMap.get(className) match {
                 case None => None
@@ -54,6 +64,9 @@ object classTable {
             }
         }
 
+        /*
+            Method to return the private fields of a class from the class table
+        */
         def getPrivateFields(className: String): Option[Map[String, TypeCheck]] = {
             classMap.get(className) match {
                 case None => None
@@ -61,7 +74,9 @@ object classTable {
             }
         }
 
-        // get methods
+        /*
+            Method to return the public methods of a class from the class table
+        */
         def getPublicMethods(className: String): Option[Map[String, (TypeCheck, List[TypeCheck])]] = {
             classMap.get(className) match {
                 case None => None
@@ -69,6 +84,9 @@ object classTable {
             }
         }
 
+        /*
+            Method to return the private methods of a class from the class table
+        */
         def getPrivateMethods(className: String): Option[Map[String, (TypeCheck, List[TypeCheck])]] = {
             classMap.get(className) match {
                 case None => None
@@ -76,6 +94,9 @@ object classTable {
             }
         }
 
+        /*
+            Method to return the parent of a class from the class table
+        */
         def getParent(className: String): Option[String] = {
             classMap.get(className) match {
                 case None => None
@@ -84,8 +105,8 @@ object classTable {
         }
 
         /*
-            Method that checks the arguments passed correspond to the types
-            of the arguments stored for the given function in the function table
+            Method that checks the constructors passed correspond to the types
+            of the constructors stored for the given function in the function table
         */
         def checkConstructor(className: String, argTypes: List[TypeCheck]): Boolean = {
             classMap.get(className) match {
@@ -109,6 +130,9 @@ object classTable {
             }
         }
 
+        /*
+            Method to return the field map from a class, recursing into the anscestor tables
+        */
         def getFieldMap(className: String, index: Int, fieldMap: Map[String, (TypeCheck, Int)]): Map[String, (TypeCheck, Int)] = {
             var localIndex = index
             getConstructors(className) match {
@@ -150,34 +174,15 @@ object classTable {
             fieldMap
         }
 
+        /*
+            Method to return the size of the class table
+        */
         def getClassSize(className: String): Int = {
             getFieldMap(className, 0, Map.empty).size * 4
         }
 
-        // def checkField(className: String, field: String, foundType: TypeCheck): Boolean = {
-        //     var equality = true
-        //     getFields(className) match {
-        //         case None => false
-        //         case Some(fields) => 
-        //             fields.get(field) match {
-        //                 case None => 
-        //                     getParent(className) match {
-        //                         case None => false
-        //                         case Some(parent) => checkField(parent, field, foundType)
-        //                     }
-        //                 case Some(correctType) =>
-        //                     correctType match {
-        //                         case PairCheck(_, _, _) => equality &= (foundType == correctType) || foundType == EmptyPairCheck()
-        //                         case _ => equality &= (foundType == correctType)
-        //                     } 
-        //             }
-        //     }
-        //     equality
-        // }
-
-       // def checkMethod() {}
         /*
-            Method that prints the function table
+            Method that prints the class table
         */
         def printClassTables(): Unit = {
             println(s"  - Classes: ")

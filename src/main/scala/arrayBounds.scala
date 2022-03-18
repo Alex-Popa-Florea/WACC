@@ -98,6 +98,9 @@ object arrayBounds {
         checks.toList
     }
 
+    /*
+        Function to check the bounds of an ident
+    */
     def checkBounds(ident: Ident, st: SymbolTable, indexes: List[Option[Int]], fstSnd: Option[Boolean]): (List[Boolean], List[Boolean]) = {
         updateArrayScope(ident, st, None, false)
         var foundTableOption = st.findAll(ident, 0, List.empty)
@@ -125,6 +128,9 @@ object arrayBounds {
         }
     }
 
+    /*
+        Recursive function to check the bounds from an arraysize
+    */
     def checkBoundsFromType(arraySize: ArraySize, indexes: List[Option[Int]]): (List[Boolean], List[Boolean]) = {
         if (indexes.nonEmpty) {
             indexes(0) match {
@@ -149,6 +155,9 @@ object arrayBounds {
         }
     }
 
+    /*
+        Function to get the arraysize of an array ident
+    */
     def getArraySize(arrayIdent: AssignLHS, st: SymbolTable): ArraySize = {
         arrayIdent match {
             case ident: Ident =>
@@ -192,6 +201,9 @@ object arrayBounds {
         }
     }
 
+    /*
+        Function to get the bounds from an ident
+    */
     def getBounds(ident: Ident, st: SymbolTable, indexes: List[Int]): ArraySize = {
         var foundTableOption = st.findAll(ident, 0, List.empty)
         foundTableOption match {
@@ -202,6 +214,9 @@ object arrayBounds {
         }
     }
 
+    /*
+        Recursive function to get the bounds from an arraysize
+    */
     def getBoundsFromType(arraySize: ArraySize, typeCheck: TypeCheck, nest: Int, indexes: List[Int]): ArraySize = {
         if (nest != indexes.size) {
             arraySize match {
@@ -214,6 +229,9 @@ object arrayBounds {
         }
     }
 
+    /*
+        Function to set the arraysize of an array ident
+    */
     def setArraySize(arrayIdent: AssignLHS, st: SymbolTable, newArraySize: ArraySize): Unit = {
         arrayIdent match {
             case ident: Ident =>
@@ -259,6 +277,9 @@ object arrayBounds {
         }
     }
 
+    /*
+        Function to set the arraysize of an ident
+    */
     def setBounds(ident: Ident, st: SymbolTable, newArraySize: ArraySize, indexes: List[Int], fstSnd: Option[Boolean]): Unit = {
         updateArrayScope(ident, st, None, true)
         var foundTableOption = st.findAll(ident, 0, List.empty)
@@ -303,6 +324,9 @@ object arrayBounds {
         }
     }
 
+    /*
+        Recursive function to return the new array size from the old arraysize
+    */
     def setBoundsFromType(arraySize: ArraySize, typeCheck: TypeCheck, nest: Int, newArraySize: ArraySize, indexes: List[Int]): ArraySize = {
         if (nest != indexes.size) {
             arraySize match {

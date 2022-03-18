@@ -1,4 +1,4 @@
-package backend_tests
+package backendTests
 import org.scalatest.AppendedClues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._

@@ -26,6 +26,9 @@ import section._
 
 object main {
 
+    /*
+        Flags.
+    */
     var STANDARD_LIBRARY = false
     var ARRAY_BOUNDS = false
     var HELP = false

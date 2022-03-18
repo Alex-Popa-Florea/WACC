@@ -9,8 +9,20 @@ import Parsley._
 import ast._
 import types._
 import section._
+import wacc.main.STANDARD_LIBRARY
 
 object functionTable {
+
+    /*
+        A list of predefined functions.
+    */
+    val preDefFunc: List[String] = List(
+        "max_int", "max_char", "min_int", "min_char",
+        "abs", "pow",
+        "is_upper_string", "is_upper_char", "is_lower_string", "is_lower_char",
+        "contains_int", "contains_char"
+        )
+
     /*
         The function table stores a map of function names, to return type and a
         list of types of the parameters for that function.
@@ -20,6 +32,27 @@ object functionTable {
     class FunctionTable(private var section: Section, private var parent: Option[FunctionTable]) {
         private var funcMap: Map[String, (TypeCheck, List[TypeCheck])] = Map.empty
         private var children: ListBuffer[FunctionTable] = ListBuffer.empty
+
+        /*
+            Preload function map with standard library functions
+            if -sl flag is selected.
+        */
+        if (STANDARD_LIBRARY) {
+            funcMap = Map("max_int" -> (IntCheck(0), List(IntCheck(0), IntCheck(0))),
+                "max_char" -> (CharCheck(0), List(CharCheck(0), CharCheck(0))),
+                "min_int" -> (IntCheck(0), List(IntCheck(0), IntCheck(0))),
+                "min_char" -> (CharCheck(0), List(CharCheck(0), CharCheck(0))),
+                "abs" -> (IntCheck(0), List(IntCheck(0))),
+                "pow" -> (IntCheck(0), List(IntCheck(0), IntCheck(0))),
+                "is_upper_string" -> (BoolCheck(0), List(CharCheck(1))),
+                "is_upper_char" -> (BoolCheck(0), List(CharCheck(0))),
+                "is_lower_string" -> (BoolCheck(0), List(CharCheck(1))),
+                "is_lower_char" -> (BoolCheck(0), List(CharCheck(0))),
+                "contains_int" -> (BoolCheck(0), List(IntCheck(1), IntCheck(0))),
+                "contains_char" -> (BoolCheck(0), List(CharCheck(1), CharCheck(0)))
+            ) 
+        }
+
         /*
             The add method adds a function to the function table, returning true
             if the addition succeded, as in there was no function of that

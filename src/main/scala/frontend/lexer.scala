@@ -4,6 +4,7 @@ import parsley.Parsley
 
 import Parsley._
 import scala.collection.mutable.ListBuffer
+import wacc.main.CLASSES
 
 object lexer {
     import parsley.token.{Lexer, Predicate, LanguageDef}
@@ -12,14 +13,14 @@ object lexer {
     import parsley.implicits.character.{stringLift, charLift}
     import parsley.implicits.zipped.Zipped3
     import parsley.errors.combinator.ErrorMethods
+    
 
-    val classFlag = true
     val basicKeywords = ListBuffer("begin", "end", "is", "skip", "read", "free", "return", 
                                     "exit", "print", "println", "if", "then", "else", "fi", 
                                     "while", "do", "done", "newpair", "call", "fst", "snd", 
                                     "pair", "true", "false", "null", "int", "bool", "char", 
                                     "string", "len", "ord", "chr")
-    val keywords = if (!classFlag) {
+    val keywords = if (!CLASSES) {
             basicKeywords.toSet
         } else {
            (basicKeywords.append("class", "ssalc", "has", "public", "private", "newinstance", "extends", "this")).toSet

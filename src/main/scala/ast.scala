@@ -90,7 +90,7 @@ object ast {
     sealed trait AssignLHS extends Node
 
     sealed trait Ident extends AssignLHS with Expr {
-        val variable: String //get rid we dont need this
+        val variable: String
         var symbolTable: Option[SymbolTable]
         var originClass: Option[String]
     }
@@ -98,12 +98,15 @@ object ast {
         var symbolTable: Option[SymbolTable] = None
         var originClass: Option[String] = None
     }
-    case class ClassAccess(classIdent: VarIdent, memberIdent: VarIdent)(val pos: (Int, Int)) extends Ident { //AHHHHHHH REMOVE VARIABLE WHEN YOU PATTERN MATCH ON IDENT IN SEMANTIC AND CODEGEN
+    case class ClassAccess(classIdent: VarIdent, memberIdent: VarIdent)(val pos: (Int, Int)) extends Ident {
         var symbolTable: Option[SymbolTable] = None
         val variable: String = s"${classIdent.variable}.${memberIdent.variable}"
         var originClass: Option[String] = None
     }
-    case class ArrayElem(id: Ident, exprs: List[Expr])(val pos: (Int, Int)) extends AssignLHS with Expr //ident or varident
+
+    case class ArrayElem(id: Ident, exprs: List[Expr])(val pos: (Int, Int)) extends AssignLHS with Expr {
+        var checked: (List[Boolean], List[Boolean]) = (List(false), List(false))
+    }
 
     sealed trait AssignRHS extends Node 
     case class ArrayLiter(array: List[Expr])(val pos: (Int, Int)) extends AssignRHS

@@ -14,6 +14,9 @@ import wacc.symbolTable._
 import wacc.classTable._
 import wacc.types._
 import wacc.section._
+import wacc.main.STANDARD_LIBRARY
+import wacc.arrayBounds._
+import wacc.section._
 
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
@@ -28,9 +31,15 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer match {
       case Success(p) => {
         // Check variable map is generated correctly.
-        analyser(p)._1.getVariableMap() should equal (Map("i" -> (IntCheck(0), 4), "b" -> (BoolCheck(0), 5), "c" -> (CharCheck(0), 6), "h" -> (StrCheck(0), 10)))
-        // Check function table is empty.
-        analyser(p)._2.getFuncMap().size should equal (0)
+        analyser(p)._1.getVariableMap() should equal (Map("i" -> ((IntCheck(0), 4, ListBuffer((ProgramSection(),Unknown(),true)))), "b" -> ((BoolCheck(0), 5, ListBuffer((ProgramSection(),Unknown(),true)))), "c" -> ((CharCheck(0), 6, ListBuffer((ProgramSection(),Unknown(),true)))), "h" -> ((StrCheck(0), 10, ListBuffer((ProgramSection(), Unknown(), true))))))
+        var funcMap = analyser(p)._2.getFuncMap()
+        if (STANDARD_LIBRARY) {
+          // Check function map contains only no new key value pair.
+          funcMap.size should equal (preDefFunc.size)
+        } else {
+          // Check function map is empty.
+          funcMap.size should equal (0)
+        }
       }
       case Failure(err) => {
         println(err)
@@ -69,8 +78,13 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer match {
       case Success(p) => {
         var funcMap = analyser(p)._2.getFuncMap()
-        // Check function map contains only one key value pair.
-        funcMap.size should equal (1)
+        if (STANDARD_LIBRARY) {
+          // Check function map contains only one new key value pair.
+          funcMap.size should equal (preDefFunc.size + 1)
+        } else {
+          // Check function map contains only one key value pair.
+          funcMap.size should equal (1)
+        }
         // Check function f's paramater list has size 0.
         funcMap.withFilter({case (name, (_, ts)) => name == "f"}).map({case (_, (_, ts)) => ts}) should equal (List(List()))
       }
@@ -83,13 +97,20 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer match {
       case Success(p) => {
         var funcMap = analyser(p)._2.getFuncMap()
-        // Check function map contains only one key value pair.
-        funcMap.size should equal (1)
+        if (STANDARD_LIBRARY) {
+          // Check function map contains only one new key value pair.
+          funcMap.size should equal (preDefFunc.size + 1)
+        } else {
+          // Check function map contains only one key value pair.
+          funcMap.size should equal (1)
+        }
         // Check function f's paramater list has two elements.
         funcMap.withFilter({case (name, (_, ts)) => name == "f"}).
         map({case (_, (_, ts)) => ts}) should equal (List(List(IntCheck(0), IntCheck(0))))
-        // Check function stores correct return type.
-        funcMap.map({case (_, (t, _)) => t}) should equal (List(IntCheck(0)))
+        if (!STANDARD_LIBRARY) {
+          // Check function stores correct return type.
+          funcMap.map({case (_, (t, _)) => t}) should equal (List(IntCheck(0)))
+        }
         // Check symbol table for function has three key value pairs in the variable map.
         val children = analyser(p)._1.getChildren()
         children(0).getVariableMap().size should equal (3)
@@ -102,9 +123,14 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer = result.parse("begin int f() is return 2 end int g() is int x = call f(); return x * 2 end int y = call g(); println y end")
     answer match {
       case Success(p) => {
-        // Check function map has two key value pairs.
         var funcMap = analyser(p)._2.getFuncMap()
-        funcMap.size should equal (2)
+        if (STANDARD_LIBRARY) {
+          // Check function map contains two new key value pairs.
+          funcMap.size should equal (preDefFunc.size + 2)
+        } else {
+          // Check function map contains two key value pairs.
+          funcMap.size should equal (2)
+        }
         // Check symbol table has two children.
         var children = analyser(p)._1.getChildren()
         children.size should equal (2)
@@ -120,14 +146,21 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     var answer = result.parse("begin int f(int a) is return a + 2 end int g(int b) is return b * 2 end int y = call g(5); println y end")
     answer match {
       case Success(p) => {
-        // Check function map has two key value pairs.
         var funcMap = analyser(p)._2.getFuncMap()
-        funcMap.size should equal (2)
+        if (STANDARD_LIBRARY) {
+          // Check function map contains two new key value pairs.
+          funcMap.size should equal (preDefFunc.size + 2)
+        } else {
+          // Check function map contains two key value pairs.
+          funcMap.size should equal (2)
+        }        
         // Check symbol table has two children.
         var children = analyser(p)._1.getChildren()
         children.size should equal (2)
-        // Check Function has correct return type.
-        funcMap.map({case (_, (t, _)) => t}) should equal (funcMap.flatMap({case (_, (_, ts)) => ts}))
+        if (!STANDARD_LIBRARY) {
+          // Check Function has correct return type.
+          funcMap.map({case (_, (t, _)) => t}) should equal (funcMap.flatMap({case (_, (_, ts)) => ts}))
+        }
       }
       case Failure(err) => {
         println(err)
@@ -183,10 +216,8 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer match {
       case Success(p) => {
         val variableMap = analyser(p)._1.getVariableMap()
-        var lhsType = variableMap.filter({case (x, _) => x == "i"}).map({case (_, (t, _)) => t})
-        var rhsType = variableMap.filter({case (x, _) => x == "b"}).map({case (_, (t, _)) => t})
-        // println(lhsType)
-        // println(rhsType)
+        var lhsType = variableMap.filter({case (x, _) => x == "i"}).map({case (_, (t, _, _)) => t})
+        var rhsType = variableMap.filter({case (x, _) => x == "b"}).map({case (_, (t, _, _)) => t})
         lhsType should equal (List(IntCheck(0)))
         rhsType should equal (List(BoolCheck(0)))
         val error = analyser(p)._3 
@@ -202,8 +233,8 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer match {
       case Success(p) => {
         val variableMap = analyser(p)._1.getVariableMap()
-        var lhsType = variableMap.filter({case (x, _) => x == "i"}).map({case (_, (t, _)) => t})
-        var rhsType = variableMap.filter({case (x, _) => x == "j"}).map({case (_, (t, _)) => t})
+        var lhsType = variableMap.filter({case (x, _) => x == "i"}).map({case (_, (t, _, _)) => t})
+        var rhsType = variableMap.filter({case (x, _) => x == "j"}).map({case (_, (t, _, _)) => t})
         // Check that lhs and rhs have equal types
         lhsType should equal (rhsType)
       }
@@ -216,8 +247,8 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer match {
       case Success(p) => {
         val variableMap = analyser(p)._1.getVariableMap()
-        var lhsType = variableMap.filter({case (x, _) => x == "i"}).map({case (_, (t, _)) => t})
-        var rhsType = variableMap.filter({case (x, _) => x == "c"}).map({case (_, (t, _)) => t})
+        var lhsType = variableMap.filter({case (x, _) => x == "i"}).map({case (_, (t, _, _)) => t})
+        var rhsType = variableMap.filter({case (x, _) => x == "c"}).map({case (_, (t, _, _)) => t})
         lhsType should equal (List(IntCheck(0)))
         rhsType should equal (List(CharCheck(0)))
         val error = analyser(p)._3
@@ -233,8 +264,8 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer match {
       case Success(p) => {
         val variableMap = analyser(p)._1.getVariableMap()
-        var lhsType = variableMap.filter({case (x, _) => x == "i"}).map({case (_, (t, _)) => t})
-        var rhsType = variableMap.filter({case (x, _) => x == "j"}).map({case (_, (t, _)) => t})
+        var lhsType = variableMap.filter({case (x, _) => x == "i"}).map({case (_, (t, _, _)) => t})
+        var rhsType = variableMap.filter({case (x, _) => x == "j"}).map({case (_, (t, _, _)) => t})
         // Check that lhs and rhs have equal types
         lhsType should equal (rhsType)
       }
@@ -291,6 +322,98 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
         // Check function has incorrect number of arguments.
         var error = analyser(p)._3
         error should equal (List(("Expression of type int expected in right hand side of assignment, but expression of type char found!",(1,15))))
+      }
+      case Failure(err) => {
+        println(err)
+      }
+    }
+  }
+  "Predefined functions" should "parse successfully" in
+  {
+    info("with standard library flag")
+    STANDARD_LIBRARY = true
+    var answer = result.parse("begin char[] c = ['A']; bool b = call is_upper_string(123) end")
+    answer match {
+      case Success(p) => {
+        var error = analyser(p)._3
+        if (!STANDARD_LIBRARY) {
+          // Check error is thrown when standard library flag is not used.
+          error should equal (List(("Function is_upper_string not declared!",(1,34))))
+        } else {
+          // Check error is thrown when standard library flag is set.
+          error should equal (List(("Expected argument types: List(char[]), but found: List(int)in call to function is_upper_string!",(1,34))))
+        }
+      }
+      case Failure(err) => {
+        println(err)
+      }
+    }
+    info("and have correct name")
+    answer = result.parse("begin char[] c = ['A']; bool b = call contains(c, 'A') end")
+    answer match {
+      case Success(p) => {
+        var error = analyser(p)._3
+        if (STANDARD_LIBRARY) {
+          // Check error is thrown when standard library flag is set.
+          error should equal (List(("Function contains not declared!",(1,34))))
+        }
+      }
+      case Failure(err) => {
+        println(err)
+      }
+    }
+    info("and have correct parameter types")
+    answer = result.parse("begin char[] c = ['A']; bool b = call contains_char(c, 12) end")
+    answer match {
+      case Success(p) => {
+        var error = analyser(p)._3
+        if (STANDARD_LIBRARY) {
+          // Check error is thrown when standard library flag is set.
+          error should equal (List(("Expected argument types: List(char[], char), but found: List(char[], int)in call to function contains_char!",(1,34))))
+        }
+      }
+      case Failure(err) => {
+        println(err)
+      }
+    }
+    info("and have correct number of parameters")
+    answer = result.parse("begin int a = 5; int b = call abs(a, a, a) end")
+    answer match {
+      case Success(p) => {
+        var error = analyser(p)._3
+        if (STANDARD_LIBRARY) {
+          // Check error is thrown when standard library flag is set.
+          error should equal (List(("Wrong number of arguments in call to function abs!",(1,26))))
+        }
+      }
+      case Failure(err) => {
+        println(err)
+      }
+    }
+    info("and cannot be redefined when standard library flag is set")
+    answer = result.parse("begin bool max_int(int a, int b) is return true end skip end")
+    answer match {
+      case Success(p) => {
+        var error = analyser(p)._3
+        if (STANDARD_LIBRARY) {
+          // Check error is thrown when standard library flag is set.
+          error should equal (List((("Function max_int has already been defined, sorry!",(1,7)))))
+        }
+      }
+      case Failure(err) => {
+        println(err)
+      }
+    }
+    info("and can be redefined when standard library flag is not set")
+    STANDARD_LIBRARY = false
+    answer = result.parse("begin int abs(int a) is return true end skip end")
+    answer match {
+      case Success(p) => {
+        var error = analyser(p)._3
+        if (STANDARD_LIBRARY) {
+          // Check error is thrown when standard library flag is set.
+          error should equal (List(("Function abs has already been defined, sorry!",(1,7))))
+        }
       }
       case Failure(err) => {
         println(err)

@@ -10,6 +10,7 @@ import Parsley._
 import ast._
 import types._
 import section._
+import arrayBounds._
 
 object symbolTable {
     /*
@@ -22,7 +23,7 @@ object symbolTable {
         in the function table
     */
     class SymbolTable(private var section: Section, private var parent: Option[SymbolTable]) {
-        private var variableMap: Map[String, (TypeCheck, Int)] = Map.empty
+        private var variableMap: Map[String, (TypeCheck, Int, ListBuffer[(Section, ArraySize, Boolean)])] = Map.empty
         private var children: ListBuffer[SymbolTable] = ListBuffer.empty
         private var size: Int = 0
 
@@ -57,8 +58,8 @@ object symbolTable {
                         case ClassCheck(name, nested) => 
                             updateSize(this, 4)
                         case _ =>
-                    }
-                    variableMap(ident.variable) = (varType, size)
+                        }
+                    variableMap(ident.variable) = (varType, size, ListBuffer((section, Unknown(), true)))
                     true
                 case _ => false
             }
@@ -67,7 +68,7 @@ object symbolTable {
         def addClassMember(member: String, varType: TypeCheck): Boolean = {
             variableMap.get(member) match {
                 case None => 
-                    variableMap(member) = (varType, size)
+                    variableMap(member) = (varType, size, ListBuffer((section, Unknown(), true)))
                     true
                 case _ => false
             }
@@ -114,6 +115,22 @@ object symbolTable {
             }
         }
 
+        def findAll(ident: Ident, scope: Int, sections: List[Section]): Option[(SymbolTable, (TypeCheck, Int, ListBuffer[(Section, ArraySize, Boolean)]), (Int, List[Section]))] = {
+            var foundType = variableMap.get(ident.variable)
+            foundType match {
+                case None => parent match {
+                    case None => None
+                    case Some(value) => 
+                        value.findAll(ident, scope + 1, List(this.section)) match {
+                            case None => None
+                            case Some(nestedFind) => Some(nestedFind._1, nestedFind._2, (nestedFind._3._1, this.section :: nestedFind._3._2))
+                        }
+                }
+                case _ => 
+                    Some(this, foundType.get, (scope, List(this.section)))
+            }
+        }
+
         /*
             The findId method finds the stack id of a given ident in the symbol table,
             searching recursively within the ancestor symbol tables until finding
@@ -135,8 +152,12 @@ object symbolTable {
         /*
             Method to return the variable map
         */
-        def getVariableMap(): collection.immutable.Map[String, (TypeCheck, Int)] = {
+        def getVariableMap(): collection.immutable.Map[String, (TypeCheck, Int, ListBuffer[(Section, ArraySize, Boolean)])] = {
             variableMap.toMap
+        }
+
+        def getSection(): Section = {
+            section
         }
 
         /*
@@ -183,6 +204,25 @@ object symbolTable {
             symbolTable.size += incr
         }
 
+
+        /*
+            Function to update the array bounds of idents in the symbol table, for each scope
+        */
+        def setArrayScope(ident: Ident, oldValue: (TypeCheck, Int, ListBuffer[(Section, ArraySize, Boolean)]), newArraySize: ListBuffer[(Section, ArraySize, Boolean)], unknownEnd: Boolean): Unit = {
+            if (unknownEnd) {
+                var i = newArraySize.size - 2
+                var ifStatement = false
+                while (i >= 0 && !ifStatement) {
+                    if (oldValue._3(i)._1 == TrueIfSection()) {
+                        ifStatement = true
+                    } 
+                    newArraySize(i) = (newArraySize(i)._1, Unknown(), false)
+                    i -= 1
+                }
+            }
+            variableMap(ident.variable) = (oldValue._1, oldValue._2, newArraySize)
+        }
+
         /*
             Method that prints the symbol table and its children recursively
         */
@@ -204,7 +244,7 @@ object symbolTable {
             }
             if (st.variableMap.size > 0) {
                 println(s"(ii) Variables:")
-                st.variableMap.zip(0 until st.variableMap.size).foreach { case ((k, (x, _)), i) => 
+                st.variableMap.zip(0 until st.variableMap.size).foreach { case ((k, (x, _, _)), i) => 
                     for (i <- 0 to nest) {
                         print("  ")
                     }
@@ -213,6 +253,36 @@ object symbolTable {
             }
             st.children.map(x => {
                 printSymbolTables(x, nest + 1)
+            })
+        }
+
+        def printSymbolTables2(st: SymbolTable, nest: Int): Unit = {
+            for (i <- 0 to nest) {
+                print("  ")
+            }
+            println(s"- Symbol Table ${st.section.toString()} - ${st}")
+            for (i <- 0 to nest) {
+                print("  ")
+            }
+            if (st.parent != None) {
+                println(s" (i) Symbol Table Parent: ${st.parent.get.section.toString()} - ${st.parent.get}")
+            } else {
+                println(s" (i) Symbol Table Parent: ${st.parent}")
+            }
+            for (i <- 0 to nest) {
+                print("  ")
+            }
+            if (st.variableMap.size > 0) {
+                println(s"(ii) Variables:")
+                st.variableMap.zip(0 until st.variableMap.size).foreach { case ((k, (x, _, b)), i) => 
+                    for (i <- 0 to nest) {
+                        print("  ")
+                    }
+                    println(s" ${i + 1}. \"$k\": \"${typeCheckToString(x)}\", ${b}")
+                }
+            }
+            st.children.map(x => {
+                printSymbolTables2(x, nest + 1)
             })
         }
     }

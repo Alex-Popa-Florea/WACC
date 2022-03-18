@@ -87,7 +87,7 @@ class TypeParserTest extends AnyFlatSpec with AppendedClues
         case Failure(err) => { 
             err should equal ("""|(line 1, column 8):
                                  |  unexpected "("
-                                 |  expected ".", "=", or "["
+                                 |  expected "=" or "["
                                  |  >begin f() is return true skip end
                                  |          ^""".stripMargin)
         }

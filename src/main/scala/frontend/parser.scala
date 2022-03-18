@@ -15,13 +15,14 @@ object parser {
     import parsley.errors.combinator.ErrorMethods
     import explanations._
     import color._
+    import wacc.main.CLASSES
 
     /* 
         Parsers for literals and identifiers, used to construct the apporopriate AST nodes 
     */
     private lazy val varIdent: Parsley[VarIdent] = VarIdent(VARIABLE).label("Variable").explain("Use to name expression")
     private lazy val classIdent: Parsley[ClassAccess] = ClassAccess(attempt((varIdent <|> ("this" ~> VarIdent(pure("this"))))<~ "." ), varIdent)
-    private lazy val ident = if (classFlag) { 
+    private lazy val ident = if (CLASSES) { 
         classIdent <|> varIdent
     } else {
         varIdent
@@ -76,7 +77,7 @@ object parser {
     private lazy val baseTypeNoClass: Parsley[BaseType] = ((IntType <# "int") <|> (StrType <# "string") <|> (BoolType <# "bool") 
                                                         <|> (CharType <# "char"))
 
-    private lazy val baseType: Parsley[BaseType] =  if (classFlag) {
+    private lazy val baseType: Parsley[BaseType] =  if (CLASSES) {
         (baseTypeNoClass <|> (ClassType("class" ~> varIdent)))
     } else {
         baseTypeNoClass
@@ -127,7 +128,7 @@ object parser {
     private lazy val assignFields = sepBy(assignField, ";")
 
     private lazy val singleClass: Parsley[Class] = Class(attempt("class" ~> VarIdent(VARIABLE) <~ "(" ), params <~ ")", option("extends" ~> VarIdent(VARIABLE)), "has" ~> assignFields, methods <~ "ssalc" ) //might need word for end of field assignments
-    private lazy val classes: Parsley[List[Class]] = if (classFlag) {
+    private lazy val classes: Parsley[List[Class]] = if (CLASSES) {
         many(singleClass)
     } else {
         pure(List.empty)
@@ -146,7 +147,7 @@ object parser {
     */
     private lazy val assignLHS: Parsley[AssignLHS] = (attempt(arrayElem) <|> ident <|> pairElem)
     private lazy val assignRHSNoClass = expr.explain(explainExpr) <|> arrayLiter <|> newPair <|> pairElem.explain(explainPairElem) <|> call 
-    private lazy val assignRHS = if (classFlag) {
+    private lazy val assignRHS = if (CLASSES) {
         assignRHSNoClass <|> newInstance <|> classIdent
     } else {
         assignRHSNoClass

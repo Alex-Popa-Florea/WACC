@@ -2,9 +2,10 @@ package backend
 
 import backend.operators._
 import lines._
+import wacc.functionTable.preDefFunc
 
 object instructions {
-    
+
     /*
         Trait to represent elements within the text section of the assembly code.
     */
@@ -38,7 +39,12 @@ object instructions {
     */
     case class F(string: String) extends Scope {
         override def toString() : String = {
-            "f_" + string + ":\n"
+            if (preDefFunc.contains(string)) {
+                "def_" + string + ":\n"
+            }
+            else {
+                "f_" + string + ":\n"
+            }
         }
     }
     

@@ -91,6 +91,10 @@ object codeGenerator {
                 case _ => 
             }    
         )
+        msg = 0
+        scopeLabels = 0
+        functionStackSize = 0
+        stackOffset = 0
         lines.toList
     }
 

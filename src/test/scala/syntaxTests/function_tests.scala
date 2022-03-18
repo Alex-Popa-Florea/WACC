@@ -34,7 +34,7 @@ class FunctionParserTest extends AnyFlatSpec with AppendedClues
         }
       }
       case Failure(err) => {
-        println(err)
+        println("ARE WE HERE" + err)
       }
     }
     
@@ -45,11 +45,11 @@ class FunctionParserTest extends AnyFlatSpec with AppendedClues
         answer should equal (0)
       }
       case Failure(err) => {
-        err should equal ("""(line 1, column 28):
-                            |  unexpected "ski"
-                            |  expected !=, ";", %, &&, *, +, -, /, <, <=, ==, >, >=, end, or ||
-                            |  >begin int f() is int a = 2 skip end
-                              ^""".stripMargin)
+        err should equal ("""|(line 1, column 28):
+                             |  unexpected "ski"
+                             |  expected !=, ";", %, &&, *, +, -, /, <, <=, ==, >, >=, end, or ||
+                             |  >begin int f() is int a = 2 skip end
+                             |                              ^""".stripMargin)
       }
     }
 

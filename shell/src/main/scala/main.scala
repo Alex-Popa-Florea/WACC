@@ -46,6 +46,7 @@ object shell{
     val validFunctions = ListBuffer[String]()
     var out = new ByteArrayOutputStream()
 
+
     /*
         Inserting a command into a .wacc file given the function flag and a readVariable if the command is read.
     */
@@ -131,23 +132,19 @@ object shell{
         val WHILE = command.startsWith("while")
 
         if (IF){
-            val condIndex = command.indexOf("then") +4
-            var (cond,rest) = command.splitAt(condIndex)
-            val elseIndex = rest.length - rest.reverse.indexOf("esle")
-            var falseVal = rest.substring(elseIndex)
-            var trueVal = rest.substring(0,elseIndex-4)
-
-            trueVal = trueVal.split(";").map{recursiveRemove}.mkString(";")
-            falseVal = falseVal.substring(0,falseVal.length()-2).split(";").map{recursiveRemove}.mkString(";")
-            rest = trueVal ++ " else " ++ falseVal ++ " fi"
-            return cond ++ rest
+            println("enter if ")
+            var Array(cond, rest) = command.split("then ")
+            var Array(trueValue,falseValue) = rest.split(" else ")
+            trueValue = trueValue.split(";").map{recursiveRemove}.mkString(";")
+            falseValue = falseValue.replace("fi","").split(";").map{recursiveRemove}.mkString(";")
+            rest = trueValue ++ " else " ++ falseValue ++ " fi"
+            return cond ++ "then " ++rest
         }
         else if(WHILE){
-            val doIndex = command.indexOf("do")
-            var (cond,rest) = command.splitAt(doIndex)
-            var body = rest.substring(0,rest.length-4).split(";").map{recursiveRemove}.mkString(";")
+            var Array(cond, rest) = command.split("do ")
+            var body = rest.replace("done","").split(";").map{recursiveRemove}.mkString(";")
             rest = body ++ " done"
-            return cond ++ rest
+            return cond ++ "do " ++ rest
         }
         else if(BEGIN){
             val beginIndex = 4
@@ -211,7 +208,19 @@ object shell{
             bw.write(s" $lines; ")
             bw.write(s"$command")
         }
-        validCommands.addOne(removeJunk(command))
+        
+        val delmiter = "####################"
+        bw.write(s"""; println "$delmiter" """)
+
+        variables.map(v => {
+            (map(v)) match {
+                case (wacc.types.IntCheck(i),_,_) if i == 0  => {bw.write(s"""; print "$v = " """);bw.write(s"; println $v")}
+                case (wacc.types.CharCheck(i),_,_) if i == 0 => {bw.write(s"""; print "$v = " """);bw.write(s"; println $v")}
+                case (wacc.types.BoolCheck(i),_,_) if i == 0 => {bw.write(s"""; print "$v = " """);bw.write(s"; println $v")}
+                case (wacc.types.StrCheck(i),_,_) if i == 0  => {bw.write(s"""; print "$v = " """);bw.write(s"; println $v")}
+                case _ => validCommands.addOne(removeJunk(command))
+            }
+        })
 
         bw.write(" end")
         bw.close()
@@ -231,10 +240,10 @@ object shell{
 
         emulate(file)
 
-        // val outputStrings = out.toString("UTF-8").split("\n")
-        // val delimterIndex = outputStrings.reverse.indexOf(delmiter)
-        // val variableValues = outputStrings.slice(outputStrings.length-delimterIndex,outputStrings.length)
-        // variableValues.foreach(i => if (i != "") validCommands.addOne(i))
+        val outputStrings = out.toString("UTF-8").split("\n")
+        val delimterIndex = outputStrings.reverse.indexOf(delmiter)
+        val variableValues = outputStrings.slice(outputStrings.length-delimterIndex,outputStrings.length)
+        variableValues.foreach(i => if (i != "") validCommands.addOne(i))
     }
 
     /*

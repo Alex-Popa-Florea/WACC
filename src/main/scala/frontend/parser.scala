@@ -120,11 +120,9 @@ object parser {
     private lazy val method = Method(visibility, function)
     lazy val methods = many(method)
 
-    // put if here:
-
     private lazy val visibility: Parsley[Visibility] =  (Private <# "private") <|> (Public <# "public")
     
-    private lazy val assignField: Parsley[AssignField] = attempt(AssignField(visibility, AssignType(types, varIdent, "=" ~> assignRHS)))
+    private lazy val assignField: Parsley[AssignField] = attempt(AssignField(visibility, AssignType2((types <~> varIdent <~ "="),  assignRHS)))
     private lazy val assignFields = sepBy(assignField, ";")
 
     private lazy val singleClass: Parsley[Class] = Class(attempt("class" ~> VarIdent(VARIABLE) <~ "(" ), params <~ ")", option("extends" ~> VarIdent(VARIABLE)), "has" ~> assignFields, methods <~ "ssalc" ) //might need word for end of field assignments

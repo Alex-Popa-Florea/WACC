@@ -232,8 +232,13 @@ object ast {
     }
 
     object AssignField {
-        def apply(visiblity: => Parsley[Visibility], assign: Parsley[AssignType]): Parsley[AssignField] =
-            pos <**> (visiblity, assign).zipped(AssignField(_, _) _)
+        def apply(visibility: => Parsley[Visibility], assignType: Parsley[AssignType]): Parsley[AssignField] =
+            pos <**> (visibility, assignType).zipped(AssignField(_, _) _)
+    }
+
+    object AssignType2 {
+        def apply(pair: => Parsley[(Type, VarIdent)], rhs: Parsley[AssignRHS]): Parsley[AssignType] =
+            pos <**> (pair, rhs).zipped((x, y) => AssignType(x._1, x._2, y) _)
     }
 
     object Method {

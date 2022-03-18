@@ -132,6 +132,7 @@ object codeGenerator {
                 textMap(label).addOne(POP(List(PC())))
                 textMap(label).addOne(Ltorg())
             case singleClass: Class =>
+                // Add fields to field map for future newinstance
                 singleClass.fields.foreach(field => {
                     if (!fieldMap.contains(singleClass.id.variable)) {
                         fieldMap(singleClass.id.variable) = ListBuffer(field.assign)
@@ -153,6 +154,7 @@ object codeGenerator {
                         })} 
                     case None =>
                 }
+                // Add methods to method map for future call
                 singleClass.methods.foreach(m => generateNode(m.func, symbolTable, singleClass.functionTable.get, classTable, label, dataMap, textMap, Some(singleClass.id.variable)))
                 singleClass.parent match {
                     case Some(parent) =>
@@ -164,7 +166,6 @@ object codeGenerator {
                 }
 
             case function: Function =>
-                //functionTable.printFunctionTables2(functionTable, 0)
                 val funcLabel = inClass match {
                     case None => F(function.id.variable)
                     case Some(value) => 
@@ -205,37 +206,6 @@ object codeGenerator {
                 })
                 textMap(funcLabel).addOne(POP(List(PC())))
                 textMap(funcLabel).addOne(Ltorg()) 
-            
-            // case AssignField(visibility, assign) =>
-            //     /* 
-            //         1. generateRHS - puts rhs in a register 
-            //         2. put size of rhs into r0
-            //         3. malloc - puts pointer into r0
-            //         4. mov from register to [r0]
-            //         5. mov r0 to [classpointerregister + offset]
-
-            //     */
-            //     println("HFKSJFBJKSDHSKJDHKSHSKJDHSKJDHSKJDHSKJDHSJKDHSKJDHAJDHSJKDHSJFDHSJDHSDJSHJKSHDJKSDHKJSDHSKJDHSJKHSJD")
-            //     symbolTable.findField("this." + assign.id) match {
-            //         case Some(value) => 
-            //             generateRHS(assign.rhs, symbolTable, functionTable, classTable, label, 5, dataMap, textMap, inClass)
-            //             val assignBytes = getBytesFromType(value)
-            //             textMap(label).addOne(LDR(None, R(0), Immed(assignBytes)))
-            //             textMap(label).addOne(BL(None, "malloc"))
-            //         case None =>  
-            //     }
-                // generateRHS(assign.rhs, symbolTable, functionTable, label, 4, dataMap, textMap)
-                // val a_mode2 = if (symbolTable.getSizeWithIdent(assign.id).get - assign.id.symbolTable.get.findId(id).get + stackOffset == 0) {
-                //     ZeroOffset(SP())
-                // } else {
-                //     ImmediateOffset(SP(), Immed(symbolTable.getSizeWithIdent(id).get - id.symbolTable.get.findId(id).get + stackOffset))
-                // }
-                // val lhsSize = getBytes(id, symbolTable)
-                // if (lhsSize == 4) {
-                //     textMap(label).addOne(STR(None, R(4), a_mode2))
-                // } else {
-                //     textMap(label).addOne(STRB(None, R(4), a_mode2))
-                // }
 
             case AssignType(t, id, rhs) => 
                 generateRHS(rhs, symbolTable, functionTable, classTable, label, 4, dataMap, textMap, inClass)
@@ -457,7 +427,7 @@ object codeGenerator {
                                     generatePrintReference(dataMap, textMap)
                                     BL(None, "p_print_reference")
 
-                                case EmptyPairCheck() => BL(None, "p_print_reference")
+                                case _ => BL(None, "p_print_reference")
                             }
                         }
                     case IntLiter(x) => 
@@ -651,9 +621,7 @@ object codeGenerator {
                         }
 
                         textMap(label).addOne(LDR(None, R(register), a_mode2)) 
-                        //println(classIdent.variable)
                         val classFieldMap = classTable.getFieldMap(classType, 0, Map.empty)
-                        //println(classFieldMap)
                         val fieldInfo = classFieldMap.get(memberIdent.variable)
 
                         val offset: Int = fieldInfo match {

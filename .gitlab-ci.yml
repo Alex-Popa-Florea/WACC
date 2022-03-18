@@ -22,5 +22,5 @@ syntax-test-job:
 backend-test-job:
   stage: backend-test
   script:
-    - sbt clean "testOnly backend_tests.*"
+    - sbt clean "testOnly backendTests.*"
 

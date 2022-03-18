@@ -15,6 +15,7 @@ import wacc.classTable._
 import wacc.types._
 import wacc.section._
 import wacc.main.STANDARD_LIBRARY
+import wacc.main.ARRAY_BOUNDS
 import wacc.arrayBounds._
 import wacc.section._
 
@@ -419,6 +420,24 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
         println(err)
       }
     }
+  }
+  "Arrays" should "parse successfully" in
+  {
+    info("with non negative indices when -ab flag is set")
+    ARRAY_BOUNDS = true
+    var answer = result.parse("begin int[] a = [43, 2, 18, 1] ; int[] b = [1, 2, 3] ; println a[-2] end")
+    answer match {
+      case Success(p) => {
+        var error = analyser(p)._3
+        println(error)
+        // Check error is thrown when standard library flag is set.
+        error should equal (List(("Out of bounds error in a",(1,66))))
+      }
+      case Failure(err) => {
+        println(err)
+      }
+    }
+    ARRAY_BOUNDS = false
   }
   def analyser(p: Node): (SymbolTable, FunctionTable, ListBuffer[(String, (Int, Int))]) = { 
     val symbolTable = new SymbolTable(ProgramSection(), None)

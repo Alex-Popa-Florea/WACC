@@ -16,6 +16,7 @@ import wacc.types._
 import wacc.section._
 import wacc.main.STANDARD_LIBRARY
 import wacc.main.ARRAY_BOUNDS
+import wacc.main.CLASSES
 import wacc.arrayBounds._
 import wacc.section._
 
@@ -23,6 +24,7 @@ import scala.collection.mutable.ListBuffer
 import scala.io.Source
 
 class SemanticTest extends AnyFlatSpec with AppendedClues{
+  CLASSES = true
   info ("SEMANTIC TESTS")
 
   "Assignment statements" should "parse successfully and produce correct symbol table" in
@@ -429,8 +431,7 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
     answer match {
       case Success(p) => {
         var error = analyser(p)._3
-        println(error)
-        // Check error is thrown when standard library flag is set.
+        // Check error is thrown when array bound check flag is set.
         error should equal (List(("Out of bounds error in a",(1,66))))
       }
       case Failure(err) => {
@@ -438,6 +439,57 @@ class SemanticTest extends AnyFlatSpec with AppendedClues{
       }
     }
     ARRAY_BOUNDS = false
+  }
+  "Class objects" should "parse successfully when -ci flag is set" in
+  {
+    info("with correct parameter types")
+    var answer = result.parse("begin class Shape(int side) has ssalc class Shape square = newinstance Shape(true); skip end")
+    answer match {
+      case Success(p) => {
+        var error = analyser(p)._3
+        // Check error is thrown when classses with inheritance flag is set.
+        error should equal (ListBuffer(("Expected argument types: List(int), but found: List(bool)in call to function Shape!",(1,60))))
+      }
+      case Failure(err) => {
+        println(err)
+      }
+    }
+    info("with correct inheritance")
+    answer = result.parse("begin class Shape(int side) extends Geometry has ssalc skip end")
+    answer match {
+      case Success(p) => {
+        var error = analyser(p)._3
+        // Check error is thrown when classses with inheritance flag is set.
+        error should equal (ListBuffer(("Parent class Geometry does not exist",(1,7))))
+      }
+      case Failure(err) => {
+        println(err)
+      }
+    }
+    info("with correct number of parameters")
+    answer = result.parse("begin class Shape(int side) has ssalc class Shape square = newinstance Shape(1, 2); skip end")
+    answer match {
+      case Success(p) => {
+        var error = analyser(p)._3
+        // Check error is thrown when classses with inheritance flag is set.
+        error should equal (ListBuffer(("Wrong number of arguments in constructor of Shape!",(1,60))))
+      }
+      case Failure(err) => {
+        println(err)
+      }
+    }
+    info("after declaration")
+    answer = result.parse("begin class Human man = newinstance Human(\"Mr.Wacc\") end")
+    answer match {
+      case Success(p) => {
+        var error = analyser(p)._3
+        // Check error is thrown when classses with inheritance flag is set.
+        error should equal (ListBuffer(("Undefined class Human",(1,13)), ("Class Human not declared!",(1,25))))
+      }
+      case Failure(err) => {
+        println(err)
+      }
+    }
   }
   def analyser(p: Node): (SymbolTable, FunctionTable, ListBuffer[(String, (Int, Int))]) = { 
     val symbolTable = new SymbolTable(ProgramSection(), None)

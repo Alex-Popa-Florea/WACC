@@ -66,6 +66,24 @@ object types {
                 ot2 match {
                     case None => false
                     case Some(t2) => t1 match {
+                        case _ => t1 == t2
+                    }
+                }
+                
+        }
+	}
+
+
+	/*
+		Function to be used in the future when casting is implemented in code generation
+	*/	
+	def equalTypesWithCasting(ct: ClassTable, ot1: Option[TypeCheck], ot2: Option[TypeCheck]): Boolean = {
+		ot1 match {
+            case None => ot1 == ot2
+            case Some(t1) => 
+                ot2 match {
+                    case None => false
+                    case Some(t2) => t1 match {
                         case ClassCheck(name, nested) => 
                             if (t1 != t2) {
                                 ct.getParent(name) match {

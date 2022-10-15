@@ -1,5 +1,7 @@
-This is the provided git repository for the WACC compilers lab. You should work 
-in this repository regularly committing and pushing your work back to GitLab.
+This is the WACC Compiler group project I undertook as part of my university degree.
+
+This was created using Scala and Parsley, and includes the implementation for both syntacting and semantic analysis and error detection and display.
+Additionally, the project contains some extensions related to optimisation, the addition of support for simple classes, as well as a shell.
 
 ----------------------------
 Provided files/directories  
@@ -19,8 +21,7 @@ You should not need to make any changes in this directory.
   
 > src < 
 
-The src directory is currently empty (apart from a simple README file) and is 
-where we expect you to write your compiler code.
+The src directory is where the compiler code lies.
 
 > grun <
 
